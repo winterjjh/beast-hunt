@@ -263,7 +263,7 @@ body.aiming #c{cursor:none}
       <label class="sens">마우스 민감도 <input type="range" class="sensR" min="0.2" max="3" step="0.1" value="1" aria-label="마우스 민감도"><b class="sensV">1.0</b></label>
       <div class="row" style="justify-content:center"><button id="bResume" class="btn" type="button">계속</button><button id="bQuit" class="btn ghost" type="button">사냥 포기하고 마을로</button></div>
       <h3>문제 신고</h3>
-      <p class="best" style="margin:.2em 0">이상한 순간에 F8을 누르면 표식 기록. 아래 버튼으로 최근 2분 기록을 복사해서 Claude에게 붙여넣기</p>
+      <p class="best" style="margin:.2em 0">어떤 종류의 문제든 이상한 순간에 F8을 누르면 표식과 전체 상태 기록. 아래 버튼으로 최근 2분 기록을 복사해서 Claude에게 붙여넣기</p>
       <div class="row" style="justify-content:center;margin-top:.5em"><button id="bLogCopy" class="btn ghost" type="button">문제 기록 복사</button><button id="bLogSave" class="btn ghost" type="button">파일로 저장</button></div>
       <p id="logMsg" class="best" style="min-height:1.2em;margin:.4em 0 0"></p>
     </div>
@@ -290,14 +290,14 @@ const TUNE={noCrate:true,tempo:.85,aimTime:1.2,speed:6.6,accel:46,decel:40,swing
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.075,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v22';
+const VER='v23';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
 addEventListener('mousemove',e=>{acc.dx+=e.movementX||0;acc.dy+=e.movementY||0;acc.n++;acc.max=Math.max(acc.max,Math.abs(e.movementX||0),Math.abs(e.movementY||0))},true);
 addEventListener('mousedown',e=>logEv('버튼누름',`b${e.button} 눌린상태=${e.buttons}`),true);
 addEventListener('mouseup',e=>logEv('버튼뗌',`b${e.button} 눌린상태=${e.buttons}`),true);
-addEventListener('keydown',e=>{if(e.repeat)return;if(e.code==='F8'){e.preventDefault();logEv('★★★ 표식(F8) ★★★');if(G.state==='hunt')say('표식 기록','일시정지 화면에서 문제 기록 복사')}else logEv('키누름',e.code)},true);
+addEventListener('keydown',e=>{if(e.repeat)return;if(e.code==='F8'){e.preventDefault();logEv('★★★ 표식(F8) ★★★');logEv('스냅샷',snap());if(G.state==='hunt')say('표식 기록','일시정지 화면에서 문제 기록 복사')}else logEv('키누름',e.code+(G.state==='hunt'&&B?' | '+ctx():''))},true);
 addEventListener('keyup',e=>logEv('키뗌',e.code),true);
 addEventListener('wheel',e=>logEv('휠',String(Math.round(e.deltaY))),{capture:true,passive:true});
 document.addEventListener('pointerlockchange',()=>logEv('마우스잠금',document.pointerLockElement?'켜짐':'꺼짐'));
@@ -305,7 +305,39 @@ document.addEventListener('pointerlockerror',()=>logEv('마우스잠금 오류')
 addEventListener('blur',()=>logEv('창 포커스 잃음'));addEventListener('focus',()=>logEv('창 포커스 얻음'));
 addEventListener('resize',()=>logEv('창 크기',innerWidth+'x'+innerHeight));
 addEventListener('error',e=>logEv('오류',String(e.message).slice(0,200)));
-function logTick(dt){
+// 범용 추적: 행동 변화, 입력 시점의 조건, 전체 상태 스냅샷, 자동 이상 감지
+const wat={act:'',actT:0,beast:'',inp:'',w:-1,flag:{}},f1=v=>(+v||0).toFixed(1);
+const flagOnce=(k,msg)=>{const t=lnow();if(wat.flag[k]&&t-wat.flag[k]<5)return;wat.flag[k]=t;logEv('!!이상',msg)};
+function heroAct(){return P.down?'쓰러짐':P.dodge?'구르기':P.skill?(P.skill.melee?'강타(대검)':'강타(관통탄)'):P.swing?'대검 베기':P.drink>0?'물약':P.block?'막기':P.stag>0?'피격 경직':P.swap>0?'무기 교체':P.reload>0?'장전':P.recov>0?'사격 후 경직':'자유'}
+function ctx(){return `탄=${P.ammo}/${P.reserve} 사격대기=${f1(P.fireCd)} 장전=${f1(P.reload)} 사격후경직=${f1(P.recov)} 피격경직=${f1(P.stag)} 교체=${f1(P.swap)} 기력=${Math.round(P.st)} 막기대기=${f1(P.blockCd)} 강타=${(+P.charge||0).toFixed(2)} 물약=${P.potions} 행동=${heroAct()}`}
+function snap(){
+  const KEEPO=['dodge','skill','swing','in','php','pmax','broken','bag','combo','pose'];
+  const pr=o=>{const r={};for(const k in o){const v=o[k];if(v==null||typeof v==='boolean'||typeof v==='string')r[k]=v;else if(typeof v==='number')r[k]=isFinite(v)?+v.toFixed(3):String(v);else if(KEEPO.includes(k))r[k]=v}return r};
+  try{return JSON.stringify({P:pr(P),G:pr(G),B:B?pr(B):null,hazards:G.hazards.length,shots:G.shots.length,S})}catch(e){return '스냅샷 실패 '+e.message}
+}
+function logWatch(raw){
+  if(raw>.25)logEv('!!이상','화면 멈칫 '+raw.toFixed(2)+'초');
+  if(G.state!=='hunt'||!B||G.botFn)return;
+  const I=G.in,inp=`사격${I.fire?1:0} 조준${I.ads?1:0} 막기${I.block?1:0}`;
+  if(inp!==wat.inp){wat.inp=inp;logEv('입력',inp+' | '+ctx())}
+  const act=heroAct();if(act!==wat.act){wat.act=act;wat.actT=lnow();logEv('사냥꾼',act)}
+  if(P.w!==wat.w){wat.w=P.w;logEv('무기',WEP[P.w].name+` 탄=${P.ammo}/${P.reserve}`)}
+  const bs=B.state+((B.state==='windup'||B.state==='strike')&&B.atk?':'+B.atk+(B.mod||''):'');
+  if(bs!==wat.beast){wat.beast=bs;logEv('거수',bs+` 거리=${f1(Math.hypot(P.x-B.x,P.z-B.z))} 체력=${Math.round(B.hp)} 경직게이지=${Math.round(B.stg)}/${B.stgMax}`)}
+}
+function logCheck(fps){
+  if([P.x,P.z,P.y,P.hp,P.st,P.vx,P.vz,B.x,B.z,B.hp,G.yaw,G.pitch].some(v=>!isFinite(v)))flagOnce('nan','수치 오류(NaN) '+snap());
+  if(Math.hypot(P.x,P.z)>AR+.5)flagOnce('outP','사냥꾼이 경기장 밖 '+f1(P.x)+','+f1(P.z));
+  if(Math.hypot(B.x,B.z)>AR+.5)flagOnce('outB','거수가 경기장 밖 '+f1(B.x)+','+f1(B.z));
+  if(P.hp>P.maxHp+.5||P.ammo<0||P.reserve<0||P.ammo>WEP[P.w].mag||P.st<-1||P.st>P.maxSt+1)flagOnce('range','수치 범위 벗어남 '+ctx()+` 체력=${f1(P.hp)}/${P.maxHp}`);
+  if(!['자유','막기','쓰러짐','장전'].includes(wat.act)&&lnow()-wat.actT>4)flagOnce('stuckP','사냥꾼 행동이 4초 넘게 지속: '+wat.act+' | '+ctx());
+  if(!['chase','dead'].includes(B.state)&&B.dur>0&&B.stateT>B.dur+1.5)flagOnce('stuckB',`거수 상태가 끝나지 않음: ${B.state} ${f1(B.stateT)}/${f1(B.dur)}초`);
+  if(B.state==='chase'&&B.stateT>25)flagOnce('idleB','거수가 25초 넘게 공격 없이 추격만 함');
+  if(fps<20)flagOnce('fps','프레임 저하 fps='+Math.round(fps));
+}
+addEventListener('unhandledrejection',e=>logEv('오류',('비동기 '+(e.reason&&e.reason.message||e.reason)).slice(0,200)));
+function logTick(dt,raw){
+  logWatch(raw||dt);
   acc.fr++;acc.t+=dt;acc.t1+=dt;
   if(G.state!==acc.state){acc.state=G.state;logEv('화면',G.state);acc.yaw=null}
   if(acc.t<.2)return;
@@ -318,13 +350,14 @@ function logTick(dt){
       else if(Math.abs(dy-exp)>.08)logEv('!!이상',`마우스 이동량과 회전량 불일치: 실제 ${f2(dy)}, 예상 ${f2(exp)}`);
     }
     acc.yaw=G.yaw;acc.pitch=G.pitch;
+    if(B)logCheck(acc.fr/acc.t);
     if(acc.t1>=1&&B){logEv('상태',`사냥꾼(${P.x.toFixed(1)},${P.z.toFixed(1)}) 체력=${Math.round(P.hp)} 기력=${Math.round(P.st)} 무기=${P.w} 탄=${P.ammo}/${P.reserve} 장전=${P.reload>0?1:0} 막기=${P.block?1:0} | 거수=${B.state}${B.atk&&(B.state==='windup'||B.state==='strike')?':'+B.atk:''} 체력=${Math.round(B.hp)} 거리=${Math.hypot(P.x-B.x,P.z-B.z).toFixed(1)} | fps=${Math.round(acc.fr/acc.t)}`);acc.t1=0}
   }
   acc.dx=acc.dy=acc.n=acc.max=acc.drop=acc.t=acc.fr=0;
 }
 function logText(){
   const t=lnow(),rows=LOG.filter(r=>r[0]>t-120).map(r=>r[0].toFixed(2)+' '+r[1]);
-  return [`거수의 골짜기 문제 기록 ${VER}`,`브라우저: ${navigator.userAgent}`,`화면: ${innerWidth}x${innerHeight} 배율 ${devicePixelRatio} | 민감도 ${G.sensMul} | 마우스잠금 ${G.plock?'켜짐':'꺼짐'}${G.noLock?' (잠금 실패 환경)':''} | 터치기기 ${coarse?1:0}`,`사냥: ${G.hunt+1}단계, 저장: 토벌 ${S.cleared}, 사냥 성공 ${S.hunts}, 장비 ${S.items.length}`,`기록 구간: 최근 ${Math.min(120,Math.round(t))}초 (시간 단위 초)`,'---'].concat(rows).join('\n');
+  return [`거수의 골짜기 문제 기록 ${VER}`,`브라우저: ${navigator.userAgent}`,`화면: ${innerWidth}x${innerHeight} 배율 ${devicePixelRatio} | 민감도 ${G.sensMul} | 마우스잠금 ${G.plock?'켜짐':'꺼짐'}${G.noLock?' (잠금 실패 환경)':''} | 터치기기 ${coarse?1:0}`,`사냥: ${G.hunt+1}단계, 저장: 토벌 ${S.cleared}, 사냥 성공 ${S.hunts}, 장비 ${S.items.length}`,`기록 구간: 최근 ${Math.min(120,Math.round(t))}초 (시간 단위 초)`,'---'].concat(rows,['--- 복사 시점 전체 상태',snap()]).join('\n');
 }
 
 // ---------- 무기 목록 (항목을 추가하면 새 무기) ----------
@@ -616,7 +649,7 @@ let ni=0;
 function num(x,y,z,txt,crit,weak){const n=numEls[ni++%numEls.length];n.v.set(x+rand(-.6,.6),y,z+rand(-.6,.6));n.t=0;n.d.textContent=txt;n.d.className='num'+(weak?' weak':crit?' crit':'');n.d.hidden=false}
 const pv=new T.Vector3();
 function updNums(dt){for(const n of numEls){if(n.d.hidden)continue;n.t+=dt;if(n.t>.9){n.d.hidden=true;continue}pv.copy(n.v);pv.y+=n.t*2.2;pv.project(camera);if(pv.z>1){n.d.hidden=true;continue}n.d.style.left=(pv.x*.5+.5)*innerWidth+'px';n.d.style.top=(-pv.y*.5+.5)*innerHeight+'px';n.d.style.opacity=1-Math.max(0,n.t-.5)/.4}}
-function say(a,b){const m=$('#msg');m.innerHTML=a+(b?`<small>${b}</small>`:'');m.style.opacity=1;G.msgT=2.2}
+function say(a,b){logEv('알림',a+(b?' / '+b:''));const m=$('#msg');m.innerHTML=a+(b?`<small>${b}</small>`:'');m.style.opacity=1;G.msgT=2.2}
 
 // ---------- 공격 예고 빛: 공격할 부위에 맺혀 커지다가 직전에 번쩍 ----------
 const cue={m:new T.Group(),mat:new T.MeshBasicMaterial({color:0xffe08a,transparent:true,opacity:.9,depthTest:false,fog:false}),g:false};
@@ -652,7 +685,7 @@ function hitBeast(part,base,heavy,quiet){
   if(open)m*=1.35;else if(B.state==='rest')m*=1.3;
   if(P.buff>0)m*=1.5;
   const dmg=Math.round(base*P.atk*m*rand(.93,1.07)),weak=part.id==='core',py=part.y!=null?part.y:1.8;
-  B.hp-=dmg;B.flash=1;
+  B.hp-=dmg;B.flash=1;logEv('명중',`${part.id} 피해=${dmg} 거수체력=${Math.round(B.hp)} 거수상태=${B.state}`);
   num(part.x,part.y!=null?part.y+.8:2.6*B.h.size,part.z,dmg,heavy||open||P.buff>0,weak);
   burst(part.x,py,part.z,heavy?16:weak?10:6,weak?0x7ef0ff:heavy?0xffd27a:0xfff2d0,heavy?9:6,heavy?7:5);
   G.shake=Math.max(G.shake,heavy?.5:quiet?.05:.14);G.stop=heavy?TUNE.stopHeavy:quiet?0:TUNE.stopLight;sfx.hit(heavy||weak);
@@ -991,7 +1024,7 @@ function hurt(dmg,sx,sz,A){
     }
     const cost=dmg*1.1*P.guardCost;
     if(P.st>=cost){
-      P.st-=cost;P.stDelay=.8;P.inv=1.15;const chip=Math.max(1,Math.round(dmg*.2));P.hp-=chip;
+      logEv('막음',`기력소모=${f1(cost)}`);P.st-=cost;P.stDelay=.8;P.inv=1.15;const chip=Math.max(1,Math.round(dmg*.2));P.hp-=chip;
       addCharge(.12);P.kx=dx/d*5;P.kz=dz/d*5;P.stag=.12;G.shake=Math.max(G.shake,.3);sfx.block();num(P.x,2.6,P.z,'막음 -'+chip,false);burst(P.x,1.3,P.z,8,0xcfd6dc,6,4);
       if(P.hp<=0)faint();
       return;
@@ -1433,7 +1466,7 @@ $('#devOpen').addEventListener('change',e=>{S.devOpen=e.target.checked;save();re
 $('#bResume').addEventListener('click',()=>{togglePause();lockTry()});$('#bQuit').addEventListener('click',goTown);
 
 let last=performance.now();
-function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;readKeys();update(dt);logTick(dt);renderer.render(scene,camera);requestAnimationFrame(frame)}
+function frame(now){const raw=(now-last)/1000,dt=Math.min(.05,raw);last=now;readKeys();update(dt);logTick(dt,raw);renderer.render(scene,camera);requestAnimationFrame(frame)}
 loadSave();recalc();toTitle();requestAnimationFrame(frame);
 
 window.__game={logText,fire,aimPoint,lockSphere,LOCKS,TUNE,ATK,G,P,get B(){return B},get S(){return S},update,startHunt,newGame,showIntro,craft,goTown,ITEMS,inside,nearestPart,beastParts,HUNTS,
