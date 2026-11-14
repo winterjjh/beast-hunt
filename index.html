@@ -168,7 +168,7 @@ body.aiming #c{cursor:none}
         <kbd>마우스</kbd><span>시점 회전과 조준. 조준점은 화면 중앙 고정. 사냥터를 클릭하면 마우스 커서가 잠겨 무한 회전(Esc로 해제)</span>
         <kbd>좌클릭</kbd><span>사격. 쏘면 총구가 위로 튀었다가 천천히 돌아오는 반동</span>
         <kbd>1 · 2 · 휠</kbd><span>무기 교체(0.5초). 단발 사냥총: 한 발 쏘고 매번 장전, 멀리서도 강하고 정확. 산탄총: 탄알 8개가 퍼지는 4발 펌프식, 가까울수록 강하고 멀면 거의 무력</span>
-        <kbd>우클릭</kbd><span>정밀 조준. 누르고 있을수록 조준점 원이 작아지고 탄 퍼짐 감소(약 1.2초 뒤 노란색 최소). 조준 중 이동 느려짐</span>
+        <kbd>우클릭</kbd><span>정밀 조준. 누르고 있을수록 조준점 원이 작아지고 탄 퍼짐 감소(약 2.2초 뒤 노란색 최소). 조준 중 이동 느려짐</span>
         <kbd>R</kbd><span>재장전. 한 발씩 장전(사격하면 중단). 가방에 담아 온 탄만 사용(소총탄 60발, 산탄 30발). 다 쓰면 대검 베기</span>
         <kbd>Shift</kbd><span>대검으로 막기. 누를 때마다 기력 소모, 막는 동안 기력 회복 정지</span>
         <kbd>F</kbd><span>강타. 가까우면 대검 내려찍기, 멀면 관통탄(탄 소모 없음). 명중과 막기로 게이지 충전, 최대 3개 저장</span>
@@ -286,7 +286,7 @@ const rand=(a,b)=>a+Math.random()*(b-a);
 const damp=(dt,k)=>1-Math.exp(-dt*k);
 
 // ---------- 조작감 수치 (한곳에서 조정) ----------
-const TUNE={noCrate:true,tempo:.85,aimTime:1.2,speed:6.6,accel:46,decel:40,swingSpeed:2.6,drinkSpeed:3,dodgeSpeed:15,dodgeTime:.45,dodgeInv:.38,buffer:.2,stopLight:.03,stopHeavy:.085,camSpring:4.5,blockSpeed:2.4,blockCd:.3,parry:.2,parryStep:.0667,parryReset:.5,blockCost:12,blockMin:.2,glint:.12,slowMul:1.9,quickMul:.62,
+const TUNE={noCrate:true,tempo:.85,aimTime:2.2,speed:6.6,accel:46,decel:40,swingSpeed:2.6,drinkSpeed:3,dodgeSpeed:15,dodgeTime:.45,dodgeInv:.38,buffer:.2,stopLight:.03,stopHeavy:.085,camSpring:4.5,blockSpeed:2.4,blockCd:.3,parry:.2,parryStep:.0667,parryReset:.5,blockCost:12,blockMin:.2,glint:.12,slowMul:1.9,quickMul:.62,
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.075,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
@@ -1016,7 +1016,7 @@ function hurt(dmg,sx,sz,A){
   if(P.block){
     if(P.blockT<=P.parryCur){P.parryPen=0;
       // 완벽한 막기
-      P.inv=1.2;P.st=Math.min(P.maxSt,P.st+20);P.buff=4;addCharge(.5);G.parries++;
+      P.parryT=.45;P.inv=1.2;P.st=Math.min(P.maxSt,P.st+20);P.buff=4;addCharge(.5);G.parries++;
       G.stop=.12;G.shake=Math.max(G.shake,.45);burst(P.x+ -dx/d,1.4,P.z+ -dz/d,22,0x9ad0ff,10,7,1.2);sfx.parry();
       say('완벽한 막기','강타 게이지 충전');
       addStagger(A&&A.melee?34:16);
@@ -1024,7 +1024,7 @@ function hurt(dmg,sx,sz,A){
     }
     const cost=dmg*1.1*P.guardCost;
     if(P.st>=cost){
-      logEv('막음',`기력소모=${f1(cost)}`);P.st-=cost;P.stDelay=.8;P.inv=1.15;const chip=Math.max(1,Math.round(dmg*.2));P.hp-=chip;
+      P.blockHit=.4;logEv('막음',`기력소모=${f1(cost)}`);P.st-=cost;P.stDelay=.8;P.inv=1.15;const chip=Math.max(1,Math.round(dmg*.2));P.hp-=chip;
       addCharge(.12);P.kx=dx/d*5;P.kz=dz/d*5;P.stag=.12;G.shake=Math.max(G.shake,.3);sfx.block();num(P.x,2.6,P.z,'막음 -'+chip,false);burst(P.x,1.3,P.z,8,0xcfd6dc,6,4);
       if(P.hp<=0)faint();
       return;
@@ -1063,7 +1063,7 @@ function updHero(dt){
   // 무기 바꿔 들기
   if(I.swap!=null&&I.swap!==P.w&&!P.dodge&&!P.skill){P.bag[P.w]={ammo:P.ammo,reserve:P.reserve};P.w=I.swap;P.ammo=P.bag[P.w].ammo;P.reserve=P.bag[P.w].reserve;P.swap=.5;P.reload=0;P.fireCd=Math.max(P.fireCd,.5);sfx.bolt();say(WEP[P.w].name,'')}
   I.swap=null;P.swap=Math.max(0,P.swap-dt);
-  if(P.reload>0){P.reload-=dt;if(P.reload<=0){if(P.reserve>0&&P.ammo<W.mag){P.ammo++;P.reserve--;sfx.reload(1)}P.reload=(P.ammo<W.mag&&P.reserve>0&&!I.fire&&!(I.dodge>0))?W.reloadOne:0}}
+  if(P.reload>0){P.reload-=dt;if(P.reload<=0){if(P.reserve>0&&P.ammo<W.mag){P.ammo++;P.reserve--;sfx.reload(1);burst(P.x+Math.sin(P.h)*.6,P.y+1.3,P.z+Math.cos(P.h)*.6,2,0xe8c060,2,3,.5)}P.reload=(P.ammo<W.mag&&P.reserve>0&&!I.fire&&!(I.dodge>0))?W.reloadOne:0}}
   if(I.reload>0&&P.reload<=0&&P.ammo<W.mag&&P.reserve>0){I.reload=0;P.reload=W.reloadOne;sfx.reload(0)}
   P.fireCd-=dt;
   // 탄창이 비고 가방에 탄이 있으면 상황과 관계없이 자동 장전 시작(피격, 무기 교체 후 포함)
@@ -1140,7 +1140,9 @@ function aimYaw(){if(G.lock){const sp=lockSphere();if(sp)return Math.atan2(sp.x-
 function animHero(dt){
   const m=hero,t=G.time,moving=Math.hypot(P.vx,P.vz)>.6;
   m.g.position.set(P.x,P.y,P.z);m.g.rotation.y=P.h;
-  let rx=0,ry=0,armX=-.5,armZ=0,swordX=-.9,armLX=moving?-Math.sin(P.run*1.6)*.6:0;
+  let rx=0,ry=0,armX=-.5,armZ=0,swordX=-.9,armLX=moving?-Math.sin(P.run*1.6)*.6:0,gunX=0,gunZ=0,rigZ=0;
+  P.blockHit=Math.max(0,(P.blockHit||0)-dt);P.parryT=Math.max(0,(P.parryT||0)-dt);
+  const W=WEP[P.w],kick=P.fireCd>W.cycle-.12;
   const sw=Math.sin(P.run*1.6);
   m.legL.rotation.x=moving?sw*.8:0;m.legR.rotation.x=moving?-sw*.8:0;
   if(P.down){rx=-1.45;m.rig.position.y=lerp(m.rig.position.y,.25,damp(dt,8))}
@@ -1148,8 +1150,17 @@ function animHero(dt){
     m.rig.position.y=moving?Math.abs(sw)*.08:0;
     if(P.dodge){rx=P.dodge.t/TUNE.dodgeTime*TAU}
     else if(P.skill&&P.skill.melee){const k=P.skill.t/P.skill.dur;armX=lerp(-3.0,.6,k*k);swordX=-.2;rx=.2}
-    else if(P.skill||P.fireCd>0||P.ads||I_fireHeld()){const k=P.fireCd>WEP[P.w].cycle-.12?1:0;armLX=-1.5;armX=-1.35;armZ=.3;rx=-.12*k;ry=-.15;swordX=-.9}
-    else if(P.block){armX=-1.25;armZ=-1.0;swordX=-1.5;armLX=-1.3;rx=.12}
+    else if(P.parryT>0){
+      // 완벽한 막기: 대검을 바깥으로 쳐냄
+      const k=1-P.parryT/.45,e=Math.sin(Math.min(1,k*1.6)*Math.PI/2);armX=-1.25-.5*e;armZ=-1.0+2.1*e;swordX=-1.5+.7*e;armLX=-1.3;ry=.55*e;rx=.12-.2*e}
+    else if(P.block){
+      // 막는 순간: 대검이 몸 쪽으로 밀리고 몸이 뒤로 젖혀졌다가 복귀
+      const k=P.blockHit/.4,e=k*k;armX=-1.25+.55*e;armZ=-1.0+.25*e;swordX=-1.5+.45*e;armLX=-1.3;rx=.12-.5*e;rigZ=-.35*e}
+    else if(P.reload>0&&!kick&&!P.skill){
+      // 장전: 총을 아래로 기울이고 오른손으로 한 발씩 밀어 넣음
+      const k=clamp(1-P.reload/W.reloadOne,0,1),up=k>.82?(k-.82)/.18:0,hand=Math.sin(Math.min(1,k/.8)*Math.PI);
+      armLX=lerp(-.95,-1.5,up);gunX=lerp(.75,0,up);gunZ=lerp(.35,0,up);armX=-1.0-.55*hand;armZ=.75-.25*hand;rx=.22*(1-up);ry=-.75*(1-up);swordX=-.9;m.rig.position.y-=.1*(1-up)}
+    else if(P.skill||P.fireCd>0||P.ads||I_fireHeld()){const k=kick?1:0;armLX=-1.5-.25*k;armX=-1.35;armZ=.3;rx=-.12*k;ry=-.15;swordX=-.9}
     else if(P.swing){const k=P.swing.t/P.swing.dur,i=P.swing.idx;
       if(i===2){armX=lerp(-3.0,.7,Math.min(1,k*1.8));swordX=-.2}
       else{armX=-1.4;armZ=(i?-1:1)*lerp(-1.4,1.4,Math.min(1,k*1.9));swordX=-.1;ry=(i?-1:1)*lerp(-.5,.5,Math.min(1,k*1.9))}}
@@ -1157,10 +1168,11 @@ function animHero(dt){
     else if(P.stag>0){rx=-.4}
   }
   m.rig.rotation.x=P.dodge||P.down?rx:lerp(m.rig.rotation.x,rx,damp(dt,14));m.rig.rotation.y=ry;
-  m.armR.rotation.x=armX;m.armR.rotation.z=armZ;m.sword.rotation.x=swordX;m.armL.rotation.x=armLX;
-  const swordOut=!!(P.block||P.swing||(P.skill&&P.skill.melee));m.guns.forEach((g,i)=>g.visible=i===P.w);m.sword.visible=swordOut;m.back.visible=!swordOut;
+  const ka=damp(dt,22);m.armR.rotation.x=lerp(m.armR.rotation.x,armX,ka);m.armR.rotation.z=lerp(m.armR.rotation.z,armZ,ka);m.sword.rotation.x=lerp(m.sword.rotation.x,swordX,ka);m.armL.rotation.x=lerp(m.armL.rotation.x,armLX,ka);
+  m.bow.rotation.x=lerp(m.bow.rotation.x,gunX,ka);m.bow.rotation.z=lerp(m.bow.rotation.z,gunZ,ka);m.rig.position.z=lerp(m.rig.position.z,rigZ,damp(dt,18));
+  const swordOut=!!(P.block||P.parryT>0||P.swing||(P.skill&&P.skill.melee));m.guns.forEach((g,i)=>g.visible=i===P.w);m.sword.visible=swordOut;m.back.visible=!swordOut;
   m.arcM.opacity=Math.max(0,m.arcM.opacity-dt*5);m.arcM.color.set(P.buff>0?0xffb24a:0xfff2d0);
-  m.blade.emissive.setRGB(P.buff>0?.9:0,P.buff>0?.5:0,0);
+  {const f=P.parryT>0?P.parryT/.45*1.6:P.blockHit>0?P.blockHit/.4*.5:0;m.blade.emissive.setRGB((P.buff>0?.9:0)+f,(P.buff>0?.5:0)+f,f)}
   m.g.visible=!(P.inv>0&&!P.dodge&&!P.skill&&!P.down&&!P.block&&P.stag<=0&&P.buff<=0&&Math.floor(t*14)%2===0);
 }
 
