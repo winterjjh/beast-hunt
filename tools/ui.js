@@ -1,0 +1,20 @@
+const {chromium}=require('playwright');const fs=require('fs');const path=require('path');
+(async()=>{
+ const b=await chromium.launch({args:['--use-gl=swiftshader','--enable-unsafe-swiftshader']});
+ const pg=await b.newPage({viewport:{width:1280,height:720}});
+ const errs=[];pg.on('pageerror',e=>errs.push(e.message));
+ await pg.route('**/three.min.js',r=>r.fulfill({body:fs.readFileSync(path.join(__dirname,'node_modules/three/build/three.min.js')),contentType:'application/javascript'}));
+ await pg.route('**/fonts.googleapis.com/**',r=>r.abort());
+ await pg.goto('file://'+path.join(__dirname,'index.html'));await pg.waitForTimeout(400);
+ await pg.click('#bNew');await pg.click('#tHunts button');await pg.click('#bGo');await pg.waitForTimeout(500);
+ const y0=await pg.evaluate(()=>window.__game.G.yaw);
+ await pg.mouse.move(1270,360);await pg.waitForTimeout(800);
+ const y1=await pg.evaluate(()=>window.__game.G.yaw);
+ await pg.mouse.move(640,360);await pg.mouse.down();await pg.waitForTimeout(150);await pg.mouse.up();await pg.waitForTimeout(100);
+ const a=await pg.evaluate(()=>({ammo:window.__game.P.ammo,plock:window.__game.G.plock}));
+ await pg.keyboard.press('KeyC');await pg.mouse.wheel(0,100);await pg.waitForTimeout(200);
+ const l=await pg.evaluate(()=>({lock:window.__game.G.lock,idx:window.__game.G.lockIdx}));
+ await pg.mouse.down({button:'right'});await pg.mouse.down();await pg.waitForTimeout(900);await pg.screenshot({path:'shot4.png'});await pg.mouse.up();await pg.mouse.up({button:'right'});
+ await pg.keyboard.press('KeyR');await pg.waitForTimeout(200);
+ console.log({y0,y1,a,l,reload:await pg.evaluate(()=>window.__game.P.reload)},errs);await b.close();
+})();
