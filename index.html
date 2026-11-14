@@ -174,7 +174,8 @@ body.aiming #c{cursor:none}
         <kbd>F</kbd><span>강타. 가까우면 대검 내려찍기, 멀면 관통탄(탄 소모 없음). 명중과 막기로 게이지 충전, 최대 3개 저장</span>
         <kbd>Space</kbd><span>구르기. 구르는 순간은 무적</span>
         <kbd>Q</kbd><span>물약</span>
-        <kbd>Esc</kbd><span>일시정지. 설정에서 마우스 민감도 조절</span>
+        <kbd>Esc</kbd><span>일시정지. 설정에서 마우스 민감도 조절, 문제 기록 복사</span>
+        <kbd>F8</kbd><span>이상한 순간에 표식 남기기</span>
       </div>
       <ul>
         <li>조준점 옆에 지금 겨눈 부위 표시. 몸통은 단단해서 피해 절반. <b>노린 부위</b>를 맞혀야 부위 파괴, 기절, 넘어뜨리기</li>
@@ -261,6 +262,10 @@ body.aiming #c{cursor:none}
       <h3>설정</h3>
       <label class="sens">마우스 민감도 <input type="range" class="sensR" min="0.2" max="3" step="0.1" value="1" aria-label="마우스 민감도"><b class="sensV">1.0</b></label>
       <div class="row" style="justify-content:center"><button id="bResume" class="btn" type="button">계속</button><button id="bQuit" class="btn ghost" type="button">사냥 포기하고 마을로</button></div>
+      <h3>문제 신고</h3>
+      <p class="best" style="margin:.2em 0">이상한 순간에 F8을 누르면 표식 기록. 아래 버튼으로 최근 2분 기록을 복사해서 Claude에게 붙여넣기</p>
+      <div class="row" style="justify-content:center;margin-top:.5em"><button id="bLogCopy" class="btn ghost" type="button">문제 기록 복사</button><button id="bLogSave" class="btn ghost" type="button">파일로 저장</button></div>
+      <p id="logMsg" class="best" style="min-height:1.2em;margin:.4em 0 0"></p>
     </div>
   </section>
 
@@ -283,6 +288,44 @@ const damp=(dt,k)=>1-Math.exp(-dt*k);
 // ---------- 조작감 수치 (한곳에서 조정) ----------
 const TUNE={noCrate:true,tempo:.85,aimTime:1.2,speed:6.6,accel:46,decel:40,swingSpeed:2.6,drinkSpeed:3,dodgeSpeed:15,dodgeTime:.45,dodgeInv:.38,buffer:.2,stopLight:.03,stopHeavy:.085,camSpring:4.5,blockSpeed:2.4,blockCd:.3,parry:.2,parryStep:.0667,parryReset:.5,blockCost:12,blockMin:.2,glint:.12,slowMul:1.9,quickMul:.62,
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.075,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
+
+// ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
+const VER='v22';
+const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
+function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
+const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
+addEventListener('mousemove',e=>{acc.dx+=e.movementX||0;acc.dy+=e.movementY||0;acc.n++;acc.max=Math.max(acc.max,Math.abs(e.movementX||0),Math.abs(e.movementY||0))},true);
+addEventListener('mousedown',e=>logEv('버튼누름',`b${e.button} 눌린상태=${e.buttons}`),true);
+addEventListener('mouseup',e=>logEv('버튼뗌',`b${e.button} 눌린상태=${e.buttons}`),true);
+addEventListener('keydown',e=>{if(e.repeat)return;if(e.code==='F8'){e.preventDefault();logEv('★★★ 표식(F8) ★★★');if(G.state==='hunt')say('표식 기록','일시정지 화면에서 문제 기록 복사')}else logEv('키누름',e.code)},true);
+addEventListener('keyup',e=>logEv('키뗌',e.code),true);
+addEventListener('wheel',e=>logEv('휠',String(Math.round(e.deltaY))),{capture:true,passive:true});
+document.addEventListener('pointerlockchange',()=>logEv('마우스잠금',document.pointerLockElement?'켜짐':'꺼짐'));
+document.addEventListener('pointerlockerror',()=>logEv('마우스잠금 오류'));
+addEventListener('blur',()=>logEv('창 포커스 잃음'));addEventListener('focus',()=>logEv('창 포커스 얻음'));
+addEventListener('resize',()=>logEv('창 크기',innerWidth+'x'+innerHeight));
+addEventListener('error',e=>logEv('오류',String(e.message).slice(0,200)));
+function logTick(dt){
+  acc.fr++;acc.t+=dt;acc.t1+=dt;
+  if(G.state!==acc.state){acc.state=G.state;logEv('화면',G.state);acc.yaw=null}
+  if(acc.t<.2)return;
+  const f2=v=>v.toFixed(3);
+  if(G.state==='hunt'&&!G.botFn){
+    if(acc.yaw!=null){
+      const dy=wrapA(G.yaw-acc.yaw),dp=G.pitch-acc.pitch,exp=-(acc.dx-acc.drop)*TUNE.sens*G.sensMul;
+      if(acc.n||Math.abs(dy)>.0005||Math.abs(dp)>.0005)logEv('시점',`좌우=${f2(G.yaw)} 상하=${f2(G.pitch)} 변화=${f2(dy)},${f2(dp)} 마우스=${acc.dx},${acc.dy} (${acc.n}회, 최대 ${acc.max}, 무시 ${acc.drop}) 조준=${P.ads?1:0} 잠금=${G.plock?1:0}`);
+      if(Math.abs(dy)>.004&&acc.dx===0)logEv('!!이상','마우스 좌우 이동 없이 시점 회전 '+f2(dy)+(G.noLock?' (가장자리 회전 모드)':''));
+      else if(Math.abs(dy-exp)>.08)logEv('!!이상',`마우스 이동량과 회전량 불일치: 실제 ${f2(dy)}, 예상 ${f2(exp)}`);
+    }
+    acc.yaw=G.yaw;acc.pitch=G.pitch;
+    if(acc.t1>=1&&B){logEv('상태',`사냥꾼(${P.x.toFixed(1)},${P.z.toFixed(1)}) 체력=${Math.round(P.hp)} 기력=${Math.round(P.st)} 무기=${P.w} 탄=${P.ammo}/${P.reserve} 장전=${P.reload>0?1:0} 막기=${P.block?1:0} | 거수=${B.state}${B.atk&&(B.state==='windup'||B.state==='strike')?':'+B.atk:''} 체력=${Math.round(B.hp)} 거리=${Math.hypot(P.x-B.x,P.z-B.z).toFixed(1)} | fps=${Math.round(acc.fr/acc.t)}`);acc.t1=0}
+  }
+  acc.dx=acc.dy=acc.n=acc.max=acc.drop=acc.t=acc.fr=0;
+}
+function logText(){
+  const t=lnow(),rows=LOG.filter(r=>r[0]>t-120).map(r=>r[0].toFixed(2)+' '+r[1]);
+  return [`거수의 골짜기 문제 기록 ${VER}`,`브라우저: ${navigator.userAgent}`,`화면: ${innerWidth}x${innerHeight} 배율 ${devicePixelRatio} | 민감도 ${G.sensMul} | 마우스잠금 ${G.plock?'켜짐':'꺼짐'}${G.noLock?' (잠금 실패 환경)':''} | 터치기기 ${coarse?1:0}`,`사냥: ${G.hunt+1}단계, 저장: 토벌 ${S.cleared}, 사냥 성공 ${S.hunts}, 장비 ${S.items.length}`,`기록 구간: 최근 ${Math.min(120,Math.round(t))}초 (시간 단위 초)`,'---'].concat(rows).join('\n');
+}
 
 // ---------- 무기 목록 (항목을 추가하면 새 무기) ----------
 const WEP=[
@@ -521,7 +564,7 @@ function startHunt(){
   G.camP.set(0,10,34);
   G.state='hunt';show(null);$('#hudAll').hidden=false;
   $('#place').textContent=h.place;buildPartChips();hudForce();
-  say(h.name,'사냥 개시');
+  say(h.name,'사냥 개시');logEv('사냥 시작',h.name+` 최대체력=${P.maxHp} 물약=${P.potMax}`);
   $('#fade').style.opacity=0;
 }
 
@@ -677,6 +720,7 @@ function fire(kind){
   dx/=L;dy/=L;dz/=L;
   const spr=kind==='skill'?.002:curSpread();
   dx+=rand(-1,1)*spr;dy+=rand(-1,1)*spr;dz+=rand(-1,1)*spr;L=Math.hypot(dx,dy,dz);dx/=L;dy/=L;dz/=L;
+  logEv('발사',kind+' 무기='+P.w);
   const W=WEP[P.w],hv=kind==='skill',n=hv?1:W.pellets,hits={};let end=140,cueHit=false;
   for(let k=0;k<n;k++){
     let ex=dx,ey=dy,ez=dz;if(k>0||W.cone&&!hv){ex+=rand(-1,1)*W.cone;ey+=rand(-1,1)*W.cone;ez+=rand(-1,1)*W.cone;const l=Math.hypot(ex,ey,ez);ex/=l;ey/=l;ez/=l}
@@ -729,7 +773,7 @@ function throwRock(){
 }
 function topple(d){setState('topple');B.dur=d;sfx.brk();G.shake=.7;burst(B.x,.5,B.z,24,0xd8cdb8,10,5,1.4)}
 function setState(s){clearTele();B.shape=null;B.linger=null;B.m.eyeM.color.set(B.h.eye);B.state=s;B.stateT=0;B.hitOnce=false;if(s!=='windup'&&s!=='strike')B.y=0}
-function killBeast(){
+function killBeast(){logEv('토벌 성공');
   setState('dead');G.winT=0;G.slow=.25;say('사냥 성공',B.h.name+' 토벌');sfx.roar(.7);sfx.win();
   for(const z of G.hazards){scene.remove(z.grp);if(z.proj)scene.remove(z.proj)}G.hazards=[];
   for(const o of G.shots)scene.remove(o.m);G.shots=[];
@@ -954,7 +998,7 @@ function hurt(dmg,sx,sz,A){
     }
     P.st=0;P.stDelay=1.2;P.block=false;P.blockCd=.6;dmg*=.6;say('방어 붕괴','기력 부족');
   }
-  dmg=Math.round(dmg);P.hp-=dmg;P.inv=1.1;P.stag=.45;P.swing=null;P.skill=null;P.drink=0;P.draw=-1;P.reload=0;P.bloom+=.08;P.y=0;P.block=false;
+  dmg=Math.round(dmg);logEv('피격','-'+dmg+(A&&A.n?' '+A.n:''));P.hp-=dmg;P.inv=1.1;P.stag=.45;P.swing=null;P.skill=null;P.drink=0;P.draw=-1;P.reload=0;P.bloom+=.08;P.y=0;P.block=false;
   P.kx=dx/d*13;P.kz=dz/d*13;
   G.shake=Math.max(G.shake,.6);$('#hurt').style.opacity=.9;sfx.hurt();
   num(P.x,2.6,P.z,'-'+dmg,false);burst(P.x,1.3,P.z,10,0xe0483c,6,5);
@@ -966,7 +1010,7 @@ function addStagger(v){
   B.stg+=v;
   if(B.stg>=B.stgMax){B.stg=0;setState('flinch');B.dur=4.5;say('거수 경직','큰 공격 기회');sfx.brk();G.shake=.7}
 }
-function faint(){P.hp=0;P.down=.001;P.lives--;G.faints++;G.huntFaints++;P.block=false;sfx.fail()}
+function faint(){logEv('쓰러짐');P.hp=0;P.down=.001;P.lives--;G.faints++;G.huntFaints++;P.block=false;sfx.fail()}
 function updHero(dt){
   const I=G.in;
   for(const k of['dodge','skill','pot','reload'])if(I[k]===true)I[k]=TUNE.buffer;
@@ -1343,14 +1387,14 @@ addEventListener('wheel',e=>{if(G.state==='hunt'&&Math.abs(e.deltaY)>4)G.in.swap
 document.addEventListener('pointerlockchange',()=>{const was=G.plock;G.plock=document.pointerLockElement===cvs;if(G.plock)G.noLock=false;if(was&&!G.plock&&G.state==='hunt')togglePause()});
 addEventListener('mousemove',e=>{
   // 버튼을 누르거나 떼는 순간 브라우저가 끼워 보내는 가짜 이동값과 비정상적으로 큰 튐은 무시
-  const bc=e.buttons!==G.lastBtn;G.lastBtn=e.buttons;if(bc||Math.abs(e.movementX)>500||Math.abs(e.movementY)>500){G.mouseOn=true;return}
+  const bc=e.buttons!==G.lastBtn;G.lastBtn=e.buttons;if(bc||Math.abs(e.movementX)>500||Math.abs(e.movementY)>500){G.mouseOn=true;acc.drop+=e.movementX||0;return}
   if(G.plock){if(G.state==='hunt'&&!G.lock){G.yaw-=e.movementX*TUNE.sens*G.sensMul;G.pitch=clamp(G.pitch+e.movementY*TUNE.sens*G.sensMul,-.6,.8)}return}
   G.mouseOn=true;G.mx=clamp(e.clientX/innerWidth*2-1,-1,1);G.my=clamp(-(e.clientY/innerHeight*2-1),-1,1);
   // 마우스 잠금이 안 되는 환경: 조준점은 화면 중앙 고정, 마우스 이동량만큼 시점 회전
   if(G.state==='hunt'&&!G.lock&&!coarse&&e.movementX!=null){G.yaw-=e.movementX*TUNE.sens*G.sensMul;G.pitch=clamp(G.pitch+e.movementY*TUNE.sens*G.sensMul,-.6,.8)}
 });
 // 마우스 잠금 요청: 어느 버튼이든, 사냥 시작과 재개 때도 시도. 실패한 환경에서만 가장자리 회전 사용
-function lockTry(){if(coarse||G.plock||G.botFn||!cvs.requestPointerLock)return;const fail=()=>{G.noLock=true};try{const r=cvs.requestPointerLock({unadjustedMovement:true});if(r&&r.catch)r.catch(()=>{try{const r2=cvs.requestPointerLock();if(r2&&r2.catch)r2.catch(fail)}catch(err){fail()}})}catch(err){fail()}}
+function lockTry(){if(coarse||G.plock||G.botFn||!cvs.requestPointerLock)return;const fail=()=>{G.noLock=true;logEv('마우스잠금 요청 실패')};try{const r=cvs.requestPointerLock({unadjustedMovement:true});if(r&&r.catch)r.catch(()=>{try{const r2=cvs.requestPointerLock();if(r2&&r2.catch)r2.catch(fail)}catch(err){fail()}})}catch(err){fail()}}
 const joy={on:false,id:null,ox:0,oy:0,x:0,y:0};
 const cvs=$('#c');
 cvs.addEventListener('pointerdown',e=>{audio();if(e.pointerType==='mouse'){if(G.state!=='hunt')return;if(e.button===2)hold.rmb=true;else if(e.button===0)hold.lmb=true;lockTry();return}if(G.state!=='hunt')return;
@@ -1373,6 +1417,11 @@ $('#aFire').addEventListener('pointerdown',e=>{e.preventDefault();audio();hold.f
 function setSens(v){G.sensMul=clamp(Math.round(v*10)/10,.2,3);for(const r of document.querySelectorAll('.sensR'))r.value=G.sensMul;for(const b of document.querySelectorAll('.sensV'))b.textContent=G.sensMul.toFixed(1);try{localStorage.setItem('gv-sens',G.sensMul)}catch(e){}}
 for(const r of document.querySelectorAll('.sensR'))r.addEventListener('input',()=>setSens(+r.value));
 {let v=1;try{v=+localStorage.getItem('gv-sens')||1}catch(e){}setSens(v)}
+function logSave(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([logText()],{type:'text/plain'}));a.download='beast-hunt-log.txt';document.body.appendChild(a);a.click();a.remove();$('#logMsg').textContent='beast-hunt-log.txt 저장 완료'}
+$('#bLogSave').addEventListener('click',logSave);
+$('#bLogCopy').addEventListener('click',()=>{const t=logText(),ok=()=>$('#logMsg').textContent=`복사 완료 (${t.split('\n').length}줄). Claude 대화창에 붙여넣기`;
+  const fb=()=>{try{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();const r=document.execCommand('copy');ta.remove();if(r)ok();else logSave()}catch(e){logSave()}};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb()});
 function togglePause(){if(G.state==='hunt'){G.state='paused';show('#sPause')}else if(G.state==='paused'){G.state='hunt';show(null)}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&G.state==='hunt')togglePause()});
 $('#bPause').addEventListener('click',togglePause);$('#bMute').addEventListener('click',()=>{audio();setMute(!muted)});
@@ -1384,10 +1433,10 @@ $('#devOpen').addEventListener('change',e=>{S.devOpen=e.target.checked;save();re
 $('#bResume').addEventListener('click',()=>{togglePause();lockTry()});$('#bQuit').addEventListener('click',goTown);
 
 let last=performance.now();
-function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;readKeys();update(dt);renderer.render(scene,camera);requestAnimationFrame(frame)}
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;readKeys();update(dt);logTick(dt);renderer.render(scene,camera);requestAnimationFrame(frame)}
 loadSave();recalc();toTitle();requestAnimationFrame(frame);
 
-window.__game={fire,aimPoint,lockSphere,LOCKS,TUNE,ATK,G,P,get B(){return B},get S(){return S},update,startHunt,newGame,showIntro,craft,goTown,ITEMS,inside,nearestPart,beastParts,HUNTS,
+window.__game={logText,fire,aimPoint,lockSphere,LOCKS,TUNE,ATK,G,P,get B(){return B},get S(){return S},update,startHunt,newGame,showIntro,craft,goTown,ITEMS,inside,nearestPart,beastParts,HUNTS,
   simulate(sec){const st=1/60;for(let i=0;i<sec*60&&G.state==='hunt';i++)update(st)}};
 })();
 </script>
