@@ -130,6 +130,14 @@ body.aiming #c{cursor:none}
 #tutSkip{pointer-events:auto;margin-top:.7em;background:transparent;border:1px solid var(--line);border-radius:.3em;padding:.3em .8em;font-size:.85em;color:var(--dim)}
 .emk{left:0;top:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:15px solid var(--blood);margin:-8px 0 0 -8px;filter:drop-shadow(0 0 3px rgba(0,0,0,.8))}
 .keys.sm{font-size:.85em;text-align:left;gap:.25em .8em;margin:.5em 0}
+#aFin .fill{position:absolute;left:0;right:0;bottom:0;height:100%;background:rgba(126,240,255,.28);transform-origin:bottom;transform:scaleY(0)}
+#aFin.ready{border-color:#7ef0ff}
+#aFin.go{border-color:#7ef0ff;box-shadow:0 0 14px rgba(126,240,255,.8);color:#7ef0ff}
+#xh .fh{position:absolute;left:0;top:34px;transform:translateX(-50%);font:600 15px/1 var(--body);color:#7ef0ff;text-shadow:0 0 4px #000,0 0 8px #000;white-space:nowrap;display:none}
+#xh.fin .fh{display:block}
+#weakTag{display:inline-block;margin-top:.4em;padding:.05em .7em;border:1px solid #7ef0ff;border-radius:.25em;color:#7ef0ff;background:rgba(0,0,0,.5);font-size:.85em;font-weight:600}
+#marks{margin-top:.3em;font-size:.85em;color:var(--amber);letter-spacing:.12em;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.perk{border:1px solid rgba(255,255,255,.18);border-radius:.3em;padding:.25em .6em;font-size:.9em}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -142,6 +150,8 @@ body.aiming #c{cursor:none}
       <div class="bar" id="bHp"><i></i><span class="m" style="left:60%"></span><span class="m" style="left:30%"></span></div>
       <div class="bar" id="bSt" aria-label="경직 게이지"><i></i></div>
       <div id="parts"></div>
+      <div id="weakTag" hidden>약점 노출</div>
+      <div id="marks" hidden></div>
     </div>
     <div id="hInfo" class="hud"><b id="place"></b><span id="timer">00:00</span></div>
     <div id="hSys" class="hud"><button id="bPause" type="button" aria-label="일시정지">II</button><button id="bMute" type="button">소리</button></div>
@@ -150,15 +160,16 @@ body.aiming #c{cursor:none}
       <div class="bar" id="stB"><i></i></div>
       <div id="ammo"><span id="wepN">단발 사냥총</span><span>탄 <b id="ammoN">1</b> / <span id="resN">14</span></span></div>
     </div>
-    <div id="xh" class="hud"><div class="ring"></div><div class="dot"></div><div class="hm">✕</div><div class="pl"></div></div>
+    <div id="xh" class="hud"><div class="ring"></div><div class="dot"></div><div class="hm">✕</div><div class="pl"></div><div class="fh">E 필살기</div></div>
     <div id="edge" class="hud" hidden></div>
     <div id="hAct" class="hud">
       <button class="act" id="aPot" type="button"><span class="cd"></span><span id="potTxt">물약 3</span><kbd>Q</kbd></button>
       <button class="act" id="aBlock" type="button"><span class="cd"></span><span>막기</span><kbd>Shift</kbd></button>
       <button class="act" id="aG1" type="button"><span class="cd"></span><span id="g1Txt">장비 1</span><kbd>F</kbd></button>
       <button class="act" id="aG2" type="button"><span class="cd"></span><span id="g2Txt">장비 2</span><kbd>G</kbd></button>
+      <button class="act" id="aFin" type="button"><span class="fill"></span><span>필살기</span><kbd>E</kbd></button>
       <button class="act big" id="aDodge" type="button"><span class="cd"></span><span>구르기</span><kbd>Space</kbd></button>
-      <button class="act" id="aSwap" type="button"><span class="cd"></span><span>무기 교체</span><kbd>1 · 2 · 휠</kbd></button>
+      <button class="act" id="aSwap" type="button"><span class="cd"></span><span>무기 교체</span><kbd>1 · 2 · 3 · 휠</kbd></button>
       <button class="act big" id="aFire" type="button"><span class="cd"></span><span>사격</span><kbd>좌클릭</kbd></button>
     </div>
     <div id="msg" class="hud"></div>
@@ -172,12 +183,13 @@ body.aiming #c{cursor:none}
     <div class="panel">
       <div class="eyebrow">3D 거수 사냥</div>
       <h1><em>거수</em>의 골짜기</h1>
-      <p>골짜기를 차지한 다섯 마리의 거수. 사냥총을 들고 대검을 등에 멘 사냥꾼이 초원, 설원, 협곡, 화구, 폐허를 차례로 넘는 긴 사냥.</p>
+      <p>골짜기를 차지한 다섯 마리의 거수. 초원, 설원, 협곡, 화구, 폐허를 차례로 넘는 보스 연전.</p>
       <ul>
-        <li><b>나 한 대, 너 한 대.</b> 거수가 연속 공격 뒤 숨을 고를 때가 내 차례. 쏜 직후와 장전 중에는 몸이 묶이는 사냥</li>
-        <li><b>노린 부위</b>를 맞혀야 부위 파괴. 하늘색으로 빛나는 약점이 가장 큰 피해</li>
-        <li>거수 곁으로 주기적으로 몰려드는 <b>쫄몹</b>, 던지기와 사격을 막아 주는 <b>엄폐 바위</b>, 골라서 들고 가는 <b>장비 스킬</b> 두 개</li>
-        <li>조작과 규칙은 <b>훈련장</b>에서 직접 해 보며 익히는 방식. 사냥터마다 새로 나오는 기믹은 입장 직전에 짧게 연습</li>
+        <li><b>나 한 대, 너 한 대.</b> 거수의 공격을 읽고 받아낸 뒤 되돌려 주는 사냥</li>
+        <li>싸우는 방식이 다른 <b>무기 세 종</b>. 공격을 끊는 단발 사냥총, 코앞에서 밀어붙이는 산탄총, 움직이며 표식을 쌓아 터뜨리는 연발 석궁</li>
+        <li>평소에는 닫혀 있다가 <b>특정 동작에서만 열리는 약점</b>. 열린 순간을 노려야 큰 피해</li>
+        <li>거수가 지치거나 쓰러졌을 때 피해를 몰아넣는 <b>필살기</b></li>
+        <li>재료 모으기 없음. 거수를 잡을 때마다 <b>보상 하나</b>를 골라 다음 사냥터로</li>
       </ul>
       <div class="row"><button id="bStart" class="btn" type="button">시작</button><button id="bTrain" class="btn ghost" type="button">훈련장</button><button id="bNew" class="btn ghost" type="button">처음부터 새로</button></div>
       <p id="bestT" class="best" hidden></p>
@@ -200,9 +212,8 @@ body.aiming #c{cursor:none}
       <h2 id="cTitle"></h2>
       <p id="cText"></p>
       <div id="cStats" class="stats"></div>
-      <h3>획득 재료</h3>
-      <div id="cUps" class="mats"></div>
-      <p id="cMiss" class="best"></p>
+      <h3 id="cPickT">보상 선택 <small class="best">하나만 획득</small></h3>
+      <div id="cUps" class="ups"></div>
       <div class="row"><button id="bNext" class="btn" type="button">마을로</button></div>
     </div>
   </section>
@@ -213,13 +224,12 @@ body.aiming #c{cursor:none}
       <h2>사냥꾼의 마을</h2>
       <p id="tStat" class="best"></p>
       <div class="town">
-        <div><h3>의뢰 게시판</h3><div id="tHunts" class="ups"></div>
-          <h3>장비 스킬 <small class="best">둘을 골라 장착 (F, G)</small></h3><div id="tGad" class="ups"></div>
-          <label class="dev"><input type="checkbox" id="devOpen"> 모든 사냥터와 제작법 열기 (개발용)</label></div>
-        <div><h3>대장간</h3><div id="tItems" class="ups"></div></div>
+        <div><h3>사냥 순서</h3><div id="tHunts" class="ups"></div>
+          <h3>강화</h3><div id="tPerks" class="mats"></div>
+          <label class="dev"><input type="checkbox" id="devOpen"> 모든 사냥터와 무기, 장비 스킬 열기 (개발용)</label></div>
+        <div><h3>무기 <small class="best">사냥 중 1 · 2 · 3 또는 휠로 교체. 누르면 시작 무기 지정</small></h3><div id="tWeps" class="ups"></div>
+          <h3>장비 스킬 <small class="best">둘을 골라 장착 (F, G)</small></h3><div id="tGad" class="ups"></div></div>
       </div>
-      <h3>재료 가방</h3>
-      <div id="tMats" class="mats"></div>
       <div class="row"><button id="bTrain2" class="btn ghost" type="button">훈련장</button><button id="bTitle" class="btn ghost" type="button">타이틀로</button></div>
     </div>
   </section>
@@ -253,9 +263,9 @@ body.aiming #c{cursor:none}
       <div class="keys sm">
         <kbd>W A S D</kbd><span>이동</span><kbd>마우스</kbd><span>시점과 조준. 화면 클릭으로 마우스 잠금</span>
         <kbd>좌클릭</kbd><span>사격</span><kbd>우클릭</kbd><span>정밀 조준(누르고 있을수록 탄 퍼짐 감소)</span>
-        <kbd>1 · 2 · 휠</kbd><span>무기 교체</span><kbd>R</kbd><span>재장전(탄 무제한)</span>
+        <kbd>1 · 2 · 3 · 휠</kbd><span>무기 교체</span><kbd>R</kbd><span>재장전(탄 무제한)</span>
         <kbd>Shift</kbd><span>막기. 번쩍하는 순간 누르면 완벽한 막기</span><kbd>Space</kbd><span>구르기</span>
-        <kbd>F · G</kbd><span>장비 스킬</span><kbd>Q</kbd><span>물약</span><kbd>F8</kbd><span>이상한 순간 표식</span>
+        <kbd>E</kbd><span>필살기(게이지 가득, 거수가 지치거나 쓰러졌을 때)</span><kbd>F · G</kbd><span>장비 스킬</span><kbd>Q</kbd><span>물약</span><kbd>F8</kbd><span>이상한 순간 표식</span>
       </div>
       <h3>설정</h3>
       <label class="sens">마우스 민감도 <input type="range" class="sensR" min="0.2" max="3" step="0.1" value="1" aria-label="마우스 민감도"><b class="sensV">1.0</b></label>
@@ -287,7 +297,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:2.2,speed:6.6,accel:46,d
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.075,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v26';
+const VER='v27';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -305,7 +315,7 @@ addEventListener('error',e=>logEv('오류',String(e.message).slice(0,200)));
 // 범용 추적: 행동 변화, 입력 시점의 조건, 전체 상태 스냅샷, 자동 이상 감지
 const wat={act:'',actT:0,beast:'',inp:'',w:-1,flag:{}},f1=v=>(+v||0).toFixed(1);
 const flagOnce=(k,msg)=>{const t=lnow();if(wat.flag[k]&&t-wat.flag[k]<5)return;wat.flag[k]=t;logEv('!!이상',msg)};
-function heroAct(){return P.down?'쓰러짐':P.dodge?'구르기':P.skill?(P.skill.melee?'강타(대검)':'강타(관통탄)'):P.swing?'대검 베기':P.drink>0?'물약':P.block?'막기':P.stag>0?'피격 경직':P.swap>0?'무기 교체':P.reload>0?'장전':P.recov>0?'사격 후 경직':'자유'}
+function heroAct(){return P.down?'쓰러짐':P.finA?'필살기':P.dodge?'구르기':P.skill?(P.skill.melee?'강타(대검)':'강타(관통탄)'):P.swing?'대검 베기':P.drink>0?'물약':P.block?'막기':P.stag>0?'피격 경직':P.swap>0?'무기 교체':P.reload>0?'장전':P.recov>0?'사격 후 경직':'자유'}
 function ctx(){return `탄=${P.ammo}/${P.reserve} 사격대기=${f1(P.fireCd)} 장전=${f1(P.reload)} 사격후경직=${f1(P.recov)} 피격경직=${f1(P.stag)} 교체=${f1(P.swap)} 기력=${Math.round(P.st)} 막기대기=${f1(P.blockCd)} 장비대기=${f1(P.gcd[0])}/${f1(P.gcd[1])} 물약=${P.potions} 행동=${heroAct()}`}
 function snap(){
   const KEEPO=['dodge','skill','swing','in','php','pmax','broken','bag','combo','pose'];
@@ -355,14 +365,21 @@ function logTick(dt,raw){
 }
 function logText(){
   const t=lnow(),rows=LOG.filter(r=>r[0]>t-120).map(r=>r[0].toFixed(2)+' '+r[1]);
-  return [`거수의 골짜기 문제 기록 ${VER}`,`브라우저: ${navigator.userAgent}`,`화면: ${innerWidth}x${innerHeight} 배율 ${devicePixelRatio} | 민감도 ${G.sensMul} | 마우스잠금 ${G.plock?'켜짐':'꺼짐'}${G.noLock?' (잠금 실패 환경)':''} | 터치기기 ${coarse?1:0}`,`사냥: ${G.hunt+1}단계, 저장: 토벌 ${S.cleared}, 사냥 성공 ${S.hunts}, 장비 ${S.items.length}`,`기록 구간: 최근 ${Math.min(120,Math.round(t))}초 (시간 단위 초)`,'---'].concat(rows,['--- 복사 시점 전체 상태',snap()]).join('\n');
+  return [`거수의 골짜기 문제 기록 ${VER}`,`브라우저: ${navigator.userAgent}`,`화면: ${innerWidth}x${innerHeight} 배율 ${devicePixelRatio} | 민감도 ${G.sensMul} | 마우스잠금 ${G.plock?'켜짐':'꺼짐'}${G.noLock?' (잠금 실패 환경)':''} | 터치기기 ${coarse?1:0}`,`사냥: ${G.hunt+1}단계, 저장: 토벌 ${S.cleared}, 사냥 성공 ${S.hunts}, 강화 ${S.perks.length}`,`기록 구간: 최근 ${Math.min(120,Math.round(t))}초 (시간 단위 초)`,'---'].concat(rows,['--- 복사 시점 전체 상태',snap()]).join('\n');
 }
 
 // ---------- 무기 목록 (항목을 추가하면 새 무기) ----------
 const WEP=[
- {id:'rifle',name:'단발 사냥총',mag:1,cycle:.25,recov:.35,reloadOne:1.4,dmg:220,pellets:1,cone:0,near:60,far:120,reserve:59,crate:0,recoil:.03,kick:.055,cueStg:12},
- {id:'shotgun',name:'산탄총',mag:4,cycle:.8,recov:.45,reloadOne:.75,dmg:28,pellets:8,cone:.075,near:6,far:20,reserve:26,crate:0,recoil:.03,kick:.065,cueStg:4},
+ {id:'rifle',name:'단발 사냥총',mag:1,cycle:.25,recov:.35,reloadOne:1.4,dmg:220,pellets:1,cone:0,near:60,far:120,reserve:59,crate:0,recoil:.03,kick:.055,cueStg:18,focus:1.25,
+  desc:'한 발씩 장전하는 정밀 소총. 우클릭으로 조준점이 노랗게 고정되면 피해 25% 증가. 그 상태로 공격을 준비하는 부위의 빛을 맞히면 공격 취소(저지)'},
+ {id:'shotgun',name:'산탄총',mag:4,cycle:.55,recov:.25,reloadOne:.75,dmg:28,pellets:8,cone:.075,near:6,far:20,reserve:26,crate:0,recoil:.03,kick:.065,cueStg:4,push:3,rollLoad:1,
+  desc:'붙을수록 강한 근접 총. 코앞에서 맞히면 거수를 밀어내며 경직 게이지 누적. 구르기를 하면 한 발 자동 장전'},
+ {id:'xbow',name:'연발 석궁',mag:6,cycle:.3,recov:0,reloadOne:1.5,magReload:1,auto:1,dmg:38,pellets:1,cone:0,near:16,far:34,reserve:59,crate:0,recoil:.012,kick:.014,cueStg:3,mark:1,sprBase:.018,sprMove:.022,reloadMove:.9,adsMove:.75,
+  desc:'누르고 있으면 연사, 움직이며 쏴도 정확한 석궁. 맞힐 때마다 표식이 쌓여 여섯 개째에 폭발. 4초 안에 다음 화살을 맞혀야 표식 유지'},
 ];
+// ---------- 필살기: 게이지가 가득 차고 거수가 지치거나 쓰러졌을 때만 발동. 무기마다 다른 형태 ----------
+const FIN={rifle:{name:'관통 일격',n:1,first:.7,gap:0,mul:3.4},shotgun:{name:'연속 격발',n:4,first:.3,gap:.24,mul:1.0},xbow:{name:'표식 난사',n:10,first:.25,gap:.09,mul:.9,burst:1.2}};
+const MARK={n:6,dmg:300,keep:4};
 // ---------- 장비 스킬 목록 (둘을 골라 장착) ----------
 const GAD=[
  {id:'rocket',name:'유도 폭죽',cd:18,desc:'폭죽 다섯 발이 쫄몹과 지금 겨눈 거수 부위를 따라가 터지는 장비. 쫄몹 정리와 약점 추가타'},
@@ -376,31 +393,31 @@ const MOB={biter:{name:'들개',hp:300,speed:5.2,dmg:6,r:.95,hy:.85},spit:{name:
 const MOBCFG=[{max:2,first:20,every:40},{max:2,first:18,every:36},{max:2,first:16,every:34},{max:3,first:16,every:36},{max:3,first:14,every:34}];
 // ---------- 사냥 목록 ----------
 const HUNTS=[
- {id:'stone',core:'chest',name:'돌등이',place:'바람 초원',hp:11000,size:1,dmg:1,speed:4.2,tele:true,wind:1.25,rest:[1.8,2.3],
+ {id:'stone',core:'chest',name:'돌등이',place:'바람 초원',hp:15000,size:1,dmg:1,speed:4.2,tele:true,wind:1.25,rest:[1.8,2.3],
   sky:0xe8b480,ground:0x73914f,ground2:0x62803f,sun:0xffe9c4,amb:0x9a8a78,
   body:0x7d7667,belly:0xbcab8b,accent:0x56613f,eye:0xffd24a,
   combos:{base:[['clawL','clawR','bite'],['slam','tail','clawL'],['charge','slam'],['bite','tail','slam']],e1:[['slam','slam','tail']],e2:[['volley','charge','slam','bite']]},
   text:'등에 바위 갑각을 두른 초원의 터줏대감. 이 사냥터에서만 공격 범위가 바닥에 붉게 표시되는 연습 상대.',
   tips:['느리지만 묵직한 거수. 뛰어올라 덮치는 공격을 자주 쓰므로 그림자 밖으로 이탈','공격할 부위에 빛이 맺혀 커지다가 번쩍하는 순간이 공격 직전. 앞발이면 할퀴기, 주둥이면 물어뜯기, 꼬리 끝이면 꼬리 휘두르기','거수는 연속 공격 뒤 헐떡이며 휴식. 그때가 공격 기회','맞기 직전에 막으면 완벽한 막기. 장비 스킬 대기시간이 줄고 거수의 경직 게이지 누적']},
- {id:'frost',core:'brow',name:'서리뿔',place:'서리 분지',hp:14500,size:1.1,dmg:1.12,speed:4.8,wind:1.1,rest:[1.6,2.0],
+ {id:'frost',core:'brow',name:'서리뿔',place:'서리 분지',hp:19500,size:1.1,dmg:1.12,speed:4.8,wind:1.1,rest:[1.6,2.0],
   sky:0xbfd6ea,ground:0x9db3c9,ground2:0x8aa1b9,sun:0xffffff,amb:0x9fb2c8,
   body:0x6f8fb0,belly:0xd9e6f2,accent:0x9fd8f0,eye:0xff6a5a,
   combos:{base:[['sweep','clawL','charge'],['charge','charge','sweep'],['volley','charge','bite','sweep'],['clawR','sweep','charge']],e1:[['nova','charge','charge','sweep']],e2:[['charge','sweep','charge','volley','sweep']]},
   text:'얼음 뿔 하나로 설원을 가르는 사나운 짐승. 여기서부터 붉은 범위 표시 없음. 준비 자세와 공격 순간을 눈으로 익혀야 하는 상대.',
   tips:['고개를 옆으로 크게 젖히면 뿔 휘두르기. 앞쪽 넓은 범위라 뒤로 빠지거나 막기','돌진을 두세 번 연달아 쓰는 거수. 한 번 피했다고 방심 금지','뒷발로 일어서며 기운을 모으면 서리 폭풍. 몸에 바짝 붙어야 안전','떨어지는 얼음 기둥은 바닥 그림자로 위치 확인']},
- {id:'thorn',core:'tailtip',name:'가시꼬리',place:'모래 협곡',hp:18000,size:1.12,dmg:1.22,speed:5.0,rest:[1.4,1.8],
+ {id:'thorn',core:'tailtip',name:'가시꼬리',place:'모래 협곡',hp:24000,size:1.12,dmg:1.22,speed:5.0,rest:[1.4,1.8],
   sky:0xe6c38f,ground:0xcfa96e,ground2:0xb98f58,sun:0xfff2d6,amb:0xa88a66,
   body:0x8a5a3c,belly:0xd9b27a,accent:0x3c2a22,eye:0x9cff6a,
   combos:{base:[['tail','lash','tail'],['lash','clawL','lash'],['roar','lash','tail','charge'],['clawR','tail','lash','bite']],e1:[['throw','throw','lash','roar','tail']],e2:[['stomp','lash','tail','lash','charge']]},
   text:'꼬리를 등 위로 말아 올린 협곡의 포식자. 구르기로는 피할 수 없는 길게 이어지는 공격을 처음 쓰는 상대.',
   tips:['꼬리를 머리 위로 말아 올리면 꼬리 내리찍기. 앞으로 길게 뻗는 직선이라 옆으로 회피','눈이 파랗게 빛나면 구르기 불가 공격. 막거나 멀리 이탈','포효와 발 구르기는 1초 가까이 지속. 구르기의 무적 시간보다 긴 공격','막기는 기력 소모. 기력이 바닥나면 방어 붕괴']},
- {id:'ash',core:'chest',name:'잿불 날개',place:'잿불 화구',hp:22000,size:1.22,dmg:1.32,speed:5.2,rest:[1.3,1.7],wings:true,
+ {id:'ash',core:'chest',name:'잿불 날개',place:'잿불 화구',hp:30000,size:1.22,dmg:1.32,speed:5.2,rest:[1.3,1.7],wings:true,
   sky:0x3b2428,ground:0x4b3d3c,ground2:0x3a2f30,sun:0xffb080,amb:0x6a4a48,
   body:0x4a3f44,belly:0xc8643a,accent:0xff7a3c,eye:0xffe27a,
   combos:{base:[['breath','tail~','slam','clawL!'],['clawL','clawR~','bite','tail','breath'],['slam','roar','breath','charge'],['volley','charge','bite!','slam','tail~']],e1:[['nova','breath','clawL!','slam','roar']],e2:[['stomp','slam','bite~','breath','charge','tail!']]},
   text:'화구의 주인. 날개로 뛰어올라 덮치고 불길을 넓게 내뿜는 거수. 네 번까지 이어지는 연속 공격.',
   tips:['엇박 공격 등장. 빛이 한 번 줄었다 다시 커지면 늦게 치는 공격, 주황빛이 크게 맺히면 빠르게 치는 공격','고개를 뒤로 젖히고 입에 불씨가 모이면 불 숨결. 옆구리나 뒤가 안전','완벽한 막기를 쌓아 경직 게이지를 채우는 것이 가장 큰 기회']},
- {id:'night',core:'brow',name:'달그림자',place:'달밤 폐허',hp:27000,size:1.3,dmg:1.42,speed:5.5,rest:[1.2,1.6],wings:true,
+ {id:'night',core:'brow',name:'달그림자',place:'달밤 폐허',hp:36000,size:1.3,dmg:1.42,speed:5.5,rest:[1.2,1.6],wings:true,
   sky:0x141a2e,ground:0x2c3346,ground2:0x232a3b,sun:0xaec4ff,amb:0x2a3350,
   body:0x23263a,belly:0x5a4a8a,accent:0x9a7cff,eye:0xff4a6a,
   combos:{base:[['clawL','clawR~','clawL!','bite','sweep'],['charge','tail~','roar','lash','charge'],['slam','slam','stomp','sweep!','bite'],['volley','nova','charge','lash~','sweep'],['bite~','tail','clawR!','clawL','lash','slam']],e1:[['roar','breath','charge','bite!','sweep','lash']],e2:[['stomp','nova','slam','tail~','bite!','charge']]},
@@ -423,16 +440,17 @@ const ATK={
  sweep:{n:'뿔 휘두르기',wind:.95,act:.3,dmg:24,melee:1},
  lash:{n:'꼬리 내리찍기',wind:1.05,act:.3,dmg:27,melee:1},
 };
-const UPS=[
- {id:'atk',name:'날 벼리기',desc:'공격력 20% 증가',apply:p=>p.atk*=1.2},
+const PERKS=[
+ {id:'atk',name:'날 선 탄두',desc:'모든 무기 피해 15% 증가',apply:p=>p.atk*=1.15},
  {id:'hp',name:'거수 가죽 갑옷',desc:'최대 체력 30 증가',apply:p=>p.maxHp+=30},
  {id:'pot',name:'물약 주머니',desc:'사냥마다 물약 2개 추가',apply:p=>p.potMax+=2},
  {id:'st',name:'가벼운 장화',desc:'기력 회복 40% 증가, 구르기 소모 감소',apply:p=>{p.stRegen*=1.4;p.dodgeCost-=5}},
- {id:'skill',name:'강타 숙련',desc:'강타 게이지 충전 30% 증가, 강타 피해 25% 증가',apply:p=>{p.gainMul*=1.3;p.skillMul*=1.25}},
  {id:'guard',name:'단단한 날받이',desc:'막기 기력 소모 30% 감소, 완벽한 막기 판정 0.05초 증가',apply:p=>{p.guardCost*=.7;p.parryWin+=.05}},
+ {id:'gad',name:'화약통',desc:'장비 스킬 대기시간 20% 감소, 장비 스킬 피해 25% 증가',apply:p=>{p.gadCdMul*=.8;p.skillMul*=1.25}},
+ {id:'fin',name:'사냥꾼의 투지',desc:'필살기 게이지 충전 35% 증가, 필살기 피해 20% 증가',apply:p=>{p.finMul*=1.35;p.finDmg*=1.2}},
 ];
-const CORE_TIP={chest:'약점은 가슴 아래의 하늘색 빛. 정면에서만 보이는 위치라 위험과 보상이 함께 큰 표적',brow:'약점은 이마의 하늘색 빛. 머리를 들어 올리는 준비 자세가 노릴 기회',tailtip:'약점은 꼬리 끝의 하늘색 빛. 꼬리를 자르면 약점도 함께 사라지는 선택'};
-const KEEP=['maxHp','stRegen','dodgeCost','atk','potMax','gainMul','skillMul','guardCost','parryWin'];
+const CORE_TIP={chest:'약점은 가슴 아래. 평소에는 닫혀 있다가 상체를 일으키는 동작(덮치기 직전, 던지기, 낙하물, 포효, 폭풍, 발 구르기)과 쓰러지거나 경직된 동안에만 하늘색으로 노출',brow:'약점은 이마. 완벽한 막기 직후 3초, 고개를 드는 동작(던지기, 낙하물, 숨결, 포효, 폭풍), 쓰러지거나 경직된 동안에만 노출. 머리를 부수면 숨 고를 때마다 노출',tailtip:'약점은 꼬리 끝. 꼬리를 치켜든 동안(꼬리 휘두르기, 꼬리 내리찍기)과 쓰러지거나 경직된 동안에만 노출. 꼬리를 자르면 잘린 자리에 상시 노출'};
+
 
 // ---------- 렌더러 ----------
 let renderer;
@@ -527,12 +545,13 @@ const hero=(()=>{
   mesh(new T.BoxGeometry(.11,.9,.13),wood,0,.1,0,bow);mesh(new T.BoxGeometry(.13,.45,.2),wood,0,.72,.04,bow);
   const rifleM=new T.Group();bow.add(rifleM);mesh(new T.CylinderGeometry(.045,.05,1.05,6),iron,0,-.75,.04,rifleM);mesh(new T.BoxGeometry(.06,.14,.06),iron,.08,.15,.06,rifleM);
   const sgM=new T.Group();bow.add(sgM);mesh(new T.CylinderGeometry(.075,.075,.7,8),iron,0,-.55,.04,sgM);mesh(new T.CylinderGeometry(.06,.06,.45,8),wood,0,-.45,-.1,sgM);sgM.visible=false;
+  const xbM=new T.Group();bow.add(xbM);mesh(new T.BoxGeometry(.09,.8,.1),wood,0,-.55,.04,xbM);mesh(new T.BoxGeometry(.95,.06,.07),iron,0,-.88,.04,xbM);mesh(new T.BoxGeometry(.13,.32,.16),wood,0,-.5,.17,xbM);xbM.visible=false;
   const back=new T.Group();back.position.set(0,1.3,-.3);back.rotation.z=.35;rig.add(back);
   mesh(new T.BoxGeometry(.16,1.5,.05),std(0xcfd6dc,{roughness:.4,metalness:.5}),0,.25,0,back);mesh(new T.BoxGeometry(.5,.1,.1),steel,0,-.7,0,back);mesh(new T.BoxGeometry(.08,.45,.08),leather,0,-.95,0,back);
   const arcM=new T.MeshBasicMaterial({color:0xfff2d0,transparent:true,opacity:0,side:T.DoubleSide,depthWrite:false});
   const arc=new T.Mesh(new T.RingGeometry(1.3,3.1,14,1,-Math.PI/2-1.1,2.2),arcM);arc.rotation.x=-Math.PI/2;arc.position.y=1.2;g.add(arc);
   scene.add(g);
-  return{g,rig,legL,legR,armL,armR,sword,arc,arcM,blade,bow,back,guns:[rifleM,sgM]};
+  return{g,rig,legL,legR,armL,armR,sword,arc,arcM,blade,bow,back,guns:[rifleM,sgM,xbM]};
 })();
 
 // ---------- 거수 모델 ----------
@@ -586,15 +605,15 @@ function buildBeast(h){
 
 // ---------- 상태 ----------
 const P={x:0,z:20,h:Math.PI,y:0,hp:100,maxHp:100,st:100,maxSt:100,stDelay:0,stRegen:24,dodgeCost:25,atk:1,potMax:3,potions:3,lives:1,
-  skillMax:8,skillMul:1,skillCd:0,swing:null,combo:0,comboT:0,dodge:null,inv:0,stag:0,drink:0,skill:null,down:0,vx:0,vz:0,run:0,ups:[],block:false,blockT:0,blockCd:0,buff:0,guardCost:1,parryWin:.2,parryCur:.2,parryPen:0,relT:9,charge:1,gainMul:1,kx:0,kz:0,ammo:5,reserve:20,reload:0,fireCd:0,draw:-1,ads:false,aimSpr:.05,bloom:0,gcd:[0,0],gadCdMul:1};
-const G={state:'title',hunt:0,time:0,huntT:0,slow:1,shake:0,in:{x:0,z:0,dodge:false,skill:false,g1:false,g2:false,pot:false,block:false,fire:false,ads:false,reload:false},yaw:Math.PI,pitch:.2,lock:false,lockIdx:0,aimX:0,aimY:0,plock:false,adsK:0,shots:[],crate:null,crateT:25,sph:[],hitT:0,hitWeak:false,camPiv:new T.Vector3(),parries:0,stop:0,botFn:null,
+  skillMax:8,skillMul:1,skillCd:0,swing:null,combo:0,comboT:0,dodge:null,inv:0,stag:0,drink:0,skill:null,down:0,vx:0,vz:0,run:0,ups:[],block:false,blockT:0,blockCd:0,buff:0,guardCost:1,parryWin:.2,parryCur:.2,parryPen:0,relT:9,charge:1,gainMul:1,kx:0,kz:0,ammo:5,reserve:20,reload:0,fireCd:0,draw:-1,ads:false,aimSpr:.05,bloom:0,gcd:[0,0],gadCdMul:1,fin:0,finA:null,finMul:1,finDmg:1};
+const G={state:'title',hunt:0,time:0,huntT:0,slow:1,shake:0,in:{x:0,z:0,dodge:false,skill:false,g1:false,g2:false,fin:false,pot:false,block:false,fire:false,ads:false,reload:false},yaw:Math.PI,pitch:.2,lock:false,lockIdx:0,aimX:0,aimY:0,plock:false,adsK:0,shots:[],crate:null,crateT:25,sph:[],hitT:0,hitWeak:false,camPiv:new T.Vector3(),parries:0,stop:0,botFn:null,
   totalT:0,faints:0,breaks:0,records:[],hazards:[],parts:[],mobs:[],covers:[],gps:[],rkts:[],fires:[],decoy:null,mobT:0,mobWave:0,tut:null,aimPart:'',msgT:0,camP:new T.Vector3(0,12,30),camL:new T.Vector3(),winT:0};
 let B=null,TG=P;
 const hunt=()=>HUNTS[G.hunt];
 const coarse=matchMedia('(pointer:coarse)').matches;
 resize();
 
-function resetHero(){Object.assign(P,{hp:100,maxHp:100,stRegen:24,dodgeCost:25,atk:1,potMax:3,gainMul:1,skillMul:1,guardCost:1,parryWin:TUNE.parry,gadCdMul:1,ups:[]})}
+function resetHero(){Object.assign(P,{hp:100,maxHp:100,stRegen:24,dodgeCost:25,atk:1,potMax:3,gainMul:1,skillMul:1,guardCost:1,parryWin:TUNE.parry,gadCdMul:1,finMul:1,finDmg:1,ups:[]})}
 function startHunt(mode){
   const h=mode==='train'?TRAIN:hunt();
   clearField();G.tut=null;$('#tut').hidden=true;
@@ -603,8 +622,9 @@ function startHunt(mode){
   for(const z of G.hazards){scene.remove(z.grp);if(z.proj)scene.remove(z.proj)}G.hazards=[];
   B={m:buildBeast(h),h,x:0,z:-8,y:0,hd:0,hp:h.hp,maxHp:h.hp,state:'chase',stateT:0,think:1.6,atk:null,enr:0,pendingRoar:false,
      combos:h.combos.base.slice(),combo:null,ci:0,lastC:-1,shape:null,linger:null,fxT:0,tele:null,stg:0,stgMax:[100,110,120,135,150][G.hunt]||150,php:{head:h.hp*.2,legs:h.hp*.22,tail:h.hp*.17},pmax:{head:h.hp*.2,legs:h.hp*.22,tail:h.hp*.17},broken:{head:false,legs:false,tail:false},
-     walk:0,flash:0,pose:{headX:0,jaw:0,rigZ:0,rigY:0,rigX:0,spin:0},hitOnce:false,sx:0,sz:0,tx:0,tz:0,chargeH:0,dur:0};
-  Object.assign(P,{x:0,z:20,h:Math.PI,y:0,hp:P.maxHp,st:P.maxSt,potions:P.potMax,lives:1,noAuto:false,skillCd:0,swing:null,dodge:null,inv:0,stag:0,drink:0,skill:null,down:0,vx:0,vz:0,combo:0,block:false,blockCd:0,buff:0,parryPen:0,relT:9,charge:1,ammo:WEP[0].mag,reserve:WEP[0].reserve,aimT:0,w:0,swap:0,bag:WEP.map(w=>({ammo:w.mag,reserve:w.reserve})),reload:0,recov:0,fireCd:0,draw:-1,ads:false,aimSpr:.05,bloom:0,gcd:[0,0]});
+     walk:0,flash:0,pose:{headX:0,jaw:0,rigZ:0,rigY:0,rigX:0,spin:0},hitOnce:false,sx:0,sz:0,tx:0,tz:0,chargeH:0,dur:0,marks:0,markT:0,coreOpen:false,coreForce:false,parryOpen:0,soft:false,cueCd:0};
+  const w0=mode==='train'?0:ownW(S.lastW)?S.lastW:Math.max(0,WEP.findIndex((w,i)=>ownW(i)));
+  Object.assign(P,{x:0,z:20,h:Math.PI,y:0,hp:P.maxHp,st:P.maxSt,potions:P.potMax,lives:1,noAuto:false,skillCd:0,swing:null,dodge:null,inv:0,stag:0,drink:0,skill:null,down:0,vx:0,vz:0,combo:0,block:false,blockCd:0,buff:0,parryPen:0,relT:9,charge:1,ammo:WEP[w0].mag,reserve:WEP[w0].reserve,aimT:0,w:w0,fin:0,finA:null,swap:0,bag:WEP.map(w=>({ammo:w.mag,reserve:w.reserve})),reload:0,recov:0,fireCd:0,draw:-1,ads:false,aimSpr:.05,bloom:0,gcd:[0,0]});
   G.mobT=(MOBCFG[G.hunt]||MOBCFG[0]).first;G.mobWave=0;G.mobKills=0;
   for(const o of G.shots)scene.remove(o.m);G.shots=[];if(G.crate){scene.remove(G.crate.g);G.crate=null}G.crateT=25;
   G.yaw=Math.PI;G.pitch=.2;G.adsK=0;G.camPiv.set(P.x,1.9,P.z);G.lockIdx=0;G.lock=false;
@@ -697,7 +717,7 @@ const PART_KO={head:'머리',legs:'다리',tail:'꼬리'};
 
 function hitBeast(part,base,heavy,quiet){
   if(B.state==='dead')return;
-  let m=part.mult;const open=B.state==='topple'||B.state==='stun'||B.state==='flinch';
+  let m=part.mult;const open=(B.state==='topple'||B.state==='stun'||B.state==='flinch')&&!B.soft;
   if(open)m*=1.35;else if(B.state==='rest')m*=1.3;
   if(P.buff>0)m*=1.5;
   const dmg=Math.round(base*P.atk*m*rand(.93,1.07)),weak=part.id==='core',py=part.y!=null?part.y:1.8;
@@ -705,6 +725,7 @@ function hitBeast(part,base,heavy,quiet){
   num(part.x,part.y!=null?part.y+.8:2.6*B.h.size,part.z,dmg,heavy||open||P.buff>0,weak);
   burst(part.x,py,part.z,heavy?16:weak?10:6,weak?0x7ef0ff:heavy?0xffd27a:0xfff2d0,heavy?9:6,heavy?7:5);
   G.shake=Math.max(G.shake,heavy?.5:quiet?.05:.14);G.stop=heavy?TUNE.stopHeavy:quiet?0:TUNE.stopLight;sfx.hit(heavy||weak);
+  if(!P.finA)addFin(dmg*.012*(weak?1.5:1));
   if(G.tut){B.hp=B.maxHp;G.tut.shots[part.id]=1;return} // 연습 상대는 쓰러지지 않음
   if(B.hp<=0){B.hp=0;return killBeast()}
   const id=part.id;
@@ -713,8 +734,8 @@ function hitBeast(part,base,heavy,quiet){
     if(id==='legs'){B.pmax.legs*=1.45;B.php.legs=B.pmax.legs;if(!B.broken.legs){B.broken.legs=true;G.huntBreaks++}topple(5.5);say('다리 붕괴','거수가 쓰러진 틈')}
     else if(!B.broken[id]){
       B.broken[id]=true;G.huntBreaks++;B.php[id]=0;
-      if(id==='head'){B.m.horns.forEach((hn,i)=>{if(i!==1)hn.visible=false;else hn.scale.y=.5});setState('stun');B.dur=4.5;say('머리 파괴','거수 기절')}
-      else{for(let i=4;i<7;i++)B.m.tail[i].visible=false;if(B.h.core==='tailtip')B.m.core.visible=false;topple(3.5);say('꼬리 절단','꼬리 공격 범위 감소');const t=beastParts()[2];burst(t.x,1.5,t.z,20,B.h.body,8,8,1.6)}
+      if(id==='head'){B.m.horns.forEach((hn,i)=>{if(i!==1)hn.visible=false;else hn.scale.y=.5});setState('stun');B.dur=4.5;say('머리 파괴',B.h.core==='brow'?'거수 기절. 이제 숨 고를 때마다 이마 약점 노출':'거수 기절')}
+      else{for(let i=4;i<7;i++)B.m.tail[i].visible=false;if(B.h.core==='tailtip'){B.m.tail[3].add(B.m.hb.core);B.m.hb.core.position.set(0,0,-1.15);B.coreForce=true}topple(3.5);say('꼬리 절단',B.h.core==='tailtip'?'잘린 자리에 약점 상시 노출':'꼬리 공격 범위 감소');const t=beastParts()[2];burst(t.x,1.5,t.z,20,B.h.body,8,8,1.6)}
       sfx.brk();
     }
   }
@@ -724,17 +745,17 @@ function hitBeast(part,base,heavy,quiet){
 // ---------- 사격: 판정 구, 조준 ----------
 const _v=new T.Vector3(),_o=new T.Vector3(),_d=new T.Vector3(),_ap=new T.Vector3();
 const LOCKS=['head','core','body','legs','tail'],LOCK_KO={head:'머리',core:'약점',body:'몸통',legs:'다리',tail:'꼬리'};
-const PMULT={head:1.3,core:2.2,body:.5,legs:.95,tail:1.05},PBONUS={core:1.6,head:.7,legs:.4,tail:.4,body:0};
+const PMULT={head:1.3,core:2.6,body:.5,legs:.95,tail:1.05},PBONUS={core:1.6,head:0,legs:0,tail:0,body:0};
 function updSpheres(){
   const m=B.m,s=B.h.size,out=[];
   const add=(o,r,part)=>{o.getWorldPosition(_v);out.push({x:_v.x,y:_v.y,z:_v.z,r:r*s,part})};
   add(m.hb.head,.95,'head');add(m.hb.bodyF,1.5,'body');add(m.hb.bodyB,1.5,'body');
   m.hb.legs.forEach(o=>add(o,.66,'legs'));
   m.hb.tail.forEach((o,i)=>{if(!(B.broken.tail&&i>=3))add(o,.62-.06*i,'tail')});
-  if(m.core.visible)add(m.hb.core,.5,'core');
+  if(B.coreOpen)add(m.hb.core,.38,'core');
   G.sph=out;
 }
-// 광선과 구들의 교차. 약점과 머리는 살짝 뒤에 있어도 우선
+// 광선과 구들의 교차. 조준 보정 없음. 몸속에 묻힌 약점만 광선이 그 작은 구를 실제로 지날 때 우선
 function rayHit(o,d,maxT){
   let best=null,bs=1e9;
   for(const sp of G.sph){
@@ -764,38 +785,54 @@ tracerG.setAttribute('position',new T.BufferAttribute(new Float32Array(6),3));co
 const flash=new T.PointLight(0xffc870,0,14);scene.add(flash);
 function curSpread(){return Math.max(.003,P.aimSpr+P.bloom+(G.lock?TUNE.spreadLock:0))}
 function fire(kind){
+  const fin=kind==='fin',W=WEP[P.w],F=FIN[W.id];
   const ap=aimPoint(),fx=Math.sin(P.h),fz=Math.cos(P.h);
   const sx=P.x+fx*.9-fz*.3,sy=P.y+1.5,sz=P.z+fz*.9+fx*.3;
   let dx=ap.x-sx,dy=ap.y-sy,dz=ap.z-sz,L=Math.hypot(dx,dy,dz);
   if(L<1.5){dx=Math.sin(G.yaw);dy=0;dz=Math.cos(G.yaw);L=1}
   dx/=L;dy/=L;dz/=L;
-  const spr=kind==='skill'?.002:curSpread();
+  // 단발 사냥총: 조준점이 완전히 고정된 상태의 사격은 정조준
+  const foc=!fin&&W.focus&&curSpread()<.008?W.focus:1,mul=(fin?F.mul*P.finDmg:1)*foc;
+  const spr=fin?Math.min(.006,curSpread()):curSpread();
   dx+=rand(-1,1)*spr;dy+=rand(-1,1)*spr;dz+=rand(-1,1)*spr;L=Math.hypot(dx,dy,dz);dx/=L;dy/=L;dz/=L;
-  logEv('발사',kind+' 무기='+P.w);
-  const W=WEP[P.w],hv=kind==='skill',n=hv?1:W.pellets,hits={},mobDmg=new Map();let end=140,cueHit=false;
+  logEv('발사',kind+' 무기='+W.id+(foc>1?' 정조준':''));
+  const n=W.pellets,hits={},mobDmg=new Map();let end=140,cueHit=false,close=0,lastHit=null;
   for(let k=0;k<n;k++){
-    let ex=dx,ey=dy,ez=dz;if(k>0||W.cone&&!hv){ex+=rand(-1,1)*W.cone;ey+=rand(-1,1)*W.cone;ez+=rand(-1,1)*W.cone;const l=Math.hypot(ex,ey,ez);ex/=l;ey/=l;ez/=l}
+    let ex=dx,ey=dy,ez=dz;if(W.cone){ex+=rand(-1,1)*W.cone;ey+=rand(-1,1)*W.cone;ez+=rand(-1,1)*W.cone;const l=Math.hypot(ex,ey,ez);ex/=l;ey/=l;ez/=l}
     _o.set(sx,sy,sz);_d.set(ex,ey,ez);
     let h=B&&B.state!=='dead'&&G.sph.length?rayHit(_o,_d,140):null,lim=h?h.t:140;
     const mh=mobRay(sx,sy,sz,ex,ey,ez,lim);if(mh){lim=mh.t;h=null}
     const tc=coverRay(sx,sy,sz,ex,ey,ez,lim);
     if(tc<lim){if(k===0)end=tc;burst(sx+ex*tc,sy+ey*tc,sz+ez*tc,n>1?1:5,0xb8b0a0,4,4,.8)}
-    else if(mh){if(k===0)end=mh.t;const fo=mh.t<=W.near?1:mh.t>=W.far?.08:lerp(1,.08,(mh.t-W.near)/(W.far-W.near));mobDmg.set(mh.m,(mobDmg.get(mh.m)||0)+W.dmg*fo)}
+    else if(mh){if(k===0)end=mh.t;const fo=mh.t<=W.near?1:mh.t>=W.far?.08:lerp(1,.08,(mh.t-W.near)/(W.far-W.near));mobDmg.set(mh.m,(mobDmg.get(mh.m)||0)+W.dmg*fo*mul)}
     else if(h){const hx=sx+ex*h.t,hy=sy+ey*h.t,hz=sz+ez*h.t,sp=h.sp;if(k===0)end=h.t;
-      const fo=hv?1:h.t<=W.near?1:h.t>=W.far?.08:lerp(1,.08,(h.t-W.near)/(W.far-W.near));
-      const e=hits[sp.part]||(hits[sp.part]={x:hx,y:hy,z:hz,base:0,part:sp.part});e.base+=(hv?TUNE.skillDmg*P.skillMul:W.dmg)*fo;
+      const fo=h.t<=W.near?1:h.t>=W.far?.08:lerp(1,.08,(h.t-W.near)/(W.far-W.near));if(h.t<=W.near)close++;
+      const e=hits[sp.part]||(hits[sp.part]={x:hx,y:hy,z:hz,base:0,part:sp.part});e.base+=W.dmg*fo*mul;lastHit=e;
       if(!cueHit&&B.state==='windup'&&cue.m.visible&&Math.hypot(hx-cue.m.position.x,hy-cue.m.position.y,hz-cue.m.position.z)<1.8*B.h.size)cueHit={x:hx,y:hy,z:hz};
     }else if(ey<-1e-3){const tg=-sy/ey;if(k===0&&tg<end)end=tg;if(tg<140)burst(sx+ex*tg,.2,sz+ez*tg,n>1?2:6,0xd8cdb8,4,4,.8)}
   }
-  if(cueHit){let st=hv?18:W.cueStg*Object.keys(hits).length;addStagger(Math.min(st,hv?18:12));burst(cueHit.x,cueHit.y,cueHit.z,8,0x9ad0ff,6,5);num(cueHit.x,cueHit.y+1.4,cueHit.z,'저지',false,true)}
+  // 저지: 공격을 준비하는 부위의 빛을 맞히면 경직 누적. 정조준한 단발 사냥총은 공격 자체를 취소
+  if(cueHit){
+    addStagger(Math.min(W.cueStg*Object.keys(hits).length,Math.max(12,W.cueStg)));addFin(8);if(G.tut)G.tut.cued=1;
+    burst(cueHit.x,cueHit.y,cueHit.z,8,0x9ad0ff,6,5);
+    if(foc>1&&B.state==='windup'&&!(B.cueCd>0)){setState('flinch');B.soft=true;B.dur=1.1;B.cueCd=7;if(G.tut)G.tut.atkOn=false;num(cueHit.x,cueHit.y+1.4,cueHit.z,'저지 성공',true,true);say('저지 성공','공격 취소');sfx.brk()}
+    else num(cueHit.x,cueHit.y+1.4,cueHit.z,'저지',false,true)}
   let any=false;
   for(const[m,d]of mobDmg){hitMob(m,d);G.hitT=.22;G.hitWeak=false}
-  for(const id in hits){const e=hits[id];if(B.state==='dead')break;any=true;hitBeast({id,x:e.x,y:e.y,z:e.z,mult:PMULT[id]},e.base,true)}
-  if(any){if(hv&&B.state!=='dead')addStagger(12);addCharge(hv?0:.12);G.hitT=.22;G.hitWeak=!!hits.core}
-  const pa=tracerG.attributes.position;pa.setXYZ(0,sx,sy,sz);pa.setXYZ(1,sx+dx*end,sy+dy*end,sz+dz*end);pa.needsUpdate=true;tracerM.opacity=1;tracerM.color.set(kind==='skill'?0xffa040:0xffe6a8);
-  flash.position.set(sx,sy,sz);flash.intensity=3;burst(sx,sy,sz,5,0xffd27a,3,2,.6,.2);
-  P.bloom+=kind==='skill'?.02:WEP[P.w].recoil;G.rkT=(G.rkT||0)+(kind==='skill'?.09:WEP[P.w].kick);G.rkYaw=rand(-.012,.012);G.shake=Math.max(G.shake,.05);P.aimT*=.5;
-  sfx.shot(kind==='skill'||P.w===1);
+  for(const id in hits){const e=hits[id];if(B.state==='dead')break;any=true;hitBeast({id,x:e.x,y:e.y,z:e.z,mult:PMULT[id]},e.base,W.id!=='xbow')}
+  if(any){addCharge(W.auto?.05:.12);G.hitT=.22;G.hitWeak=!!hits.core;
+    // 산탄총: 코앞에서 대부분의 산탄을 맞히면 밀어붙이기
+    if(W.push&&close>=5&&B.state!=='dead'){addStagger(W.push);num(B.x,3.4*B.h.size,B.z,'밀어붙임',false,true);
+      if(B.y<.5&&(B.state==='chase'||B.state==='rest'||B.state==='link')){const d=Math.hypot(B.x-P.x,B.z-P.z)||1;B.x+=(B.x-P.x)/d*.7;B.z+=(B.z-P.z)/d*.7}}
+    // 연발 석궁: 표식 누적, 여섯 개째에 마지막으로 맞은 부위 기준으로 폭발
+    if(W.mark&&lastHit&&B.state!=='dead'){B.marks++;B.markT=MARK.keep;
+      if(B.marks>=MARK.n){B.marks=0;const e=lastHit;burst(e.x,e.y,e.z,26,0xffb24a,11,8,1.3,.5);sfx.pop();G.shake=Math.max(G.shake,.4);if(G.tut)G.tut.bursts=(G.tut.bursts||0)+1;logEv('표식 폭발',e.part);
+        hitBeast({id:e.part,x:e.x,y:e.y,z:e.z,mult:PMULT[e.part]},MARK.dmg*(fin?F.burst*P.finDmg:1),true);if(B.state!=='dead')addStagger(6)}}
+  }
+  const pa=tracerG.attributes.position;pa.setXYZ(0,sx,sy,sz);pa.setXYZ(1,sx+dx*end,sy+dy*end,sz+dz*end);pa.needsUpdate=true;tracerM.opacity=1;tracerM.color.set(fin?0x7ef0ff:foc>1?0xffa040:0xffe6a8);
+  flash.position.set(sx,sy,sz);flash.intensity=W.id==='xbow'?1:3;burst(sx,sy,sz,W.id==='xbow'?2:5,0xffd27a,3,2,.6,.2);
+  P.bloom+=W.recoil;G.rkT=(G.rkT||0)+W.kick*(fin?1.4:1);G.rkYaw=rand(-.012,.012);G.shake=Math.max(G.shake,fin?.3:.05);if(!fin)P.aimT*=.5;
+  if(W.id==='xbow')sfx.shoot(.9);else sfx.shot(fin||W.id==='shotgun');
   // 총소리에 거수가 즉시 반응
   if(B&&B.state==='chase'){B.think=Math.min(B.think,.25)}
 }
@@ -831,8 +868,47 @@ function throwRock(){
   const m=mesh(B.h.id==='frost'?new T.OctahedronGeometry(.9,0):new T.DodecahedronGeometry(.9,0),B.h.id==='stone'?std(col):new T.MeshBasicMaterial({color:col}),_v.x,_v.y,_v.z,scene);
   G.shots.push({m,x:_v.x,y:_v.y,z:_v.z,vx:dx/d*spd,vz:dz/d*spd,vy:(1.2-_v.y)/tt+9*tt/2,t:0,r:1.1*s,dmg:ATK.throw.dmg*B.h.dmg,col});
 }
+// 약점: 평소에는 닫혀 있고 정해진 동작과 상태에서만 열림. 부위 파괴로 상시 노출 가능
+const finOpen=()=>!!B&&['rest','topple','stun','flinch'].includes(B.state)&&!B.soft;
+function coreOpenNow(){
+  const c=B.h.core,st=B.state,a=B.atk;if(!c||st==='dead')return false;
+  if(G.tut&&G.tut.coreCyc)return G.tut.t%5<2.8;
+  if(B.coreForce)return true;
+  if((st==='topple'||st==='stun'||st==='flinch')&&!B.soft)return true;
+  if(c==='brow'&&(B.parryOpen>0||(B.broken.head&&st==='rest')))return true;
+  if(st==='enrage')return c!=='tailtip';
+  const p=B.dur?B.stateT/B.dur:0;
+  if(st==='windup'){
+    if(c==='chest')return['throw','volley','nova','stomp','roar'].includes(a)||(a==='slam'&&p<.5);
+    if(c==='brow')return['throw','volley','breath','roar','nova'].includes(a);
+    return a==='tail'||a==='lash'}
+  if(st==='strike'){
+    if(c==='chest')return a==='roar'||a==='stomp'||a==='nova';
+    if(c==='brow')return a==='roar'||a==='breath';
+    return a==='lash'}
+  return false;
+}
+function updCore(dt){
+  const m=B.m;B.parryOpen=Math.max(0,(B.parryOpen||0)-dt);B.cueCd=Math.max(0,(B.cueCd||0)-dt);
+  if(B.marks>0){B.markT-=dt;if(B.markT<=0)B.marks=0}
+  const o=coreOpenNow();
+  if(o&&!B.coreOpen){sfx.glint();m.hb.core.getWorldPosition(_v);burst(_v.x,_v.y,_v.z,10,0x7ef0ff,5,4,.9,.3)}
+  B.coreOpen=o;m.coreHalo.visible=o;m.core.material.color.set(o?0x7ef0ff:0x2c3f46);
+  m.core.scale.setScalar(o?1+.15*Math.sin(G.time*8):.5);if(o)m.coreHalo.scale.setScalar(1+.3*Math.sin(G.time*8));
+}
+function addFin(v){
+  if(P.finA||P.fin>=100)return;P.fin=Math.min(100,P.fin+v*P.finMul);
+  if(P.fin>=100){say('필살기 준비','거수가 지치거나 쓰러졌을 때 E');sfx.buy()}
+}
+function startFin(){
+  const F=FIN[WEP[P.w].id],tot=F.first+F.gap*(F.n-1);
+  P.fin=0;P.finA={i:0,t:F.first,F};P.block=false;P.reload=0;P.swing=null;P.drink=0;P.inv=Math.max(P.inv,tot+.2);
+  // 필살기 동안 거수는 일어나지 못함
+  B.dur=Math.max(B.dur,B.stateT+(tot+.5)*TUNE.tempo);
+  say('필살기 · '+F.name,'겨눈 부위에 피해 집중');sfx.parry();G.shake=Math.max(G.shake,.5);logEv('필살기',F.name);if(G.tut)G.tut.fin=1;
+}
 function topple(d){setState('topple');B.dur=d;sfx.brk();G.shake=.7;burst(B.x,.5,B.z,24,0xd8cdb8,10,5,1.4)}
-function setState(s){clearTele();bLz.visible=false;B.shape=null;B.linger=null;B.m.eyeM.color.set(B.h.eye);B.state=s;B.stateT=0;B.hitOnce=false;if(s!=='windup'&&s!=='strike')B.y=0}
+function setState(s){clearTele();bLz.visible=false;B.soft=false;B.shape=null;B.linger=null;B.m.eyeM.color.set(B.h.eye);B.state=s;B.stateT=0;B.hitOnce=false;if(s!=='windup'&&s!=='strike')B.y=0}
 function killBeast(){logEv('토벌 성공');
   setState('dead');G.winT=0;G.slow=.25;say('사냥 성공',B.h.name+' 토벌');sfx.roar(.7);sfx.win();
   for(const z of G.hazards){scene.remove(z.grp);if(z.proj)scene.remove(z.proj)}G.hazards=[];
@@ -1066,22 +1142,22 @@ function hurt(dmg,sx,sz,A){
   if(P.block){
     if(P.blockT<=P.parryCur){P.parryPen=0;
       // 완벽한 막기
-      P.parryT=.45;P.inv=1.2;P.st=Math.min(P.maxSt,P.st+20);P.buff=4;addCharge(.5);G.parries++;if(G.tut)G.tut.parries++;
+      P.parryT=.45;P.inv=1.2;P.st=Math.min(P.maxSt,P.st+20);P.buff=4;addCharge(.5);addFin(16);if(!(A&&A.mob))B.parryOpen=3.5;G.parries++;if(G.tut)G.tut.parries++;
       G.stop=.12;G.shake=Math.max(G.shake,.45);burst(P.x+ -dx/d,1.4,P.z+ -dz/d,22,0x9ad0ff,10,7,1.2);sfx.parry();
-      say('완벽한 막기','장비 스킬 대기시간 단축');
+      say('완벽한 막기',B.h.core==='brow'&&!(A&&A.mob)?'이마 약점 3초 노출':'필살기 게이지와 장비 스킬 충전');
       if(!(A&&A.mob))addStagger(A&&A.melee?34:16);
       return;
     }
     const cost=dmg*1.1*P.guardCost;
     if(P.st>=cost){
       P.blockHit=.4;if(G.tut)G.tut.blocks++;logEv('막음',`기력소모=${f1(cost)}`);P.st-=cost;P.stDelay=.8;P.inv=1.15;const chip=Math.max(1,Math.round(dmg*.2));P.hp-=chip;
-      addCharge(.12);P.kx=dx/d*5;P.kz=dz/d*5;P.stag=.12;G.shake=Math.max(G.shake,.3);sfx.block();num(P.x,2.6,P.z,'막음 -'+chip,false);burst(P.x,1.3,P.z,8,0xcfd6dc,6,4);
+      addCharge(.12);addFin(4);P.kx=dx/d*5;P.kz=dz/d*5;P.stag=.12;G.shake=Math.max(G.shake,.3);sfx.block();num(P.x,2.6,P.z,'막음 -'+chip,false);burst(P.x,1.3,P.z,8,0xcfd6dc,6,4);
       if(P.hp<=0){if(G.tut)P.hp=1;else faint()}
       return;
     }
     P.st=0;P.stDelay=1.2;P.block=false;P.blockCd=.6;dmg*=.6;say('방어 붕괴','기력 부족');
   }
-  dmg=Math.round(dmg);if(G.tut)G.tut.hits++;logEv('피격','-'+dmg+(A&&A.n?' '+A.n:''));P.hp-=dmg;P.inv=1.1;P.stag=.45;P.swing=null;P.skill=null;P.drink=0;P.draw=-1;P.reload=0;P.bloom+=.08;P.y=0;P.block=false;
+  dmg=Math.round(dmg);if(G.tut)G.tut.hits++;logEv('피격','-'+dmg+(A&&A.n?' '+A.n:''));P.hp-=dmg;P.inv=1.1;P.stag=.45;P.swing=null;P.skill=null;P.finA=null;P.drink=0;P.draw=-1;P.reload=0;P.bloom+=.08;P.y=0;P.block=false;
   P.kx=dx/d*13;P.kz=dz/d*13;
   G.shake=Math.max(G.shake,.6);$('#hurt').style.opacity=.9;sfx.hurt();
   num(P.x,2.6,P.z,'-'+dmg,false);burst(P.x,1.3,P.z,10,0xe0483c,6,5);
@@ -1097,7 +1173,7 @@ function addStagger(v){
 function faint(){logEv('쓰러짐');P.hp=0;P.down=.001;P.lives--;G.faints++;G.huntFaints++;P.block=false;sfx.fail()}
 function updHero(dt){
   const I=G.in;
-  for(const k of['dodge','g1','g2','pot','reload'])if(I[k]===true)I[k]=TUNE.buffer;
+  for(const k of['dodge','g1','g2','fin','pot','reload'])if(I[k]===true)I[k]=TUNE.buffer;
   P.inv=Math.max(0,P.inv-dt);P.skillCd=Math.max(0,P.skillCd-dt);P.buff=Math.max(0,P.buff-dt);P.blockCd=Math.max(0,P.blockCd-dt);
   if(P.down){
     P.down+=dt;
@@ -1106,15 +1182,15 @@ function updHero(dt){
     if(P.down>2.2&&P.lives>0){const a=Math.atan2(B.x,B.z)+Math.PI;P.x=Math.sin(a)*(AR-6);P.z=Math.cos(a)*(AR-6);P.hp=P.maxHp;P.st=P.maxSt;P.down=0;P.inv=2.5;$('#fade').style.opacity=0}
     return;
   }
-  if(B.state==='dead'){P.swing=null;P.block=false;P.draw=-1;I.dodge=I.skill=I.pot=0;return}
+  if(B.state==='dead'){P.swing=null;P.block=false;P.draw=-1;P.finA=null;I.dodge=I.skill=I.pot=I.fin=0;return}
   P.ads=!!I.ads;
   // 장전은 다른 행동 중에도 진행
   // 한 발씩 장전. 장전 중 사격 입력이 들어오면 중단
   const W=WEP[P.w];
   // 무기 바꿔 들기
-  if(I.swap!=null&&I.swap!==P.w&&!P.dodge&&!P.skill){P.bag[P.w]={ammo:P.ammo,reserve:P.reserve};P.w=I.swap;P.ammo=P.bag[P.w].ammo;P.reserve=P.bag[P.w].reserve;P.swap=.5;P.reload=0;P.noAuto=false;P.fireCd=Math.max(P.fireCd,.5);sfx.bolt();say(WEP[P.w].name,'')}
+  if(I.swap!=null&&I.swap!==P.w&&ownW(I.swap)&&!P.dodge&&!P.skill&&!P.finA){P.bag[P.w]={ammo:P.ammo,reserve:P.reserve};P.w=I.swap;P.ammo=P.bag[P.w].ammo;P.reserve=P.bag[P.w].reserve;P.swap=.5;P.reload=0;P.noAuto=false;P.fireCd=Math.max(P.fireCd,.5);sfx.bolt();say(WEP[P.w].name,'')}
   I.swap=null;P.swap=Math.max(0,P.swap-dt);
-  if(P.reload>0){P.reload-=dt;if(P.reload<=0){if(P.reserve>0&&P.ammo<W.mag){P.ammo++;if(!TUNE.infAmmo)P.reserve--;P.noAuto=false;sfx.reload(1);burst(P.x+Math.sin(P.h)*.6,P.y+1.3,P.z+Math.cos(P.h)*.6,2,0xe8c060,2,3,.5)}P.reload=(P.ammo<W.mag&&P.reserve>0&&!I.fire&&!(I.dodge>0))?W.reloadOne:0}}
+  if(P.reload>0){P.reload-=dt;if(P.reload<=0){if(P.reserve>0&&P.ammo<W.mag){P.ammo=W.magReload?W.mag:P.ammo+1;if(!TUNE.infAmmo)P.reserve--;P.noAuto=false;sfx.reload(1);burst(P.x+Math.sin(P.h)*.6,P.y+1.3,P.z+Math.cos(P.h)*.6,2,0xe8c060,2,3,.5)}P.reload=(P.ammo<W.mag&&P.reserve>0&&!I.fire&&!(I.dodge>0))?W.reloadOne:0}}
   if(I.reload>0&&P.reload<=0&&P.ammo<W.mag&&P.reserve>0){I.reload=0;P.noAuto=false;P.reload=W.reloadOne;sfx.reload(0)}
   P.fireCd-=dt;
   // 탄창이 비고 가방에 탄이 있으면 상황과 관계없이 자동 장전 시작(피격, 무기 교체 후 포함)
@@ -1124,24 +1200,30 @@ function updHero(dt){
   const mv=Math.hypot(P.vx,P.vz)>1;
   if(P.ads&&!P.block&&!P.dodge){P.aimT=(P.aimT||0)+dt*(mv?.45:1)}else P.aimT=0;
   const k=Math.min(1,(P.aimT||0)/TUNE.aimTime),sm=k*k*(3-2*k);
-  const want=P.ads?lerp(.045,TUNE.sprAds,sm):mv?TUNE.sprMove:.045;
+  const sb=W.sprBase||.045,want=P.ads?lerp(sb,TUNE.sprAds,sm):mv?(W.sprMove||TUNE.sprMove):sb;
   P.aimSpr+=(want-P.aimSpr)*damp(dt,P.ads?20:8);P.bloom*=Math.exp(-dt*4);
   let mx=I.x,mz=I.z;const ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml}
   const part=nearestPart();
   // 구르기
   if(I.dodge>0&&!P.dodge&&!P.skill&&P.stag<=0&&P.recov<=0&&P.st>=P.dodgeCost){I.dodge=0;
     // 구르기로 장전을 끊으면 다음 장전은 수동(R 또는 빈 총 사격 입력)
-    if(P.reload>0){P.reload=0;P.noAuto=true;logEv('장전 취소','구르기')}
+    // 산탄총은 구르는 동작으로 한 발 장전
+    if(W.rollLoad){if(P.ammo<W.mag){P.ammo++;sfx.reload(1);num(P.x,2.5,P.z,'한 발 장전',false,true)}P.reload=0;P.noAuto=false}
+    else if(P.reload>0){P.reload=0;P.noAuto=true;logEv('장전 취소','구르기')}
+    P.finA=null;
     let dx=mx,dz=mz;if(ml<.2){const d=Math.hypot(P.x-B.x,P.z-B.z)||1;dx=(P.x-B.x)/d;dz=(P.z-B.z)/d}else{dx/=Math.min(ml,1)||1;dz/=Math.min(ml,1)||1}
     P.dodge={t:0,dx,dz};P.st-=P.dodgeCost;P.stDelay=.55;P.inv=Math.max(P.inv,TUNE.dodgeInv);P.swing=null;P.drink=0;P.draw=-1;if(P.block){P.block=false;P.blockCd=.1;P.parryPen++;P.relT=0}sfx.whoosh(.25);
   }
   // 장비 스킬
-  for(const sl of[0,1]){const k='g'+(sl+1);if(I[k]>0&&!P.dodge&&P.stag<=0&&P.drink<=0&&useGadget(sl))I[k]=0}
+  for(const sl of[0,1]){const k='g'+(sl+1);if(I[k]>0&&!P.dodge&&!P.finA&&P.stag<=0&&P.drink<=0&&useGadget(sl))I[k]=0}
+  // 필살기: 게이지가 가득 차고 거수가 지치거나 쓰러진 동안에만
+  if(I.fin>0&&!P.finA&&!P.dodge&&P.stag<=0&&P.swap<=0){I.fin=0;
+    if(P.fin<100)say('필살기 게이지 부족','명중과 완벽한 막기로 충전');else if(!finOpen())say('아직 아님','거수가 지치거나 쓰러졌을 때 사용');else startFin()}
   // 물약
-  if(I.pot>0&&!P.dodge&&!P.skill&&P.stag<=0&&P.drink<=0&&P.potions>0&&P.hp<P.maxHp){I.pot=0;P.potions--;P.drink=1.2;P.swing=null;P.block=false;sfx.heal()}
-  for(const k of['dodge','g1','g2','pot','reload'])I[k]=Math.max(0,(+I[k]||0)-dt);
+  if(I.pot>0&&!P.dodge&&!P.skill&&!P.finA&&P.stag<=0&&P.drink<=0&&P.potions>0&&P.hp<P.maxHp){I.pot=0;P.potions--;P.drink=1.2;P.swing=null;P.block=false;sfx.heal()}
+  for(const k of['dodge','g1','g2','fin','pot','reload'])I[k]=Math.max(0,(+I[k]||0)-dt);
   // 막기: 누르는 순간부터 짧은 시간이 완벽한 막기 판정
-  const canB=!P.dodge&&!P.skill&&P.stag<=0&&P.drink<=0&&P.recov<=0&&P.reload<=0;
+  const canB=!P.dodge&&!P.skill&&!P.finA&&P.stag<=0&&P.drink<=0&&P.recov<=0&&P.reload<=0;
   P.blockMinT=Math.max(0,(P.blockMinT||0)-dt);
   // 세키로식 판정: 기본 0.2초, 뗐다가 0.5초 안에 다시 누를 때마다 판정 축소
   if(!P.block){P.relT+=dt;if(P.relT>TUNE.parryReset)P.parryPen=0}
@@ -1150,19 +1232,21 @@ function updHero(dt){
     if(!P.block){P.block=true;P.blockT=0;P.blockMinT=TUNE.blockMin;P.swing=null;P.draw=-1;P.st-=bCost;P.stDelay=.5;P.parryCur=Math.max(0,P.parryWin-P.parryPen*TUNE.parryStep)}else P.blockT+=dt}
   else if(P.block){P.block=false;P.blockCd=.1;P.parryPen++;P.relT=0}
   P.recov=Math.max(0,(P.recov||0)-dt);
-  let sp=TUNE.speed*(P.recov>0?0:P.reload>0?.35:1);
+  let sp=TUNE.speed*(P.recov>0?0:P.reload>0?(W.reloadMove||.35):1);
   if(P.stag>0){P.stag-=dt;P.x+=P.kx*dt;P.z+=P.kz*dt;P.kx*=.9;P.kz*=.9;sp=0}
   else if(P.dodge){const D=P.dodge;D.t+=dt;const v=TUNE.dodgeSpeed*(1-D.t/TUNE.dodgeTime*.5);P.x+=D.dx*v*dt;P.z+=D.dz*v*dt;sp=0;if(D.t>=TUNE.dodgeTime)P.dodge=null}
   else if(P.skill&&!P.skill.melee){P.skill.t+=dt;sp=TUNE.speed*.3;if(P.skill.t>=P.skill.dur)P.skill=null}
   else if(P.skill){const S=P.skill;S.t+=dt;const k=clamp(S.t/S.dur,0,1);P.x=lerp(S.sx,S.tx,k);P.z=lerp(S.sz,S.tz,k);P.y=Math.sin(k*Math.PI)*2.6;sp=0;
     if(k>=1){P.skill=null;P.y=0;const pt=nearestPart();hero.arcM.opacity=1;G.shake=Math.max(G.shake,.3);burst(P.x,.3,P.z,10,0xd8cdb8,7,4);
       if(pt.gap<3.2){hitBeast(pt,135*P.skillMul,true);if(B.state!=='dead')addStagger(10)}else sfx.boom(.4)}}
+  else if(P.finA){const A=P.finA;sp=TUNE.speed*.2;P.h=aimYaw();A.t-=dt;
+    if(A.t<=0){fire('fin');A.i++;A.t+=A.F.gap;if(A.i>=A.F.n||B.state==='dead'){P.finA=null;P.recov=.25;P.fireCd=.4}}}
   else if(P.block){sp=TUNE.blockSpeed}
   else{
     if(P.drink>0){P.drink-=dt;P.hp=Math.min(P.maxHp,P.hp+45/1.2*dt);sp=TUNE.drinkSpeed}
     // 단발 사격: 누를 때마다 한 발, 노리쇠 당기는 동안 다음 발 불가
-    if(I.fire&&!P.trig){P.trig=true;
-      if(P.drink<=0&&P.fireCd<=0&&P.ammo>0){P.reload=0;P.h=aimYaw();fire('shot');P.ammo--;P.fireCd=W.cycle;P.recov=W.recov;setTimeout(()=>sfx.bolt(),280);if(P.ammo<=0&&P.reserve>0)P.reload=W.cycle+W.reloadOne}
+    if(I.fire&&(!P.trig||W.auto)){P.trig=true;
+      if(P.drink<=0&&P.fireCd<=0&&P.ammo>0){P.reload=0;P.h=aimYaw();fire('shot');P.ammo--;P.fireCd=W.cycle;P.recov=W.recov;if(!W.auto)setTimeout(()=>sfx.bolt(),280);if(P.ammo<=0&&P.reserve>0)P.reload=W.cycle+W.reloadOne}
       else if(P.ammo<=0&&P.reserve>0&&P.reload<=0&&P.fireCd<=0&&P.drink<=0){P.noAuto=false;P.reload=W.reloadOne;sfx.reload(0)}
       else if(P.ammo<=0&&P.reserve<=0&&!P.swing){P.swing={t:0,dur:.55,hit:false,idx:P.combo};P.combo=(P.combo+1)%2;sfx.whoosh(.3)}}
     // 탄이 바닥나면 대검 베기
@@ -1170,7 +1254,7 @@ function updHero(dt){
       if(!S.hit&&S.t>=S.dur*.45){S.hit=true;hero.arcM.opacity=.9;const pt=nearestPart();if(pt.gap<2.8){hitBeast(pt,TUNE.swordDmg,false);addCharge(.08)}}
       if(S.t>=S.dur)P.swing=null}
     if(!I.fire)P.trig=false;
-    if(P.ads)sp*=TUNE.adsMove;
+    if(P.ads)sp*=W.adsMove||TUNE.adsMove;
   }
   {const tx=sp>0?mx*sp:0,tz=sp>0?mz*sp:0,dvx=tx-P.vx,dvz=tz-P.vz,dv=Math.hypot(dvx,dvz),rate=(Math.hypot(tx,tz)>Math.hypot(P.vx,P.vz)?TUNE.accel:TUNE.decel)*dt;
    if(dv<=rate){P.vx=tx;P.vz=tz}else{P.vx+=dvx/dv*rate;P.vz+=dvz/dv*rate}
@@ -1182,7 +1266,7 @@ function updHero(dt){
   pushOut(P,.55);
   const r=Math.hypot(P.x,P.z);if(r>AR-1){P.x*=(AR-1)/r;P.z*=(AR-1)/r}
   // 방향
-  const face=P.dodge?Math.atan2(P.dodge.dx,P.dodge.dz):P.skill&&P.skill.melee?Math.atan2(part.x-P.x,part.z-P.z):(P.block||P.fireCd>.5||P.ads||P.skill||G.lock||ml<.05)?aimYaw():Math.atan2(mx,mz);
+  const face=P.dodge?Math.atan2(P.dodge.dx,P.dodge.dz):P.skill&&P.skill.melee?Math.atan2(part.x-P.x,part.z-P.z):(P.block||P.finA||P.fireCd>.5||P.ads||P.skill||G.lock||ml<.05)?aimYaw():Math.atan2(mx,mz);
   P.h+=wrapA(face-P.h)*damp(dt,P.ads?24:14);
 }
 function I_fireHeld(){return !!G.in.fire}
@@ -1210,7 +1294,7 @@ function animHero(dt){
       // 장전: 총을 아래로 기울이고 오른손으로 한 발씩 밀어 넣음
       const k=clamp(1-P.reload/W.reloadOne,0,1),up=k>.82?(k-.82)/.18:0,hand=Math.sin(Math.min(1,k/.8)*Math.PI);
       armLX=lerp(-.95,-1.5,up);gunX=lerp(.75,0,up);gunZ=lerp(.35,0,up);armX=-1.0-.55*hand;armZ=.75-.25*hand;rx=.22*(1-up);ry=-.75*(1-up);swordX=-.9;m.rig.position.y-=.1*(1-up)}
-    else if(P.skill||P.fireCd>0||P.ads||I_fireHeld()){const k=kick?1:0;armLX=-1.5-.25*k;armX=-1.35;armZ=.3;rx=-.12*k;ry=-.15;swordX=-.9}
+    else if(P.skill||P.finA||P.fireCd>0||P.ads||I_fireHeld()){const k=kick?1:0;armLX=-1.5-.25*k;armX=-1.35;armZ=.3;rx=-.12*k;ry=-.15;swordX=-.9}
     else if(P.swing){const k=P.swing.t/P.swing.dur,i=P.swing.idx;
       if(i===2){armX=lerp(-3.0,.7,Math.min(1,k*1.8));swordX=-.2}
       else{armX=-1.4;armZ=(i?-1:1)*lerp(-1.4,1.4,Math.min(1,k*1.9));swordX=-.1;ry=(i?-1:1)*lerp(-.5,.5,Math.min(1,k*1.9))}}
@@ -1223,7 +1307,7 @@ function animHero(dt){
   const swordOut=!!(P.block||P.parryT>0||P.swing||(P.skill&&P.skill.melee));m.guns.forEach((g,i)=>g.visible=i===P.w);m.sword.visible=swordOut;m.back.visible=!swordOut;
   m.arcM.opacity=Math.max(0,m.arcM.opacity-dt*5);m.arcM.color.set(P.buff>0?0xffb24a:0xfff2d0);
   {const f=P.parryT>0?P.parryT/.45*1.6:P.blockHit>0?P.blockHit/.4*.5:0;m.blade.emissive.setRGB((P.buff>0?.9:0)+f,(P.buff>0?.5:0)+f,f)}
-  m.g.visible=!(P.inv>0&&!P.dodge&&!P.skill&&!P.down&&!P.block&&P.stag<=0&&P.buff<=0&&Math.floor(t*14)%2===0);
+  m.g.visible=!(P.inv>0&&!P.dodge&&!P.skill&&!P.finA&&!P.down&&!P.block&&P.stag<=0&&P.buff<=0&&Math.floor(t*14)%2===0);
 }
 
 // ---------- 붉은 레이저: 원거리 공격의 방향 예고 ----------
@@ -1285,7 +1369,7 @@ function mobRay(ox,oy,oz,dx,dy,dz,maxT,minT=0){
 function hitMob(m,dmg,quiet){
   if(m.state==='dead')return;
   dmg=Math.round(dmg*P.atk);m.hp-=dmg;m.flash=1;num(m.x,m.D.hy+1,m.z,dmg,false);burst(m.x,m.D.hy,m.z,6,0xfff2d0,5,4);if(!quiet)sfx.hit(false);
-  if(m.hp<=0){m.state='dead';m.t=0;m.lz.visible=false;burst(m.x,m.D.hy,m.z,14,B.h.accent,7,6,1.2);addCharge(.33);G.mobKills=(G.mobKills||0)+1;if(G.tut)G.tut.kills++;logEv('쫄몹 처치',m.D.name)}
+  if(m.hp<=0){m.state='dead';m.t=0;m.lz.visible=false;burst(m.x,m.D.hy,m.z,14,B.h.accent,7,6,1.2);addCharge(.33);addFin(5);G.mobKills=(G.mobKills||0)+1;if(G.tut)G.tut.kills++;logEv('쫄몹 처치',m.D.name)}
   else if(m.state!=='spawn')mobStun(m,.35);
 }
 function mobStun(m,t){m.stun=Math.max(m.stun,t);if(m.state==='aim'||m.state==='wind'){m.state='move';m.t=0;m.cd=1;m.lz.visible=false}}
@@ -1368,7 +1452,7 @@ function landGadget(o){
     burst(x,1.2,z,34,0xffffff,14,9,1.4,.3);flash.position.set(x,2.5,z);flash.intensity=9;G.shake=Math.max(G.shake,.35);sfx.pop();
     for(const m of G.mobs)if(m.state!=='dead'&&Math.hypot(m.x-x,m.z-z)<10)mobStun(m,4);
     if(B.state!=='dead'){const hp=beastParts()[0],dh=Math.hypot(hp.x-x,hp.z-z),db=Math.hypot(B.x-x,B.z-z),front=Math.abs(wrapA(Math.atan2(x-B.x,z-B.z)-B.hd))<1.3;
-      if(dh<9&&front&&!['topple','stun','flinch','enrage'].includes(B.state)){B.stg=Math.min(B.stgMax-1,B.stg+15);setState('flinch');B.dur=2;say('섬광 명중','거수 짧은 경직');if(G.tut)G.tut.atkOn=false}
+      if(dh<9&&front&&!['topple','stun','flinch','enrage'].includes(B.state)){B.stg=Math.min(B.stgMax-1,B.stg+15);setState('flinch');B.soft=true;B.dur=1.6;say('섬광 명중','공격 취소. 짧은 틈');if(G.tut)G.tut.atkOn=false}
       else if(db<13){addStagger(10);say('섬광 빗나감','얼굴 앞에서 터져야 경직')}}
   }else placeDecoy(x,z);
 }
@@ -1414,35 +1498,43 @@ function clearField(){
 const TRAIN=Object.assign({},HUNTS[0],{name:'목각 거수',place:'훈련장',tele:true,body:0x8a6a44,belly:0xc9a877,accent:0x5a4228,eye:0xffe27a});
 const TRAIN_STEPS=[
  {t:'이동과 시점',d:'<kbd>W A S D</kbd>로 이동, 마우스로 시점 회전. 화면을 클릭하면 마우스가 잠겨 끝없이 회전(<kbd>Esc</kbd>로 해제). 조금 걸어 보기',ok:T=>T.move>10},
- {t:'사격',d:'<kbd>좌클릭</kbd>으로 목각 거수의 <b>머리</b> 맞히기. 조준점 옆에 지금 겨눈 부위 이름 표시. 몸통은 단단해서 피해 절반. 쏜 직후에는 잠깐 몸이 묶이는 구조',ok:T=>T.shots.head},
- {t:'정밀 조준과 약점',d:'<kbd>우클릭</kbd>을 누르고 있으면 조준점이 줄어들다 노란색으로 고정. 가슴 아래 <b>하늘색 약점</b> 맞히기. 정면 아래쪽에서만 보이는 위치',ok:T=>T.shots.core},
- {t:'무기 교체와 재장전',d:'<kbd>2</kbd> 또는 휠로 산탄총. 가까울수록 강한 총. 바짝 붙어 <b>다리</b> 맞히기. 탄은 무제한, 탄창이 비면 자동 장전, <kbd>R</kbd>로 직접 장전',ok:T=>P.w===1&&T.shots.legs},
- {t:'구르기',d:'바닥의 붉은 범위가 다 차오르면 공격. <kbd>Space</kbd> 구르기의 짧은 무적으로 할퀴기 피하기. 쏜 직후와 장전 중에는 구르기 불가',atk:'clawL',need:'dodge',retry:'범위가 거의 다 찼을 때 Space'},
+ {t:'사격',d:'<kbd>좌클릭</kbd>으로 목각 거수의 <b>머리</b> 맞히기. 조준점 옆에 지금 겨눈 부위 이름 표시. 몸통은 단단해서 피해 절반. 쏜 직후에는 잠깐 몸이 묶이는 구조',init:()=>{G.in.swap=0},ok:T=>T.shots.head},
+ {t:'약점은 열릴 때만',d:'약점은 평소에 닫혀 있고 <b>하늘색으로 빛나는 동안</b>에만 큰 피해. 실전에서는 거수가 특정 동작을 할 때만 노출. 화면 위에 <b>약점 노출</b> 표시가 뜬 동안 가슴 아래의 빛 맞히기. <kbd>우클릭</kbd> 정밀 조준 권장',init:T=>{T.coreCyc=true},ok:T=>T.shots.core},
+ {t:'단발 사냥총: 저지',d:'단발 사냥총의 역할은 공격 끊기. <kbd>우클릭</kbd>을 누르고 있어 조준점이 <b>노랗게 고정</b>된 상태로, 공격을 준비하는 부위에 맺힌 빛을 쏘면 공격 취소. 물어뜯기를 준비하는 주둥이의 빛 맞히기',init:()=>{G.in.swap=0},atk:'bite',need:'cue',retry:'우클릭을 미리 누르고 있다가 주둥이에 맺힌 빛을 사격'},
+ {t:'산탄총: 밀어붙이기',d:'<kbd>2</kbd> 또는 휠로 산탄총. 붙을수록 강하고, 코앞에서 맞히면 거수를 밀어내며 경직 게이지 누적. <b>구르기를 하면 한 발 자동 장전</b>. 바짝 붙어 <b>다리</b> 맞히기',ok:T=>P.w===1&&T.shots.legs},
+ {t:'연발 석궁: 표식 폭발',d:'<kbd>3</kbd>으로 연발 석궁. <kbd>좌클릭</kbd>을 누르고 있으면 연사, 움직이며 쏴도 정확. 맞힐 때마다 <b>표식</b>이 쌓여 여섯 개째에 폭발. 폭발 피해는 마지막 화살이 맞은 부위 기준. 4초 동안 못 맞히면 표식 소멸. 표식 폭발 한 번 일으키기',ok:T=>P.w===2&&T.bursts>0},
+ {t:'구르기',d:'바닥의 붉은 범위가 다 차오르면 공격. <kbd>Space</kbd> 구르기의 짧은 무적으로 할퀴기 피하기. 쏜 직후에는 구르기 불가',atk:'clawL',need:'dodge',retry:'범위가 거의 다 찼을 때 Space'},
  {t:'막기',d:'<kbd>Shift</kbd>를 누르고 있으면 대검으로 막기. 기력을 쓰고 피해는 조금만 받는 방어. 물어뜯기 막아 보기',atk:'bite',need:'block',retry:'공격 전에 Shift를 미리 누르고 유지'},
- {t:'완벽한 막기',d:'공격할 부위에 맺힌 빛이 <b>번쩍</b>하는 순간 <kbd>Shift</kbd>. 피해 없음, 거수의 경직 게이지 누적, 장비 스킬 대기시간 단축',atk:'bite',need:'parry',retry:'미리 누르지 말고 번쩍하는 순간에 Shift'},
+ {t:'완벽한 막기',d:'공격할 부위에 맺힌 빛이 <b>번쩍</b>하는 순간 <kbd>Shift</kbd>. 피해 없음, 거수의 경직 게이지 누적, 필살기 게이지와 장비 스킬 충전',atk:'bite',need:'parry',retry:'미리 누르지 말고 번쩍하는 순간에 Shift'},
  {t:'레이저와 엄폐',d:'붉은 <b>레이저</b>는 원거리 공격의 방향 예고. 바위 뒤에 서면 거수의 던지기와 쫄몹의 사격 차단. 거수와 나 사이에 바위가 오도록 숨기. 돌진과 덮치기에 맞은 바위는 파괴',atk:'throw',need:'cover',retry:'레이저가 바위에서 끊기는 위치로 이동'},
  {t:'쫄몹',d:'사냥 중 주기적으로 몰려드는 쫄몹. 한두 발이면 쓰러지는 상대. <b>들개</b>는 웅크렸다가 덮치고, <b>가시쏘개</b>는 레이저로 겨눈 뒤 사격. 레이저가 굵어지면 옆으로 이동. 둘 다 처치',init:()=>{spawnMob('biter');spawnMob('spit')},ok:T=>T.kills>=2},
- {t:'장비 스킬',d:'<kbd>F</kbd>와 <kbd>G</kbd>로 장비 스킬. 조준한 곳으로 던지거나 발사하고, 쓴 뒤에는 대기시간. 마을에서 네 가지 중 둘을 골라 장착. 두 개 모두 써 보기',init:()=>{P.gcd=[0,0]},ok:T=>T.g0&&T.g1&&!G.gps.length},
+ {t:'장비 스킬',d:'<kbd>F</kbd>와 <kbd>G</kbd>로 장비 스킬. 조준한 곳으로 던지거나 발사하고, 쓴 뒤에는 대기시간. 마을에서 둘을 골라 장착. 두 개 모두 써 보기',init:()=>{P.gcd=[0,0]},ok:T=>T.g0&&T.g1&&!G.gps.length},
+ {t:'필살기',d:'명중과 완벽한 막기로 차는 <b>필살기 게이지</b>(오른쪽 아래). 가득 찬 상태에서 거수가 지쳐 숨을 고르거나 쓰러졌을 때 <kbd>E</kbd>. 겨눈 부위에 큰 피해를 몰아넣고, 그동안 거수는 일어나지 못함. 쓰러진 목각 거수의 <b>열린 약점</b>을 겨누고 사용',init:()=>{P.fin=100},tick:T=>{if(!T.fin){P.fin=100;if(B.state==='chase'&&T.t>1.2)topple(6)}},ok:T=>T.fin&&!P.finA},
  {t:'물약',d:'<kbd>Q</kbd>로 물약. 마시는 동안 느려지므로 거수가 숨을 고르는 틈에 사용. 목숨은 하나, 쓰러지면 사냥 실패',init:()=>{P.hp=Math.min(P.hp,P.maxHp*.5);P.potions=Math.max(P.potions,1)},ok:()=>P.hp>P.maxHp*.8},
 ];
 const PRAC=[
  [{t:'바닥의 붉은 범위',d:'이 사냥터에서만 공격 범위가 바닥에 붉게 표시. 범위가 다 차오르는 순간이 공격. 덮치기의 붉은 원 밖으로 벗어나기',atk:'slam'},
-  {t:'빛이 맺히는 부위',d:'공격할 부위에 빛이 맺혀 커지다가 번쩍하면 공격 직전. 꼬리 끝의 빛은 꼬리 휘두르기. 구르거나 막거나 범위 밖으로 이탈',atk:'tail'}],
+  {t:'빛이 맺히는 부위',d:'공격할 부위에 빛이 맺혀 커지다가 번쩍하면 공격 직전. 꼬리 끝의 빛은 꼬리 휘두르기. 구르거나 막거나 범위 밖으로 이탈',atk:'tail'},
+  {t:'약점: 상체를 일으킬 때',d:'돌등이의 약점은 가슴 아래. 덮치기 직전에 몸을 일으키는 짧은 순간과 돌을 던지려 상체를 든 동안에만 노출. 던지기를 준비하는 동안 가슴의 <b>하늘색 빛</b> 맞히기',atk:'throw',need:'core',retry:'가슴 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
  [{t:'동작 읽기: 뿔 휘두르기',d:'여기서부터 붉은 범위 표시 없음. 고개를 옆으로 크게 젖히면 뿔 휘두르기. 앞쪽 넓은 범위라 뒤로 빠지거나 막기',atk:'sweep'},
-  {t:'동작 읽기: 돌진',d:'몸을 낮추고 앞발로 땅을 긁으면 돌진. 옆으로 구르기. 돌진에 맞은 엄폐 바위는 파괴',atk:'charge'}],
+  {t:'동작 읽기: 돌진',d:'몸을 낮추고 앞발로 땅을 긁으면 돌진. 옆으로 구르기. 돌진에 맞은 엄폐 바위는 파괴',atk:'charge'},
+  {t:'약점: 고개를 들 때',d:'서리뿔의 약점은 이마. 완벽한 막기 직후 3초, 그리고 낙하물과 던지기, 폭풍을 준비하며 고개를 든 동안에만 노출. 머리를 부수면 숨 고를 때마다 노출. 낙하물을 준비하는 동안 이마의 <b>하늘색 빛</b> 맞히기',atk:'volley',need:'core',retry:'이마 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
  [{t:'파란 눈: 구르기 불가',d:'눈이 파랗게 빛나고 파란 빛이 맺히면 1초 가까이 이어지는 공격. 구르기의 무적보다 길어서 구르기로는 회피 불가. <b>막기를 유지</b>하거나 범위 밖으로 멀리 이탈',atk:'roar',retry:'Shift를 누른 채 버티거나 멀리 이탈'},
-  {t:'꼬리 내리찍기',d:'꼬리를 머리 위로 말아 올리면 앞으로 길게 내리찍기. 직선 공격이라 옆으로 회피',atk:'lash'}],
+  {t:'꼬리 내리찍기',d:'꼬리를 머리 위로 말아 올리면 앞으로 길게 내리찍기. 직선 공격이라 옆으로 회피',atk:'lash'},
+  {t:'약점: 치켜든 꼬리',d:'가시꼬리의 약점은 꼬리 끝. 꼬리를 휘두르거나 내리찍으려고 치켜든 동안에만 노출. 꼬리를 자르면 잘린 자리에 상시 노출. 꼬리 내리찍기를 준비하는 동안 꼬리 끝의 <b>하늘색 빛</b> 맞히기',atk:'lash',need:'core',retry:'옆으로 비켜서서 치켜든 꼬리 끝을 사격'}],
  [{t:'엇박: 늦게 치는 공격',d:'빛이 한 번 줄었다가 다시 커지면 한 박자 늦게 치는 공격. 일찍 구르면 맞는 구조. 다시 커진 빛이 번쩍할 때 대응',atk:'tail~'},
   {t:'엇박: 빠르게 치는 공격',d:'주황빛이 크게 맺히면 평소보다 빠른 공격. 보자마자 대응',atk:'clawL!'},
-  {t:'불 숨결',d:'고개를 뒤로 젖히고 입에 불씨가 모이면 불 숨결. 정면으로 긴 부채꼴이라 옆구리나 뒤로 이동',atk:'breath'}],
+  {t:'불 숨결',d:'고개를 뒤로 젖히고 입에 불씨가 모이면 불 숨결. 정면으로 긴 부채꼴이라 옆구리나 뒤로 이동',atk:'breath'},
+  {t:'약점: 상체를 일으킬 때',d:'잿불 날개의 약점은 가슴 아래. 포효, 폭풍, 발 구르기, 덮치기 직전처럼 상체를 일으키는 동작에서만 노출. 포효를 준비하는 동안 가슴의 <b>하늘색 빛</b>을 맞히고 막기 유지',atk:'roar',need:'core',retry:'빛이 켜지면 바로 쏘고 Shift로 막기'}],
  [{t:'섞어 쓰는 공격: 늦은 할퀴기',d:'지금까지의 기믹을 모두 섞어 쓰는 마지막 거수. 먼저 한 박자 늦게 치는 할퀴기',atk:'clawR~'},
   {t:'섞어 쓰는 공격: 포효',d:'파란 눈의 포효. 구르기 불가, 막기 유지 또는 이탈',atk:'roar'},
-  {t:'섞어 쓰는 공격: 빠른 뿔 휘두르기',d:'주황빛이 보이면 즉시 대응. 실전에서는 이 공격들이 다섯 번까지 연속',atk:'sweep!'}],
+  {t:'섞어 쓰는 공격: 빠른 뿔 휘두르기',d:'주황빛이 보이면 즉시 대응. 실전에서는 이 공격들이 다섯 번까지 연속',atk:'sweep!'},
+  {t:'약점: 고개를 들 때',d:'달그림자의 약점은 이마. 완벽한 막기 직후 3초, 숨결과 포효, 폭풍, 낙하물을 준비하며 고개를 든 동안에만 노출. 숨결을 준비하는 동안 옆으로 비켜서서 이마의 <b>하늘색 빛</b> 맞히기',atk:'breath',need:'core',retry:'정면을 피해 옆에서 이마를 사격'}],
 ];
 function tutStart(kind){G.tut={kind,steps:kind==='train'?TRAIN_STEPS:PRAC[G.hunt],i:-1,fails:0};$('#tut').hidden=false;tutNext()}
 function tutNext(){const T=G.tut;T.i++;T.fails=0;if(T.i>=T.steps.length)return tutDone();tutBegin()}
 function tutBegin(){
-  const T=G.tut,s=T.steps[T.i];Object.assign(T,{t:0,ph:0,wt:0,hits:0,blocks:0,parries:0,dodged:false,covered:false,kills:0,g0:0,g1:0,shots:{},want:null,atkOn:false,move:0,doneT:0});
+  const T=G.tut,s=T.steps[T.i];Object.assign(T,{t:0,ph:0,wt:0,hits:0,blocks:0,parries:0,dodged:false,covered:false,kills:0,g0:0,g1:0,fin:0,cued:0,bursts:0,coreCyc:false,shots:{},want:null,atkOn:false,move:0,doneT:0});
   $('#tutN').textContent=(T.kind==='train'?'훈련 ':'기믹 연습 ')+(T.i+1)+' / '+T.steps.length;$('#tutT').textContent=s.t;
   $('#tutD').innerHTML=s.d+(T.fails?`<br><span class="re">다시 한 번. ${s.retry||'동작을 끝까지 보고 대응'}</span>`:'');
   logEv('연습 단계',s.t+(T.fails?' 재시도 '+T.fails:''));if(s.init)s.init(T);
@@ -1451,13 +1543,13 @@ function tutPass(msg){const T=G.tut;T.doneT=1.2;sfx.buy();say(msg||'좋음',T.i<
 function tutUpd(dt){
   const T=G.tut,s=T.steps[T.i];T.t+=dt;if(P.dodge)T.dodged=true;T.move+=Math.hypot(P.vx,P.vz)*dt;
   if(T.doneT>0){T.doneT-=dt;if(T.doneT<=0)tutNext();return}
-  if(!s.atk){if(s.ok(T))tutPass();return}
+  if(!s.atk){if(s.tick)s.tick(T);if(s.ok(T))tutPass();return}
   if(T.ph===0){if(T.t>(T.fails?1.8:2.8)&&B.state==='chase'){T.ph=1;T.want=s.atk;T.wt=0}}
   else if(T.ph===1){T.wt+=dt;if(!T.want)T.ph=2}
   else if(['rest','chase','flinch'].includes(B.state)&&!G.shots.length&&!G.hazards.length){
     let ok=T.hits===0;const n=s.need;
-    if(n==='dodge')ok=ok&&T.dodged;else if(n==='block')ok=ok&&T.blocks+T.parries>0;else if(n==='parry')ok=T.parries>0;else if(n==='cover')ok=ok&&T.covered;
-    if(ok)tutPass(n==='parry'?'완벽한 막기':n==='cover'?'엄폐 성공':'좋음');
+    if(n==='dodge')ok=ok&&T.dodged;else if(n==='block')ok=ok&&T.blocks+T.parries>0;else if(n==='parry')ok=T.parries>0;else if(n==='cover')ok=ok&&T.covered;else if(n==='cue')ok=!!T.cued;else if(n==='core')ok=!!T.shots.core;
+    if(ok)tutPass(n==='parry'?'완벽한 막기':n==='cover'?'엄폐 성공':n==='cue'?'저지':n==='core'?'약점 명중':'좋음');
     else if(++T.fails>=3){T.doneT=1.4;say('다음으로','실전에서 다시 익히기')}
     else tutBegin();
   }
@@ -1484,8 +1576,8 @@ function update(dt){
   if(G.state!=='hunt')return;
   updMobs(bdt);updGadgets(dt);
   if(G.state!=='hunt')return;
-  animBeast(bdt);updSpheres();updCue();updShots(bdt);animHero(dt);updParts(dt);
-  B.m.core.scale.setScalar(1+.15*Math.sin(G.time*8));B.m.coreHalo.scale.setScalar(1+.3*Math.sin(G.time*8));
+  animBeast(bdt);updCore(bdt);updSpheres();updCue();updShots(bdt);animHero(dt);updParts(dt);
+  
   if(embers){const a=embers.geometry.attributes.position;for(let i=0;i<a.count;i++){let y=a.getY(i)+dt*(1.5+i%3);if(y>26)y=0;a.setY(i,y)}a.needsUpdate=true}
   if(B.state==='dead'){G.winT+=dt/G.slow;if(G.winT>1.2)G.slow=lerp(G.slow,1,.05);if(G.winT>3.6)return winHunt()}
   updCamera(dt/G.slow);
@@ -1518,91 +1610,90 @@ function updCamera(rdt){
   camera.lookAt(cx+fx*30,cy+fy*30,cz+fz*30);
   const fov=G.fov0*lerp(1,.72,G.adsK);if(Math.abs(camera.fov-fov)>.01){camera.fov=fov;camera.updateProjectionMatrix()}
 }
-// ---------- 저장, 재료, 제작 ----------
-const SAVE_KEY='gv-save1';
-const newSave=()=>({mats:{},items:[],cleared:0,devOpen:true,hunts:0,best:null,gad:['rocket','flash'],trained:false,prac:{}});
+// ---------- 저장과 보상: 재료 모으기 없이, 거수를 처음 잡을 때마다 보상 하나 선택 ----------
+const SAVE_KEY='gv-save2';
+const newSave=()=>({v:2,cleared:0,hunts:0,best:null,devOpen:true,weps:[],gads:['rocket','flash'],gad:['rocket','flash'],perks:[],lastW:0,reward:null,trained:false,prac:{}});
 let S=newSave();
-function loadSave(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(d&&d.mats)Object.assign(S,d)}catch(e){}
+function loadSave(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(d&&d.v===2)Object.assign(S,d)}catch(e){}
+  for(const k of['weps','gads','perks'])if(!Array.isArray(S[k]))S[k]=newSave()[k];
   if(!Array.isArray(S.gad)||S.gad.length!==2||!S.gad.every(g=>GADM[g]))S.gad=['rocket','flash'];S.prac=S.prac||{}}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
-const MAT_PART={hide:'가죽',head:'뿔',tail:'꼬리',legs:'발톱'};
-const matName=k=>{const[id,pt]=k.split('_');return HUNTS.find(h=>h.id===id).name+' '+MAT_PART[pt]};
-const CHARMS=[
- {name:'돌꼬리 물약띠',desc:'사냥마다 물약 2개 추가',apply:p=>p.potMax+=2},
- {name:'서리꼬리 장화끈',desc:'기력 회복 40% 증가, 구르기 소모 감소',apply:p=>{p.stRegen*=1.4;p.dodgeCost-=5}},
- {name:'가시꼬리 날받이',desc:'막기 기력 소모 30% 감소, 완벽한 막기 판정 0.05초 증가',apply:p=>{p.guardCost*=.7;p.parryWin+=.05}},
- {name:'잿불꼬리 화약통',desc:'장비 스킬 대기시간 20% 감소, 장비 스킬 피해 25% 증가',apply:p=>{p.gadCdMul*=.8;p.skillMul*=1.25}},
- {name:'달그림자 부적',desc:'공격력 15% 증가, 최대 체력 20 증가',apply:p=>{p.atk*=1.15;p.maxHp+=20}},
-];
-const ITEMS=[];
-HUNTS.forEach((h,i)=>{
-  ITEMS.push({id:'w'+i,tier:i,type:'weapon',name:h.name+' 사냥총',desc:`공격력 ${20*(i+1)}% 증가 (가장 좋은 사냥총 하나만 적용)`,cost:{[h.id+'_hide']:2,[h.id+'_head']:1}});
-  ITEMS.push({id:'a'+i,tier:i,type:'armor',name:h.name+' 갑옷',desc:`최대 체력 ${30*(i+1)} 증가 (가장 좋은 갑옷 하나만 적용)`,cost:{[h.id+'_hide']:2,[h.id+'_legs']:1}});
-  ITEMS.push({id:'c'+i,tier:i,type:'charm',name:CHARMS[i].name,desc:CHARMS[i].desc,apply:CHARMS[i].apply,cost:{[h.id+'_hide']:1,[h.id+'_tail']:1}});
-});
+const ownW=i=>!!WEP[i]&&(S.devOpen||!!(G.tut&&G.tut.kind==='train')||S.weps.includes(WEP[i].id));
+const ownG=id=>S.devOpen||S.gads.includes(id);
+const nextW=d=>{for(let k=1;k<=WEP.length;k++){const i=(P.w+d*k+WEP.length*8)%WEP.length;if(ownW(i))return i}return P.w};
 function recalc(){
-  resetHero();let w=-1,a=-1;
-  for(const id of S.items){const it=ITEMS.find(x=>x.id===id);if(!it)continue;if(it.type==='weapon')w=Math.max(w,it.tier);else if(it.type==='armor')a=Math.max(a,it.tier);else it.apply(P)}
-  P.atk*=1+.2*(w+1);P.maxHp+=30*(a+1);
-  // 점진적 성장: 사냥 성공마다 체력, 새 거수 첫 토벌마다 물약
+  resetHero();for(const id of S.perks){const p=PERKS.find(x=>x.id===id);if(p)p.apply(P)}
+  // 토벌한 거수 수만큼의 기본 성장
   const g=growth();P.maxHp+=g.hp;P.potMax+=g.pot;
 }
-const growth=()=>({hp:Math.min(S.hunts||0,10)*10,pot:Math.min(S.cleared||0,5)});
-const canCraft=it=>!S.items.includes(it.id)&&Object.keys(it.cost).every(k=>(S.mats[k]||0)>=it.cost[k]);
-function craft(id){
-  const it=ITEMS.find(x=>x.id===id);if(!it||!canCraft(it))return false;
-  for(const k in it.cost)S.mats[k]-=it.cost[k];
-  S.items.push(id);save();recalc();sfx.buy();renderTown();return true;
+const growth=()=>({hp:Math.min(S.cleared||0,5)*20,pot:Math.min(S.cleared||0,5)});
+function rewardOptions(){
+  const o=[],pick=a=>a.splice(Math.floor(Math.random()*a.length),1)[0];
+  const w=WEP.filter(w=>!S.weps.includes(w.id)),g=GAD.filter(g=>!S.gads.includes(g.id)),p=PERKS.filter(p=>!S.perks.includes(p.id));
+  if(w.length){const x=pick(w);o.push({kind:'w',id:x.id,name:x.name,tag:'새 무기',desc:x.desc})}
+  if(g.length){const x=pick(g);o.push({kind:'g',id:x.id,name:x.name,tag:'새 장비 스킬',desc:x.desc})}
+  while(o.length<3&&p.length){const x=pick(p);o.push({kind:'p',id:x.id,name:x.name,tag:'강화',desc:x.desc})}
+  return o;
+}
+function takeReward(o){
+  if(o.kind==='w'){if(!S.weps.includes(o.id))S.weps.push(o.id);if(S.weps.length===1)S.lastW=WEP.findIndex(w=>w.id===o.id)}
+  else if(o.kind==='g'){if(!S.gads.includes(o.id))S.gads.push(o.id)}else if(!S.perks.includes(o.id))S.perks.push(o.id);
+  S.reward=null;save();recalc();sfx.buy();
+}
+function renderPick(){
+  const box=$('#cUps'),R=S.reward;box.innerHTML='';$('#cPickT').hidden=!R;$('#bNext').hidden=!!R;
+  if(R)R.forEach(o=>{const b=document.createElement('button');b.type='button';b.className='up';
+    b.innerHTML=`<b>${o.name}</b><small>${o.desc}</small><span class="tag">${o.tag}</span>`;
+    b.addEventListener('click',()=>{takeReward(o);goTown()});box.appendChild(b)});
 }
 
-// ---------- 흐름: 타이틀 → 마을 → 사냥 → 결과 → 마을 ----------
+// ---------- 흐름: 타이틀 → 마을 → 사냥 → 보상 선택 → 마을 ----------
 function winHunt(){
-  const h=hunt(),drops={[h.id+'_hide']:3},g0=growth();
-  for(const pt of['head','tail','legs'])if(B.broken[pt])drops[h.id+'_'+pt]=1;
-  for(const k in drops)S.mats[k]=(S.mats[k]||0)+drops[k];
+  const h=hunt(),g0=growth();
   const first=S.cleared<=G.hunt;S.cleared=Math.max(S.cleared,G.hunt+1);S.hunts++;
   const last=G.hunt===HUNTS.length-1;
   if(last&&(!S.best||G.huntT<S.best))S.best=G.huntT;
+  if(first&&!last)S.reward=rewardOptions();
   save();
   const g1=growth(),up=[];if(g1.hp>g0.hp)up.push(`최대 체력 +${g1.hp-g0.hp}`);if(g1.pot>g0.pot)up.push(`물약 +${g1.pot-g0.pot}`);
   G.state='camp';$('#hudAll').hidden=true;clearField();
   if(first&&last)return ending();
   $('#cTitle').textContent=`${h.name} 토벌`;
-  $('#cText').textContent=`${h.place}의 거수가 쓰러진 자리에서 재료를 갈무리하는 시간. 부순 부위마다 다른 재료 획득.${up.length?' 사냥 경험으로 '+up.join(', ')+'.':''}`;
+  $('#cText').textContent=`${h.place}의 거수가 쓰러진 자리.${up.length?' 사냥 경험으로 '+up.join(', ')+'.':''}${first?' 전리품 가운데 하나만 골라 다음 사냥터로.':' 이미 토벌한 거수라 추가 보상 없음.'}`;
   $('#cStats').innerHTML=`<div><b>${fmt(G.huntT)}</b><span>사냥 시간</span></div><div><b>${G.huntBreaks}</b><span>부위 파괴</span></div><div><b>${P.potions}</b><span>남은 물약</span></div>`;
-  $('#cUps').innerHTML=Object.keys(drops).map(k=>`<span class="mat">${matName(k)} <b>×${drops[k]}</b></span>`).join('');
-  const miss=['head','tail','legs'].filter(pt=>!B.broken[pt]).map(pt=>MAT_PART[pt]);
-  $('#cMiss').textContent=miss.length?`놓친 재료: ${miss.join(', ')} (해당 부위를 부숴야 획득)`:'모든 부위 재료 획득';
-  show('#sCamp');
+  renderPick();show('#sCamp');
 }
 function goTown(){
-  backdrop();recalc();G.state='town';$('#hudAll').hidden=true;renderTown();show('#sTown');
+  backdrop();recalc();$('#hudAll').hidden=true;
+  // 첫 무기 선택, 또는 아직 고르지 않은 보상
+  if(!S.weps.length&&!S.reward)S.reward=WEP.map(w=>({kind:'w',id:w.id,name:w.name,tag:'무기',desc:w.desc}));
+  if(S.reward){G.state='camp';
+    if(!S.weps.length){$('#cTitle').textContent='첫 무기 선택';$('#cText').textContent='싸우는 방식이 서로 다른 세 무기. 나머지는 거수를 잡은 뒤 보상으로 획득 가능.';$('#cStats').innerHTML=''}
+    else if($('#cTitle').textContent==='첫 무기 선택'||!$('#cTitle').textContent){$('#cTitle').textContent='보상 선택';$('#cText').textContent='지난 사냥의 전리품 가운데 하나.';$('#cStats').innerHTML=''}
+    renderPick();show('#sCamp');return}
+  for(let i=0;i<2;i++)if(!ownG(S.gad[i]))S.gad[i]=S.gads.find(g=>!S.gad.includes(g))||S.gad[i];
+  G.state='town';renderTown();show('#sTown');
 }
 function renderTown(){
   $('#devOpen').checked=!!S.devOpen;
   const hb=$('#tHunts');hb.innerHTML='';
   HUNTS.forEach((h,i)=>{
-    const locked=i>S.cleared&&!S.devOpen,done=i<S.cleared;
-    const b=document.createElement('button');b.type='button';b.className='up';b.disabled=locked;
-    b.innerHTML=`<b>${i+1}단계 · ${h.name}</b><small>${h.place}</small><span class="tag">${locked?'잠김':done?'토벌 완료 · 재도전':'도전'}</span>`;
+    const next=i===S.cleared,done=i<S.cleared,locked=i>S.cleared&&!S.devOpen;
+    const b=document.createElement('button');b.type='button';b.className='up'+(next?' on':'');b.disabled=locked;
+    b.innerHTML=`<b>${i+1}단계 · ${h.name}</b><small>${h.place}</small><span class="tag">${locked?'잠김':done?'토벌 완료 · 재도전':next?'다음 사냥':'도전'}</span>`;
     b.addEventListener('click',()=>{G.hunt=i;showIntro()});hb.appendChild(b);
   });
-  const ib=$('#tItems');ib.innerHTML='';
-  ITEMS.forEach(it=>{
-    if(it.tier>S.cleared&&!S.devOpen)return;
-    const own=S.items.includes(it.id),ok=canCraft(it);
-    const cost=Object.keys(it.cost).map(k=>`${matName(k)} ${S.mats[k]||0}/${it.cost[k]}`).join(' · ');
-    const b=document.createElement('button');b.type='button';b.className='up'+(own?' on':'');b.disabled=!ok;
-    b.innerHTML=`<b>${it.name}</b><small>${it.desc}</small><small>${own?'':cost}</small><span class="tag">${own?'보유':ok?'제작':'재료 부족'}</span>`;
-    b.addEventListener('click',()=>craft(it.id));ib.appendChild(b);
-  });
+  if(!ownW(S.lastW))S.lastW=Math.max(0,WEP.findIndex((w,i)=>ownW(i)));
+  const wb=$('#tWeps');wb.innerHTML='';
+  WEP.forEach((w,i)=>{const own=ownW(i),on=own&&S.lastW===i,b=document.createElement('button');b.type='button';b.className='up'+(on?' on':'');b.disabled=!own;
+    b.innerHTML=`<b>${i+1} · ${w.name}</b><small>${w.desc}</small><small>필살기: ${FIN[w.id].name}</small><span class="tag">${!own?'미획득':on?'시작 무기':'보유'}</span>`;
+    b.addEventListener('click',()=>{S.lastW=i;save();sfx.buy();renderTown()});wb.appendChild(b)});
   const gb=$('#tGad');gb.innerHTML='';
-  GAD.forEach(g=>{const on=S.gad.includes(g.id),b=document.createElement('button');b.type='button';b.className='up'+(on?' on':'');
-    b.innerHTML=`<b>${g.name}</b><small>${g.desc}</small><small>대기시간 ${g.cd}초</small><span class="tag">${on?(S.gad[0]===g.id?'F 장착':'G 장착'):'교체'}</span>`;
+  GAD.forEach(g=>{const own=ownG(g.id),on=S.gad.includes(g.id),b=document.createElement('button');b.type='button';b.className='up'+(on?' on':'');b.disabled=!own;
+    b.innerHTML=`<b>${g.name}</b><small>${g.desc}</small><small>대기시간 ${g.cd}초</small><span class="tag">${!own?'미획득':on?(S.gad[0]===g.id?'F 장착':'G 장착'):'교체'}</span>`;
     b.addEventListener('click',()=>{if(on)return;S.gad=[S.gad[1],g.id];save();sfx.buy();renderTown()});gb.appendChild(b)});
-  const keys=Object.keys(S.mats).filter(k=>S.mats[k]>0);
-  $('#tMats').innerHTML=keys.length?keys.map(k=>`<span class="mat">${matName(k)} <b>×${S.mats[k]}</b></span>`).join(''):'<span class="best">아직 재료 없음. 의뢰 게시판에서 사냥 선택</span>';
-  {const g=growth();$('#tStat').textContent=`공격력 ${Math.round(P.atk*100)}% · 최대 체력 ${P.maxHp} · 물약 ${P.potMax}개 · 사냥 경험: 체력 +${g.hp}/100, 물약 +${g.pot}/5`}
+  $('#tPerks').innerHTML=S.perks.length?S.perks.map(id=>{const p=PERKS.find(x=>x.id===id);return p?`<span class="perk"><b>${p.name}</b> ${p.desc}</span>`:''}).join(''):'<span class="best">아직 없음. 거수를 처음 잡을 때마다 보상 하나 선택</span>';
+  {const g=growth();$('#tStat').textContent=`토벌 ${S.cleared} / ${HUNTS.length} · 무기 피해 ${Math.round(P.atk*100)}% · 최대 체력 ${P.maxHp} · 물약 ${P.potMax}개 (토벌 성장: 체력 +${g.hp}, 물약 +${g.pot})`}
 }
 function showIntro(){
   const h=hunt();G.state='intro';$('#hudAll').hidden=true;recalc();
@@ -1612,11 +1703,11 @@ function showIntro(){
   show('#sIntro');
 }
 function failHunt(){clearField();G.state='fail';$('#hudAll').hidden=true;$('#fade').style.opacity=0;$('#fTitle').textContent=`${hunt().name}에게 패배`;show('#sFail')}
-function newGame(n=0){S=newSave();save();Object.assign(G,{hunt:n,totalT:0,faints:0,breaks:0,parries:0,records:[]});goTown()}
+function newGame(n=0){S=newSave();save();$('#cTitle').textContent='';Object.assign(G,{hunt:n,totalT:0,faints:0,breaks:0,parries:0,records:[]});goTown()}
 function ending(){
   G.state='end';
   $('#eRank').textContent=`마지막 사냥 ${fmt(G.huntT)}`;
-  $('#eStats').innerHTML=`<div><b>${S.hunts}</b><span>총 사냥 횟수</span></div><div><b>${S.items.length}</b><span>만든 장비</span></div><div><b>${G.parries}</b><span>완벽한 막기</span></div>`;
+  $('#eStats').innerHTML=`<div><b>${S.hunts}</b><span>총 사냥 횟수</span></div><div><b>${S.perks.length+S.weps.length+S.gads.length-3}</b><span>고른 보상</span></div><div><b>${G.parries}</b><span>완벽한 막기</span></div>`;
   $('#eBest').textContent=S.best?`달그림자 최단 기록: ${fmt(S.best)}`:'';sfx.win();show('#sEnd');
 }
 function backdrop(){
@@ -1627,7 +1718,7 @@ function backdrop(){
 }
 function toTitle(){
   backdrop();G.state='title';$('#hudAll').hidden=true;
-  const bt=$('#bestT');if(S.cleared||S.items.length){bt.hidden=false;bt.textContent=`이어하기: ${S.cleared}단계까지 토벌, 장비 ${S.items.length}개 보유`}else bt.hidden=true;
+  const bt=$('#bestT');if(S.cleared||S.weps.length){bt.hidden=false;bt.textContent=`이어하기: ${S.cleared}단계까지 토벌`}else bt.hidden=true;
   show('#sTitle');
 }
 function show(id){for(const s of document.querySelectorAll('.overlay'))s.hidden=true;if(id){$(id).hidden=false;if(document.pointerLockElement)document.exitPointerLock();hold.lmb=hold.rmb=hold.fire=false}document.body.classList.toggle('aiming',!id&&G.state==='hunt')}
@@ -1651,6 +1742,10 @@ function hud(){
   const hv=$('#hurt');if(hv.style.opacity>0)hv.style.opacity=Math.max(0,hv.style.opacity-.04);
   setT('am','#ammoN',String(P.ammo));setT('rs','#resN',P.reload>0?'∞ 장전 중':P.ammo<=0&&P.noAuto?'∞ · R로 장전':'∞');$('#ammoN').className=P.ammo===0?'rl':'';
   $('#aFire .cd').style.transform=`scaleY(${P.ammo<=0?1:Math.max(0,P.fireCd/Math.max(WEP[P.w].cycle,.5))})`;setT('wp','#wepN',WEP[P.w].name);
+  {const rdy=P.fin>=100,go=rdy&&finOpen(),k=rdy+'|'+go,fb=$('#aFin');fb.querySelector('.fill').style.transform=`scaleY(${P.fin/100})`;
+   if(lastH.fin!==k){lastH.fin=k;fb.classList.toggle('ready',rdy);fb.classList.toggle('go',go);$('#xh').classList.toggle('fin',go)}}
+  {const mk=B.marks|0,on=!!WEP[P.w].mark||mk>0,k=on+'|'+mk;if(lastH.mk!==k){lastH.mk=k;const el=$('#marks');el.hidden=!on;el.textContent='표식 '+'●'.repeat(mk)+'○'.repeat(MARK.n-mk)}}
+  if(lastH.wk!==B.coreOpen){lastH.wk=B.coreOpen;$('#weakTag').hidden=!B.coreOpen}
   // 조준점
   const xh=$('#xh');let sx=G.aimX,sy=G.aimY;
   if(G.lock){const sp=lockSphere();if(sp){pv.set(sp.x,sp.y,sp.z).project(camera);if(pv.z<1){sx=pv.x;sy=pv.y}}}
@@ -1728,6 +1823,7 @@ addEventListener('keydown',e=>{
     else if(e.code==='KeyF'||e.code==='KeyJ')G.in.g1=true;
     else if(e.code==='KeyG'||e.code==='KeyK')G.in.g2=true;
     else if(e.code==='Enter')tutSkip();
+    else if(e.code==='KeyE'||e.code==='KeyV')G.in.fin=true;
     else if(e.code==='KeyQ')G.in.pot=true;
     else if(e.code==='KeyR')G.in.reload=true;
     else if(/^Digit[1-9]$/.test(e.code)){const i=+e.code.slice(5)-1;if(i<WEP.length)G.in.swap=i}
@@ -1740,9 +1836,9 @@ addEventListener('blur',()=>{for(const k in keys)keys[k]=false;hold.lmb=hold.rmb
 const hold={lmb:false,rmb:false,fire:false,touch:false};
 addEventListener('pointerup',e=>{if(e.pointerType==='mouse'){if(e.button===0)hold.lmb=false;if(e.button===2)hold.rmb=false}if(e.pointerId===hold.tid)hold.touch=false;if(e.pointerId===hold.fid)hold.fire=false;if(e.pointerId===camDrag.id)camDrag.id=null});
 function toggleLock(){G.lock=!G.lock;G.lockSet=true;if(!G.lock){G.pitch=clamp(G.pitch,-.2,.5)}}
-function cycleLock(d){if(!G.lock)return;G.lockIdx=(G.lockIdx+d+LOCKS.length)%LOCKS.length;if(LOCKS[G.lockIdx]==='core'&&B&&!B.m.core.visible)G.lockIdx=(G.lockIdx+d+LOCKS.length)%LOCKS.length}
+function cycleLock(d){if(!G.lock)return;G.lockIdx=(G.lockIdx+d+LOCKS.length)%LOCKS.length;if(LOCKS[G.lockIdx]==='core'&&B&&!B.coreOpen)G.lockIdx=(G.lockIdx+d+LOCKS.length)%LOCKS.length}
 const camDrag={id:null,x:0,y:0};
-addEventListener('wheel',e=>{if(G.state==='hunt'&&Math.abs(e.deltaY)>4)G.in.swap=(P.w+(e.deltaY>0?1:WEP.length-1))%WEP.length},{passive:true});
+addEventListener('wheel',e=>{if(G.state==='hunt'&&Math.abs(e.deltaY)>4)G.in.swap=nextW(e.deltaY>0?1:-1)},{passive:true});
 // 마우스 시점: 포인터 잠금이 되면 마우스 이동으로 회전, 안 되면 조준점이 커서를 따라가고 가장자리에서 회전
 document.addEventListener('pointerlockchange',()=>{const was=G.plock;G.plock=document.pointerLockElement===cvs;if(G.plock)G.noLock=false;if(was&&!G.plock&&G.state==='hunt')togglePause()});
 addEventListener('mousemove',e=>{
@@ -1771,7 +1867,7 @@ addEventListener('mousedown',e=>{if(e.target===cvs||document.pointerLockElement=
 addEventListener('mouseup',syncBtn);
 const tap=(sel,fn)=>$(sel).addEventListener('pointerdown',e=>{e.preventDefault();audio();fn()});
 $('#aBlock').addEventListener('pointerdown',e=>{e.preventDefault();audio();hold.touch=true;hold.tid=e.pointerId});$('#aBlock').addEventListener('pointercancel',()=>hold.touch=false);
-tap('#aDodge',()=>G.in.dodge=true);tap('#aSwap',()=>G.in.swap=(P.w+1)%WEP.length);tap('#aG1',()=>G.in.g1=true);tap('#aG2',()=>G.in.g2=true);tap('#aPot',()=>G.in.pot=true);
+tap('#aDodge',()=>G.in.dodge=true);tap('#aSwap',()=>G.in.swap=nextW(1));tap('#aFin',()=>G.in.fin=true);tap('#aG1',()=>G.in.g1=true);tap('#aG2',()=>G.in.g2=true);tap('#aPot',()=>G.in.pot=true);
 $('#aFire').addEventListener('pointerdown',e=>{e.preventDefault();audio();hold.fire=true;hold.fid=e.pointerId});$('#aFire').addEventListener('pointercancel',()=>hold.fire=false);
 // 마우스 민감도: 일시정지 화면의 설정에서 조절, 브라우저에 저장
 function setSens(v){G.sensMul=clamp(Math.round(v*10)/10,.2,3);for(const r of document.querySelectorAll('.sensR'))r.value=G.sensMul;for(const b of document.querySelectorAll('.sensV'))b.textContent=G.sensMul.toFixed(1);try{localStorage.setItem('gv-sens',G.sensMul)}catch(e){}}
@@ -1798,7 +1894,7 @@ let last=performance.now();
 function frame(now){const raw=(now-last)/1000,dt=Math.min(.05,raw);last=now;readKeys();update(dt);logTick(dt,raw);renderer.render(scene,camera);requestAnimationFrame(frame)}
 loadSave();recalc();toTitle();requestAnimationFrame(frame);
 
-window.__game={AR,spawnMob,useGadget,startTrain,tutSkip,GAD,logText,fire,aimPoint,lockSphere,LOCKS,TUNE,ATK,G,P,get B(){return B},get S(){return S},update,startHunt,newGame,showIntro,craft,goTown,ITEMS,inside,nearestPart,beastParts,HUNTS,
+window.__game={AR,cue,FIN,PERKS,WEP,finOpen,spawnMob,useGadget,startTrain,tutSkip,GAD,logText,fire,aimPoint,lockSphere,LOCKS,TUNE,ATK,G,P,get B(){return B},get S(){return S},update,startHunt,newGame,showIntro,goTown,inside,nearestPart,beastParts,HUNTS,
   simulate(sec){const st=1/60;for(let i=0;i<sec*60&&G.state==='hunt';i++)update(st)}};
 })();
 </script>
