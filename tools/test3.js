@@ -23,7 +23,7 @@ const WI=+(process.env.WI||0),mode=process.argv[2]||'rhythm',stages=(process.arg
     const gate={chest:'legs',brow:'head',tailtip:'tail'}[B.h.core],wantP=B.arm[gate]>0?gate:B.arm.head>0?'head':'head';let tsp=null,bd=1e9;for(const q of G.sph){if(q.part==='core'){tsp=q;break}if(q.part===wantP){const dd=Math.hypot(q.x-P.x,q.z-P.z);if(dd<bd){bd=dd;tsp=q}}}
     let mob=null,md=1e9;for(const m of G.mobs){if(m.state==='dead'||m.state==='spawn')continue;const d=Math.hypot(m.x-P.x,m.z-P.z);if(d<md){md=d;mob=m}}
     if(mob&&md>[32,9,26][WI])mob=null;
-    const left=B.state==='windup'?B.dur-B.stateT:9,cueOn=WI===0&&B.state==='windup'&&g.cue.m.visible&&left>.35&&!mob;
+    const left=B.state==='windup'?B.dur-B.stateT:9,cueOn=WI===0&&B.state==='windup'&&g.cue.on&&left>.35&&!mob;
     const jit=WI===0?.7:1.2;
     G.aimAt=mob?{x:mob.x+(Math.random()-.5)*.6,y:mob.D.hy+(Math.random()-.5)*.5,z:mob.z+(Math.random()-.5)*.6}
       :cueOn?{x:g.cue.m.position.x+(Math.random()-.5)*.8,y:g.cue.m.position.y+(Math.random()-.5)*.8,z:g.cue.m.position.z+(Math.random()-.5)*.8}
