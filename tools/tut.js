@@ -20,6 +20,8 @@ const {chromium}=require('playwright');const fs=require('fs');const path=require
      else if(s.t==='약점은 열릴 때만'){const c=aim('core');if(!c)aim('body');I.ads=true;I.fire=!!c&&!pf&&P.ammo>0&&P.fireCd<=0&&P.aimT>1.2}
      else if(s.t==='산탄총: 밀어붙이기'){I.swap=1;if(d>7){I.x=dx/d;I.z=dz/d}aim('legs');I.fire=!pf&&P.ammo>0&&P.fireCd<=0&&d<8&&P.w===1}
      else if(s.t==='연발 석궁: 표식 폭발'){I.swap=2;aim('head');I.fire=P.w===2;if(d>16){I.x=dx/d;I.z=dz/d}}
+     else if(s.t==='갑각'){aim('head');I.ads=true;I.fire=!pf&&P.ammo>0&&P.fireCd<=0&&P.aimT>.6}
+     else if(s.t==='체간과 결정타'){aim('head');I.fin=!!B.broke}
      else if(s.t==='필살기'){const c=aim('core');if(!c)aim('head');I.fin=g.finOpen()&&P.fin>=100}
      else if(s.atk){const left=B.dur-B.stateT;
        if(s.need==='block'){I.block=B.state==='windup'&&left<.5||B.state==='strike'}

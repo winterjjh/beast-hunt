@@ -10,17 +10,17 @@ const WI=+(process.env.WI||0),mode=process.argv[2]||'rhythm',stages=(process.arg
  await pg.goto('file://'+path.join(__dirname,FILE));
  await pg.waitForTimeout(500);
  for(const st of stages){
-  const res=await pg.evaluate(([st,mode,WI,NOMOB,NOGAD,NOFIN])=>{
+  const res=await pg.evaluate(([st,mode,WI,NOMOB,NOGAD,NOFIN,NOX])=>{
    const g=window.__game,{G,P,inside}=g,AR=g.AR;
-   g.newGame(st);g.S.hunts=st;g.S.cleared=st;g.S.weps=['rifle'];g.S.reward=null;g.S.perks=['atk','hp','fin','pot'].slice(0,st);g.S.lastW=WI;
+   g.newGame(st);g.S.hunts=st;g.S.cleared=st;g.S.weps=['rifle'];g.S.rq=[];g.S.perks=['atk','hp','fin','pot'].slice(0,st);g.S.mods=g.MODS.filter(m=>m.w===g.WEP[WI].id).slice(0,Math.min(st,3)).map(m=>m.id);g.S.lastW=WI;
    G.hunt=st;g.showIntro();g.startHunt();if(NOMOB)G.mobT=1e9;
-   const stat={fin:0,finDmg:0,dmgIn:0,st:{}};let lastHp=P.hp,lastB=0,wasFin=false;
+   const stat={fin:0,finDmg:0,dmgIn:0,ex:0,st:{}};const NOEXEC=NOX;let lastHp=P.hp,lastB=0,wasFin=false;
    G.botFn=(G,P,B,dt)=>{
     const I=G.in;I.block=false;I.dodge=false;I.pot=false;I.g1=I.g2=false;I.fin=false;I.reload=false;
     stat.st[B.state]=(stat.st[B.state]||0)+dt;if(P.hp<lastHp)stat.dmgIn+=lastHp-P.hp;lastHp=P.hp;
     if(P.finA&&!wasFin){stat.fin++;lastB=B.hp}if(!P.finA&&wasFin)stat.finDmg+=lastB-B.hp;wasFin=!!P.finA;
     const open=g.finOpen(),W=g.WEP[P.w];
-    let tsp=null;for(const q of G.sph){if(q.part==='core'){tsp=q;break}if(q.part==='head')tsp=q}
+    const gate={chest:'legs',brow:'head',tailtip:'tail'}[B.h.core],wantP=B.arm[gate]>0?gate:B.arm.head>0?'head':'head';let tsp=null,bd=1e9;for(const q of G.sph){if(q.part==='core'){tsp=q;break}if(q.part===wantP){const dd=Math.hypot(q.x-P.x,q.z-P.z);if(dd<bd){bd=dd;tsp=q}}}
     let mob=null,md=1e9;for(const m of G.mobs){if(m.state==='dead'||m.state==='spawn')continue;const d=Math.hypot(m.x-P.x,m.z-P.z);if(d<md){md=d;mob=m}}
     if(mob&&md>[32,9,26][WI])mob=null;
     const left=B.state==='windup'?B.dur-B.stateT:9,cueOn=WI===0&&B.state==='windup'&&g.cue.m.visible&&left>.35&&!mob;
@@ -44,7 +44,7 @@ const WI=+(process.env.WI||0),mode=process.argv[2]||'rhythm',stages=(process.arg
     if(mode==='lazy')fire=canShoot;
     I.fire=W.auto?fire:(fire&&!I.fire);
     if(P.ammo===0&&P.reload<=0)I.reload=true;
-    if(!NOFIN&&P.fin>=100&&open&&!P.finA&&B.dur-B.stateT>.2)I.fin=true;
+    if(B.broke&&B.state==='flinch'&&!P.finA&&!NOEXEC){I.fin=true;stat.ex++}else if(!NOFIN&&P.fin>=100&&open&&!P.finA&&B.dur-B.stateT>.2)I.fin=true;
     if(mode!=='lazy'){
      if(P.hp<P.maxHp*.45&&P.potions>0&&B.state!=='windup')I.pot=true;
      if(!NOGAD){if(P.gcd[0]<=0&&(mob||['rest','topple','stun','flinch'].includes(B.state)))I.g1=true;if(P.gcd[1]<=0&&B.state==='windup'&&d<14)I.g2=true}
@@ -62,8 +62,8 @@ const WI=+(process.env.WI||0),mode=process.argv[2]||'rhythm',stages=(process.arg
    let t=0;const T=600;
    while(t<T&&G.state==='hunt'){g.simulate(5);t+=5}
    const B=g.B;
-   return {st,w:g.WEP[WI].id,state:G.state,huntT:Math.round(G.huntT),hpPct:Math.round(B.hp/B.maxHp*100),breaks:G.huntBreaks,parries:G.parries,myHp:Math.round(P.hp)+'/'+P.maxHp,pots:P.potions,mobKills:G.mobKills,fin:stat.fin,finAvg:stat.fin?Math.round(stat.finDmg/stat.fin):0,dmgIn:Math.round(stat.dmgIn),states:Object.fromEntries(Object.entries(stat.st).map(([k,v])=>[k,Math.round(v)]))};
-  },[st,mode,WI,NOMOB,NOGAD,NOFIN]);
+   return {st,w:g.WEP[WI].id,state:G.state,huntT:Math.round(G.huntT),hpPct:Math.round(B.hp/B.maxHp*100),breaks:G.huntBreaks,parries:G.parries,myHp:Math.round(P.hp)+'/'+P.maxHp,pots:P.potions,mobKills:G.mobKills,fin:stat.fin,execs:G.execs,arm:Object.values(B.arm).filter(v=>v<=0).length,dmgIn:Math.round(stat.dmgIn),fl:Math.round(stat.st.flinch||0)};
+  },[st,mode,WI,NOMOB,NOGAD,NOFIN,process.env.NOEXEC==='1']);
   console.log(JSON.stringify(res));
  }
  console.log('errors:',errs.slice(0,5));
