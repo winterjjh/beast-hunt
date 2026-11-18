@@ -20,7 +20,7 @@ const ST=+(process.env.ST||0),OUT=process.env.OUT||'poses.png',MODE=process.env.
     // 사냥꾼 눈높이, 거수 정면에서 살짝 옆
     c.position.set(B.x+ux*D-uz*2.5,2.4,B.z+uz*D+ux*2.5);c.fov=52;c.aspect=640/440;c.updateProjectionMatrix();c.lookAt(B.x,2.6*s+B.y*.5,B.z);
     g.scene.traverse(o=>{});g.renderer.setSize(640,440,false);g.renderer.render(g.scene,c);
-    return {st:B.state,t:+B.stateT.toFixed(2),dur:+B.dur.toFixed(2),name:g.ATK[B.atk].n+(B.mod||''),img:document.querySelector('#c').toDataURL('image/jpeg',.85)}},[ST,raw,when]);
+    return {st:B.state,t:+B.stateT.toFixed(2),dur:+B.dur.toFixed(2),name:g.AT(B.mv||B.atk).n+(B.mod||''),img:document.querySelector('#c').toDataURL('image/jpeg',.85)}},[ST,raw,when]);
   shots.push({raw,when,info});
  }
  const lab={hold:'자세 잡은 뒤',peak:'공격 직전',relax:'힘을 푼 순간',mid:'중간'};

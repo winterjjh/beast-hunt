@@ -251,7 +251,7 @@ body.aiming #c{cursor:none}
     <div class="panel">
       <div class="eyebrow">골짜기의 새벽</div>
       <h2>다섯 거수 사냥 완료</h2>
-      <p>달그림자가 쓰러지자 폐허 위로 동이 트고, 골짜기 아래 마을까지 닿는 아침 햇살. 사냥꾼의 개머리판에 새겨진 다섯 줄의 흠집.</p>
+      <p>잿불 날개가 떨어지자 화구의 불길이 잦아들고, 골짜기 아래 마을까지 닿는 아침 햇살. 사냥꾼의 개머리판에 새겨진 다섯 줄의 흠집.</p>
       <div id="eRank" class="rank"></div>
       <div id="eStats" class="stats"></div>
       <p id="eBest" class="best"></p>
@@ -303,7 +303,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:2.2,speed:6.6,accel:46,d
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.075,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v28';
+const VER='v30';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -414,32 +414,64 @@ const GADM={};GAD.forEach(g=>GADM[g.id]=g);
 const MOB={biter:{name:'들개',hp:210,speed:5.2,dmg:6,r:.95,hy:.85},spit:{name:'가시쏘개',hp:125,speed:3.6,dmg:8,r:.95,hy:1.15}};
 const MOBCFG=[{max:2,first:20,every:40},{max:2,first:18,every:36},{max:2,first:16,every:34},{max:3,first:16,every:36},{max:3,first:14,every:34}];
 // ---------- 사냥 목록 ----------
+// 본편 다섯 단계: 뼈대(skel)마다 대표 거수 하나. atk은 공격 이름과 수치 덮어쓰기, motion은 모션 덮어쓰기, parts는 부위 이름
 const HUNTS=[
- {id:'stone',core:'chest',name:'돌등이',place:'바람 초원',hp:15000,size:1,dmg:1,speed:4.2,tele:true,wind:1.25,rest:[1.8,2.3],
+ {id:'stone',skel:'quad',core:'chest',name:'돌등이',place:'바람 초원',hp:15000,size:1,dmg:1,speed:4.2,tele:true,wind:1.25,rest:[1.8,2.3],
   sky:0xe8b480,ground:0x73914f,ground2:0x62803f,sun:0xffe9c4,amb:0x9a8a78,
   body:0x7d7667,belly:0xbcab8b,accent:0x56613f,eye:0xffd24a,
   combos:{base:[['clawL','clawR','bite'],['slam','tail','clawL'],['charge','slam'],['bite','tail','slam']],p2:[['charge','charge','slam'],['clawL','clawR','tail','bite'],['volley','slam','tail'],['slam','slam','tail']],p3:[['volley','charge','slam','bite'],['tail','clawL','clawR','slam'],['charge','tail','charge'],['throw','slam','slam','bite']]},
   text:'등에 바위 갑각을 두른 초원의 터줏대감. 이 사냥터에서만 공격 범위가 바닥에 붉게 표시되는 연습 상대.',
-  tips:['느리지만 묵직한 거수. 뛰어올라 덮치는 공격을 자주 쓰므로 그림자 밖으로 이탈','공격 종류는 준비 자세로 구분. 한쪽 앞발을 높이 들면 할퀴기, 낮게 웅크려 입을 벌리면 물어뜯기, 옆구리를 보이며 꼬리를 감으면 꼬리 휘두르기. 자세를 잡은 뒤 한 번 더 확 움츠리는 순간이 공격 직전','거수는 연속 공격 뒤 헐떡이며 휴식. 그때가 공격 기회','맞기 직전에 막으면 완벽한 막기. 장비 스킬 대기시간이 줄고 거수의 경직 게이지 누적']},
- {id:'frost',core:'brow',name:'서리뿔',place:'서리 분지',hp:19500,size:1.1,dmg:1.12,speed:4.8,wind:1.1,rest:[1.6,2.0],
+  tips:['느리지만 묵직한 거수. 뛰어올라 덮치는 공격을 자주 쓰므로 그림자 밖으로 이탈','공격 종류는 준비 자세로 구분. 한쪽 앞발을 높이 들면 할퀴기, 낮게 웅크려 입을 벌리면 물어뜯기, 옆구리를 보이며 꼬리를 감으면 꼬리 휘두르기. 자세를 잡은 뒤 한 번 더 확 움츠리는 순간이 공격 직전','거수는 연속 공격 뒤 헐떡이며 휴식. 그때가 공격 기회','맞기 직전에 막으면 완벽한 막기. 장비 스킬 대기시간이 줄고 거수의 경직 게이지 누적'],
+  atk:{tail:{n:'곤봉 꼬리 휘두르기'}},
+  motion:{wind:{tail:q=>({spin:-1.45*Math.min(1,q),tailSide:.42*q,tailAmp:.04,tailUp:.3*q,headY:-.85*q,rigZ:.2*q,rigX:.12*q,rigY:-.25*q})}}},
+ {id:'lantern',skel:'biped',env:'frost',core:'brow',coreKo:'등불',name:'등불아귀',place:'서리 해안',hp:19500,size:1.05,dmg:1.12,speed:4.8,wind:1.1,rest:[1.6,2.0],
+  sky:0xbfd6ea,ground:0x9db3c9,ground2:0x8aa1b9,sun:0xffffff,amb:0x9fb2c8,
+  body:0x4a3f6e,belly:0xd9a98f,accent:0xd9a23a,eye:0xfff2a0,glow:0x4a3204,fx:0xffd27a,
+  atk:{bite:{n:'아귀 물기',sh:{half:.7}},clawL:{n:'발차기'},clawR:{n:'발차기'},sweep:{n:'등불 휘두르기'},lash:{n:'등불 내려치기'},slam:{n:'뛰어 밟기'},volley:{n:'불씨 비'},nova:{n:'섬광'},throw:{n:'불씨 뱉기'}},
+  coreTip:'약점은 머리 위 등불. 머리 갑각을 깨야 열리기 시작. 완벽한 막기 직후 3초, 등불을 치켜드는 동작(불씨 뱉기, 불씨 비, 섬광), 쓰러지거나 경직된 동안에만 노출. 머리를 부수면 숨 고를 때마다 노출',
+  combos:{base:[['sweep','clawL','bite'],['charge','lash','sweep'],['volley','charge','bite','sweep'],['clawR','lash','charge']],p2:[['nova','charge','lash','sweep'],['sweep','sweep','bite'],['volley','nova','charge'],['slam','clawL','sweep','charge']],p3:[['charge','sweep','slam','volley','sweep'],['nova','lash','bite','charge'],['charge','charge','lash','sweep'],['volley','volley','nova','sweep']]},
+  text:'머리 위에 등대 불빛을 매단 두 발 거수. 여기서부터 붉은 범위 표시 없음. 준비 자세와 공격 순간을 눈으로 익혀야 하는 상대.',
+  tips:['등불 줄기를 옆 뒤로 길게 젖히면 등불 휘두르기. 앞쪽 넓은 범위라 뒤로 빠지거나 막기','등불 줄기를 수직으로 곧게 세우면 등불 내려치기. 앞으로 긴 직선이라 옆으로 회피','다리를 벌리고 낮게 엎드려 등불만 높이 세우면 섬광. 몸에 바짝 붙어야 안전','한 발을 높이 들면 발차기, 몸을 젖히며 입을 크게 벌리면 아귀 물기']},
+ {id:'molten',skel:'fore',env:'thorn',core:'chest',name:'쇳물곰',place:'쇳물 협곡',hp:24000,size:1.1,dmg:1.15,speed:4.6,rest:[1.4,1.8],
+  sky:0xe6c38f,ground:0xcfa96e,ground2:0xb98f58,sun:0xfff2d6,amb:0xa88a66,
+  body:0x8a3f30,belly:0x6a4a40,accent:0x4a4a52,eye:0xffc04a,fx:0xff8a2a,parts:{legs:'팔다리',tail:'용광로'},
+  atk:{clawL:{n:'후려치기'},clawR:{n:'후려치기'},bite:{n:'양팔 내려찍기',wind:.9,dmg:24,sh:{half:.75}},tail:{n:'회전 후려치기'},slam:{n:'몸통 덮치기'},breath:{n:'쇳물 쏟기'},stomp:{n:'땅 두드리기'},throw:{n:'쇳덩이 던지기'}},
+  coreTip:'약점은 가슴 아래 화구. 팔다리 갑각을 깨야 열리기 시작. 두 발로 일어서는 동작(쇳덩이 던지기, 포효, 땅 두드리기, 덮치기 직전)과 쓰러지거나 경직된 동안에만 하늘색으로 노출',
+  combos:{base:[['clawL','clawR','bite'],['roar','charge','bite'],['tail','clawL','breath'],['clawR','bite','tail','charge']],p2:[['throw','throw','charge','bite'],['roar','breath','tail'],['slam','clawL','clawR','bite'],['clawL','tail','breath','charge']],p3:[['stomp','breath','tail','charge'],['clawL','clawR','bite','tail','bite'],['throw','slam','roar','charge'],['clawR','breath','bite','stomp']]},
+  text:'등에 용광로를 지고 한 팔에 쇳물 국자를 단 거수. 두 발로 일어서는 동작이 많고, 구르기로는 피할 수 없는 길게 이어지는 공격을 처음 쓰는 상대.',
+  tips:['두 발로 서서 양팔을 머리 위로 치켜들면 양팔 내려찍기. 정면 부채꼴이라 옆이나 뒤로 이동','서서 국자 팔만 높이 들면 쇳물 쏟기. 정면으로 긴 부채꼴','눈이 파랗게 빛나면 구르기 불가 공격. 막거나 멀리 이탈','일어설 때마다 가슴 약점이 드러나는 거수. 포효와 땅 두드리기는 위험하지만 가장 큰 기회']},
+ {id:'rail',skel:'serpent',env:'night',core:'tailtip',name:'철길뱀',place:'달밤 폐선로',hp:30000,size:1.1,dmg:1.32,speed:5.4,rest:[1.3,1.7],
+  sky:0x141a2e,ground:0x2c3346,ground2:0x232a3b,sun:0xaec4ff,amb:0x2a3350,
+  body:0xa03a30,belly:0xd9c79a,accent:0x5a3a30,eye:0xfff2a0,fx:0xfff2a0,parts:{legs:'몸통'},
+  atk:{clawL:{n:'머리 후려치기'},clawR:{n:'머리 후려치기'},tail:{n:'똬리 휩쓸기'},charge:{n:'기차 돌진'},slam:{n:'솟구쳐 덮치기'},breath:{n:'증기 숨결'},stomp:{n:'머리 내리찍기'},roar:{n:'기적 소리'},throw:{n:'석탄 뱉기'}},
+  coreTip:'약점은 꼬리 끝. 꼬리 갑각을 깨야 열리기 시작. 꼬리를 치켜든 동안(똬리 휩쓸기, 꼬리 내리찍기)과 쓰러지거나 경직된 동안에만 노출. 꼬리를 자르면 잘린 자리에 상시 노출',
+  combos:{base:[['breath','tail~','slam','clawL!'],['clawL','clawR~','bite','lash','breath'],['slam','roar','lash','charge'],['charge','charge','bite!','tail~']],p2:[['stomp','breath','clawL!','slam','roar'],['lash','lash','charge'],['slam','slam','breath','tail~'],['throw','charge','bite!','lash']],p3:[['stomp','slam','bite~','breath','charge','tail!'],['roar','stomp','lash','slam'],['breath','clawL!','clawR','lash~','roar'],['throw','slam','charge','charge','bite!']]},
+  text:'화물칸을 등에 이고 폐선로를 누비는 다리 없는 거수. 엇박 공격을 섞어 네 번 넘게 이어 치는 상대.',
+  tips:['엇박 공격 등장. 자세를 풀었다가 다시 당기면 늦게 치는 공격, 멈춤 없이 곧장 당기면 빠르게 치는 공격','몸을 일직선으로 펴고 낮게 물러나면 기차 돌진. 옆으로 구르기','머리를 낮추고 꼬리를 등 위로 세우면 꼬리 내리찍기. 그때 꼬리 끝 약점 노출','몸을 둥글게 감으면 똬리 휩쓸기. 몸 둘레 전체가 범위']},
+ {id:'ash',skel:'flyer',env:'ash',core:'chest',name:'잿불 날개',place:'잿불 화구',hp:36000,size:1.25,dmg:1.42,speed:5.5,rest:[1.2,1.6],
+  sky:0x3b2428,ground:0x4b3d3c,ground2:0x3a2f30,sun:0xffb080,amb:0x6a4a48,
+  body:0x4a3f44,belly:0xc8643a,accent:0xff7a3c,eye:0xffe27a,glow:0x7a2a08,fx:0xff7a3c,parts:{legs:'날개'},
+  atk:{clawL:{n:'날개 후려치기'},clawR:{n:'날개 후려치기'},sweep:{n:'양 날개 후려치기'},bite:{n:'들이받기'},tail:{n:'꼬리 휩쓸기'},lash:{n:'꼬리 찌르기'},charge:{n:'활공 돌진'},slam:{n:'급강하'},breath:{n:'불 숨결'},nova:{n:'잿불 폭풍'},roar:{n:'열풍'},stomp:{n:'날개 내리치기'},volley:{n:'불씨 비'},throw:{n:'불덩이 뱉기'}},
+  coreTip:'약점은 배의 송풍기. 날개 갑각을 깨야 열리기 시작. 몸을 세우거나 높이 뜨는 동작(급강하 직전, 불덩이 뱉기, 불씨 비, 열풍, 잿불 폭풍, 날개 내리치기)과 쓰러지거나 경직된 동안에만 노출',
+  combos:{base:[['clawL','clawR~','clawL!','bite','sweep'],['charge','tail~','roar','lash','charge'],['slam','slam','stomp','sweep!','bite'],['volley','nova','charge','lash~','sweep'],['bite~','tail','clawR!','clawL','lash','slam']],p2:[['roar','breath','charge','bite!','sweep','lash'],['nova','sweep!','clawL','clawR~','lash'],['slam','stomp','slam','sweep'],['volley','charge','lash~','breath','bite'],['charge','charge','sweep!','tail']],p3:[['stomp','nova','slam','tail~','bite!','charge'],['breath','roar','breath','lash','sweep!'],['clawL!','clawR!','bite~','sweep','slam','stomp'],['volley','nova','charge','charge','lash~','roar'],['slam','breath','tail','sweep~','bite!']]},
+  text:'화구 위를 떠다니는 골짜기 최강의 거수. 지금까지의 모든 공격을 다섯 번까지 이어 쓰는 마지막 상대.',
+  tips:['휴식이 짧은 상대. 지쳐서 낮게 내려앉은 틈에만 사격','한쪽 날개를 수직으로 세우면 날개 후려치기, 양 날개를 V자로 세우면 양 날개 후려치기','높이 떠서 날개로 몸을 감싸면 잿불 폭풍. 몸 아래로 파고들어야 안전','날개를 부수면 땅에 떨어지는 거수. 눈이 파랗게 빛나면 구르기 불가 공격']},
+];
+// 같은 네발 뼈대를 쓰는 거수. 본편 단계에는 아직 넣지 않음
+const HUNTS_LATER=[
+ {id:'frost',glow:0x18394a,fx:0xbfe6f7,core:'brow',name:'서리뿔',place:'서리 분지',hp:19500,size:1.1,dmg:1.12,speed:4.8,wind:1.1,rest:[1.6,2.0],
   sky:0xbfd6ea,ground:0x9db3c9,ground2:0x8aa1b9,sun:0xffffff,amb:0x9fb2c8,
   body:0x6f8fb0,belly:0xd9e6f2,accent:0x9fd8f0,eye:0xff6a5a,
   combos:{base:[['sweep','clawL','charge'],['charge','charge','sweep'],['volley','charge','bite','sweep'],['clawR','sweep','charge']],p2:[['nova','charge','charge','sweep'],['sweep','sweep','bite'],['volley','nova','charge'],['charge','clawL','sweep','charge']],p3:[['charge','sweep','charge','volley','sweep'],['nova','sweep','bite','charge'],['charge','charge','charge','sweep'],['volley','volley','nova','sweep']]},
   text:'얼음 뿔 하나로 설원을 가르는 사나운 짐승. 여기서부터 붉은 범위 표시 없음. 준비 자세와 공격 순간을 눈으로 익혀야 하는 상대.',
   tips:['고개를 옆으로 크게 젖히면 뿔 휘두르기. 앞쪽 넓은 범위라 뒤로 빠지거나 막기','돌진을 두세 번 연달아 쓰는 거수. 한 번 피했다고 방심 금지','뒷발로 일어서며 기운을 모으면 서리 폭풍. 몸에 바짝 붙어야 안전','떨어지는 얼음 기둥은 바닥 그림자로 위치 확인']},
- {id:'thorn',core:'tailtip',name:'가시꼬리',place:'모래 협곡',hp:24000,size:1.12,dmg:1.15,speed:5.0,rest:[1.4,1.8],
+ {id:'thorn',fx:0x9cff6a,core:'tailtip',name:'가시꼬리',place:'모래 협곡',hp:24000,size:1.12,dmg:1.15,speed:5.0,rest:[1.4,1.8],
   sky:0xe6c38f,ground:0xcfa96e,ground2:0xb98f58,sun:0xfff2d6,amb:0xa88a66,
   body:0x8a5a3c,belly:0xd9b27a,accent:0x3c2a22,eye:0x9cff6a,
   combos:{base:[['tail','lash','tail'],['lash','clawL','lash'],['roar','lash','tail','charge'],['clawR','tail','lash','bite']],p2:[['throw','throw','lash','tail'],['roar','lash','lash'],['tail','tail','lash','charge'],['clawL','lash','clawR','bite']],p3:[['stomp','lash','tail','charge'],['lash','tail','lash','tail','bite'],['throw','lash','roar','charge'],['clawR','tail','lash','stomp']]},
   text:'꼬리를 등 위로 말아 올린 협곡의 포식자. 구르기로는 피할 수 없는 길게 이어지는 공격을 처음 쓰는 상대.',
   tips:['꼬리를 머리 위로 말아 올리면 꼬리 내리찍기. 앞으로 길게 뻗는 직선이라 옆으로 회피','눈이 파랗게 빛나면 구르기 불가 공격. 막거나 멀리 이탈','포효와 발 구르기는 1초 가까이 지속. 구르기의 무적 시간보다 긴 공격','막기는 기력 소모. 기력이 바닥나면 방어 붕괴']},
- {id:'ash',core:'chest',name:'잿불 날개',place:'잿불 화구',hp:30000,size:1.22,dmg:1.32,speed:5.2,rest:[1.3,1.7],wings:true,
-  sky:0x3b2428,ground:0x4b3d3c,ground2:0x3a2f30,sun:0xffb080,amb:0x6a4a48,
-  body:0x4a3f44,belly:0xc8643a,accent:0xff7a3c,eye:0xffe27a,
-  combos:{base:[['breath','tail~','slam','clawL!'],['clawL','clawR~','bite','tail','breath'],['slam','roar','breath','charge'],['volley','charge','bite!','slam','tail~']],p2:[['nova','breath','clawL!','slam','roar'],['breath','breath','charge'],['slam','slam','breath','tail~'],['volley','nova','bite!','charge']],p3:[['stomp','slam','bite~','breath','charge','tail!'],['nova','stomp','breath','slam'],['breath','clawL!','clawR','breath','roar'],['volley','slam','nova','charge','bite!']]},
-  text:'화구의 주인. 날개로 뛰어올라 덮치고 불길을 넓게 내뿜는 거수. 네 번까지 이어지는 연속 공격.',
-  tips:['엇박 공격 등장. 자세를 풀었다가 다시 당기면 늦게 치는 공격, 멈춤 없이 곧장 당기면 빠르게 치는 공격','고개를 뒤로 젖히고 입에 불씨가 모이면 불 숨결. 옆구리나 뒤가 안전','완벽한 막기를 쌓아 경직 게이지를 채우는 것이 가장 큰 기회']},
- {id:'night',core:'brow',name:'달그림자',place:'달밤 폐허',hp:36000,size:1.3,dmg:1.42,speed:5.5,rest:[1.2,1.6],wings:true,
+ {id:'night',glow:0x3a2a88,fx:0x9a7cff,core:'brow',name:'달그림자',place:'달밤 폐허',hp:36000,size:1.3,dmg:1.42,speed:5.5,rest:[1.2,1.6],wings:true,
   sky:0x141a2e,ground:0x2c3346,ground2:0x232a3b,sun:0xaec4ff,amb:0x2a3350,
   body:0x23263a,belly:0x5a4a8a,accent:0x9a7cff,eye:0xff4a6a,
   combos:{base:[['clawL','clawR~','clawL!','bite','sweep'],['charge','tail~','roar','lash','charge'],['slam','slam','stomp','sweep!','bite'],['volley','nova','charge','lash~','sweep'],['bite~','tail','clawR!','clawL','lash','slam']],p2:[['roar','breath','charge','bite!','sweep','lash'],['nova','sweep!','clawL','clawR~','lash'],['slam','stomp','slam','sweep'],['volley','charge','lash~','breath','bite'],['charge','charge','sweep!','tail']],p3:[['stomp','nova','slam','tail~','bite!','charge'],['breath','roar','breath','lash','sweep!'],['clawL!','clawR!','bite~','sweep','slam','stomp'],['volley','nova','charge','charge','lash~','roar'],['slam','breath','tail','sweep~','bite!']]},
@@ -462,6 +494,9 @@ const ATK={
  sweep:{n:'뿔 휘두르기',wind:.95,act:.3,dmg:24,melee:1},
  lash:{n:'꼬리 내리찍기',wind:1.05,act:.3,dmg:27,melee:1},
 };
+// 거수가 실제로 쓰는 공격 값: 기본 ATK에 거수의 atk 항목을 덮어씀. ATK에 없는 이름은 새 공격이고 like에 적힌 공격의 판정을 빌림
+function AT(id){const o=B&&B.h.atk&&B.h.atk[id],b=ATK[id]||(o&&ATK[o.like]);return o?Object.assign({},b,o):b}
+function kindOf(id){const o=B&&B.h.atk&&B.h.atk[id];return ATK[id]?id:(o&&o.like)||id}
 const PERKS=[
  {id:'atk',name:'날 선 탄두',desc:'모든 무기 피해 15% 증가',apply:p=>p.atk*=1.15},
  {id:'hp',name:'거수 가죽 갑옷',desc:'최대 체력 30 증가',apply:p=>p.maxHp+=30},
@@ -493,34 +528,35 @@ const mesh=(geo,mat,x,y,z,par,sh=true)=>{const m=new T.Mesh(geo,mat);m.position.
 // ---------- 사냥터 ----------
 let embers=null;
 function buildWorld(h){
+  const E=h.env||h.id; // 사냥터 풍경 종류
   scene.remove(world);world=new T.Group();scene.add(world);embers=null;
   scene.background=new T.Color(h.sky);scene.fog=new T.Fog(h.sky,45,150);
   hemi.color.set(h.sun);hemi.groundColor.set(h.amb);sun.color.set(h.sun);
-  const dark=h.id==='ash'||h.id==='night';hemi.intensity=dark?.6:h.id==='frost'?.55:.8;sun.intensity=dark?.8:h.id==='frost'?.6:1.0;
+  const dark=E==='ash'||E==='night';hemi.intensity=dark?.6:E==='frost'?.55:.8;sun.intensity=dark?.8:E==='frost'?.6:1.0;
   const g=mesh(new T.CircleGeometry(AR+90,56),std(h.ground2),0,0,0,world,false);g.rotation.x=-Math.PI/2;g.receiveShadow=true;
   const a=mesh(new T.CircleGeometry(AR,56),std(h.ground),0,.02,0,world,false);a.rotation.x=-Math.PI/2;a.receiveShadow=true;
   const patch=std(h.ground2);
   for(let i=0;i<46;i++){const r=Math.sqrt(Math.random())*(AR-2),t=Math.random()*TAU,p=mesh(new T.CircleGeometry(rand(.8,2.6),7),patch,Math.cos(t)*r,.04,Math.sin(t)*r,world,false);p.rotation.x=-Math.PI/2;p.receiveShadow=true}
-  const rockM=std(h.id==='frost'?0xaec4d8:h.id==='ash'?0x2e2729:h.id==='thorn'?0xb08a5a:h.id==='night'?0x3a4052:0x8b8577);
+  const rockM=std(E==='frost'?0xaec4d8:E==='ash'?0x2e2729:E==='thorn'?0xb08a5a:E==='night'?0x3a4052:0x8b8577);
   for(let i=0;i<54;i++){const t=i/54*TAU+rand(-.04,.04),r=AR+rand(1.5,6),s=rand(1.4,3.8);const m=mesh(new T.DodecahedronGeometry(s,0),rockM,Math.cos(t)*r,s*.35,Math.sin(t)*r,world);m.rotation.set(rand(0,3),rand(0,3),rand(0,3));m.scale.y=rand(.6,1.5)}
   // 엄폐 바위
   G.covers=[];
   {const cm=std(new T.Color(rockM.color).multiplyScalar(1.12).getHex()),n=8;for(let i=0;i<n;i++){const t=(i+.5)/n*TAU+rand(-.2,.2),r=rand(13,AR-12),x=Math.sin(t)*r,z=Math.cos(t)*r;if(Math.hypot(x,z-24)<6||Math.hypot(x,z+8)<7)continue;addCover(x,z,rand(2,2.7),cm)}}
   // 먼 산
-  const mtM=new T.MeshBasicMaterial({color:new T.Color(h.sky).multiplyScalar(h.id==='ash'?.55:h.id==='night'?1.5:.78)});
+  const mtM=new T.MeshBasicMaterial({color:new T.Color(h.sky).multiplyScalar(E==='ash'?.55:E==='night'?1.5:.78)});
   for(let i=0;i<16;i++){const t=i/16*TAU+rand(-.1,.1),r=rand(95,125),hh=rand(22,48);mesh(new T.ConeGeometry(rand(22,38),hh,5),mtM,Math.cos(t)*r,hh/2-2,Math.sin(t)*r,world,false)}
-  if(h.id==='stone'){
+  if(E==='stone'){
     const trunk=std(0x5a4632),leaf=std(0x4f7a3a),leaf2=std(0x6a8f3f);
     for(let i=0;i<34;i++){const t=Math.random()*TAU,r=AR+rand(5,22),x=Math.cos(t)*r,z=Math.sin(t)*r,s=rand(.8,1.6);mesh(new T.CylinderGeometry(.3*s,.45*s,3*s,5),trunk,x,1.5*s,z,world);mesh(new T.ConeGeometry(2.2*s,4*s,6),i%2?leaf:leaf2,x,4.6*s,z,world);mesh(new T.ConeGeometry(1.6*s,3*s,6),i%2?leaf2:leaf,x,6.6*s,z,world)}
     const tuft=new T.InstancedMesh(new T.ConeGeometry(.12,.55,4),std(0x8fb05a),320),d=new T.Object3D();
     for(let i=0;i<320;i++){const r=Math.sqrt(Math.random())*(AR+8),t=Math.random()*TAU;d.position.set(Math.cos(t)*r,.25,Math.sin(t)*r);d.rotation.y=Math.random()*3;d.scale.setScalar(rand(.7,1.6));d.updateMatrix();tuft.setMatrixAt(i,d.matrix)}
     world.add(tuft);
-  }else if(h.id==='frost'){
+  }else if(E==='frost'){
     const ice=std(0xbfe6f7,{roughness:.35,emissive:0x1b3a52});
     for(let i=0;i<40;i++){const t=Math.random()*TAU,r=AR+rand(3,20),s=rand(1,3.2),m=mesh(new T.ConeGeometry(s*.6,s*3.4,5),ice,Math.cos(t)*r,s*1.5,Math.sin(t)*r,world);m.rotation.z=rand(-.25,.25);m.rotation.x=rand(-.25,.25)}
     const snow=std(0xffffff);
     for(let i=0;i<40;i++){const r=Math.sqrt(Math.random())*(AR-1),t=Math.random()*TAU,m=mesh(new T.SphereGeometry(rand(.5,1.4),6,4),snow,Math.cos(t)*r,-.1,Math.sin(t)*r,world,false);m.scale.y=.35;m.receiveShadow=true}
-  }else if(h.id==='ash'){
+  }else if(E==='ash'){
     const lava=new T.MeshBasicMaterial({color:0xff6a2a});
     for(let i=0;i<26;i++){const t=Math.random()*TAU,r=AR+rand(2,26),m=mesh(new T.CircleGeometry(rand(1.5,5),8),lava,Math.cos(t)*r,.06,Math.sin(t)*r,world,false);m.rotation.x=-Math.PI/2}
     const spire=std(0x241d20);
@@ -529,7 +565,7 @@ function buildWorld(h){
     const eg=new T.BufferGeometry();eg.setAttribute('position',new T.BufferAttribute(pos,3));
     embers=new T.Points(eg,new T.PointsMaterial({color:0xff9a4a,size:.28,transparent:true,opacity:.9}));world.add(embers);
     const pl=new T.PointLight(0xff6a2a,.9,90);pl.position.set(0,6,0);world.add(pl);
-  }else if(h.id==='thorn'){
+  }else if(E==='thorn'){
     const mesa=std(0xb5744a),mesa2=std(0xc98a58),bush=std(0x7a8a4a),bone=std(0xe9e1cd);
     for(let i=0;i<26;i++){const t=Math.random()*TAU,r=AR+rand(8,34),rr=rand(3,8),hh=rand(5,17),x=Math.cos(t)*r,z=Math.sin(t)*r;mesh(new T.CylinderGeometry(rr*.8,rr,hh,7),i%2?mesa:mesa2,x,hh/2,z,world);mesh(new T.CylinderGeometry(rr*.86,rr*.82,.8,7),mesa2,x,hh*.62,z,world,false)}
     for(let i=0;i<40;i++){const r=Math.sqrt(Math.random())*(AR+10),t=Math.random()*TAU;mesh(new T.ConeGeometry(.35,rand(.5,1.1),5),bush,Math.cos(t)*r,.3,Math.sin(t)*r,world)}
@@ -592,7 +628,7 @@ const SKIN_DEF={legLen:1,spineH:1.1,tailCurl:0,tipR:.3,tipL:1.5,rocks:0,tip:'spi
 function buildQuad(h){
   const K=Object.assign({},SKIN_DEF,SKIN[h.skin||h.id]||{}),L=K.legLen;
   const g=new T.Group(),rig=new T.Group();g.add(rig);
-  const mB=std(h.body),mU=std(h.belly),mA=std(h.accent,h.id==='ash'?{emissive:0x7a2a08}:h.id==='frost'?{emissive:0x18394a,roughness:.4}:h.id==='night'?{emissive:0x3a2a88}:{}),mH=std(0xe9e1cd),mE=new T.MeshBasicMaterial({color:h.eye});
+  const mB=std(h.body),mU=std(h.belly),mA=std(h.accent,h.glow?{emissive:h.glow,roughness:h.id==='frost'?.4:.92}:{}),mH=std(0xe9e1cd),mE=new T.MeshBasicMaterial({color:h.eye});
   const mats=[mB,mU,mA,mH],ico=new T.IcosahedronGeometry(1,1);
   const chest=new T.Group();chest.position.set(0,2.15,.95);rig.add(chest);
   const hip=new T.Group();hip.position.set(0,2.15,-.95);rig.add(hip);
@@ -647,10 +683,446 @@ function buildQuad(h){
   for(let i=1;i<=3;i++){const r=.62-.07*i,a=mesh(new T.CylinderGeometry(r+.13,r+.06,.85,6),mArm,0,0,-.5,tail[i]);a.rotation.x=Math.PI/2;armor.tail.push(a)}
   return{g,rig,chest,hip,neck,headP,jawP,legs,tail,mats,horns,wings,eyeM:mE,anchors,hb,core,coreHalo,armor,K,baseY:(L-1)*1.6-.04};
 }
-const SKEL={quad:{build:buildQuad,anim:animQuad}};
+// ---------- 모션 표 ----------
+// 뼈대마다 기본 모션 한 벌: ch(자세 채널과 평소 값), wind(공격 준비 자세), hit(공격 순간), state(걷기, 휴식, 경직, 기절, 쓰러짐, 포효)
+// 각 항목은 (q 준비 진행도, p 시간 진행도, t 시각, B 거수) => 바꿀 채널만 돌려주는 함수
+// 거수는 HUNTS 항목의 motion에 같은 모양으로 적어 바꾸고 싶은 동작만 덮어쓰거나, atk에 새 공격을 추가(like로 판정을 빌림)하고 그 이름으로 모션을 추가
+const sn=Math.sin;
+const MOTION={};
+MOTION.quad={
+ ch:{headX:0,headY:0,headZ:0,jaw:0,rigZ:0,rigY:0,rigX:0,yaw:0,spin:0,tailAmp:.14,tailSide:0,wing:.15,legAmp:0,pawL:0,pawR:0,front:0,hind:0,splay:0,pz:0,px:0,tailUp:0},
+ wind:{
+  bite:q=>({headX:-.55*q,jaw:1.05*q,rigX:.14*q,rigY:-.4*q,pz:-1.4*q}), // 낮게 웅크려 뒤로 빠지며 입을 크게 벌림
+  clawL:q=>({pawL:-1.7*q,rigZ:.34*q,rigX:-.2*q,yaw:.28*q,headY:-.4*q,px:-.5*q,pz:-.6*q}), // 왼쪽 어깨와 앞발을 높이 들고 몸을 왼쪽으로 비틂
+  clawR:q=>({pawR:-1.7*q,rigZ:-.34*q,rigX:-.2*q,yaw:-.28*q,headY:.4*q,px:.5*q,pz:-.6*q}),
+  tail:q=>({spin:-1.45*Math.min(1,q),tailSide:.42*q,tailAmp:.04,headY:-.85*q,rigZ:.2*q,rigX:.12*q,rigY:-.2*q}), // 옆구리를 보이며 꼬리를 한쪽으로 감아 당김
+  charge:(q,p,t)=>({rigX:.28*q,headX:.55*q,rigY:-.3*q,pawL:(-.5+sn(t*12)*.6)*q,pz:-1.6*q,tailUp:.1*q}), // 머리를 숙이고 엉덩이를 든 채 앞발로 땅을 긁음
+  slam:(q,p)=>({rigX:-.3*Math.min(1,p*2.2),wing:1.1,front:-.5*p,splay:.4*Math.min(1,p*2.2)}),
+  breath:(q,p,t)=>({headX:-.8*q,jaw:.3*q,rigX:-.12*q,rigY:.22*q,headY:sn(t*3.2)*.26*q,rigZ:sn(t*3.2)*.1*q,pz:-.7*q}), // 꼿꼿이 서서 고개를 젖히고 좌우로 천천히 흔듦
+  nova:q=>({rigX:-.55*q,headX:-.75*q,jaw:.6*q,wing:q,front:-.6*q,splay:.75*q,tailUp:.36*q}), // 상체를 세워 앞발을 양옆으로 벌리고 꼬리를 수직으로 세움
+  roar:(q,p)=>({rigX:.1*q,rigY:-.22*q,headX:-1.15*q,jaw:.15+.5*p,wing:.6*q,splay:.4*q}), // 네 발을 넓게 딛고 목만 하늘로
+  stomp:(q,p,t)=>({rigX:-.7*q,headX:.6*q,pawL:(-.9+sn(t*9)*.5)*q,pawR:(-.9-sn(t*9)*.5)*q,wing:.8*q}), // 상체를 세우고 땅을 내려다보며 앞발을 번갈아 구름
+  throw:q=>({headX:-.6*q,headY:-q,headZ:.4*q,rigZ:-.2*q,yaw:-.3*q,jaw:.7*q,pz:-.8*q}), // 머리를 오른쪽 뒤로 크게 젖힘
+  sweep:q=>({headY:1.2*q,headX:.45*q,headZ:-.5*q,rigZ:.3*q,yaw:.2*q,rigX:.16*q,pz:-.6*q,px:.4*q}), // 머리를 왼쪽 아래로 낮게 틂
+  lash:q=>({tailUp:q,rigX:.34*q,headX:.45*q,rigY:-.35*q,splay:.3*q}), // 앞을 낮추고 꼬리를 머리 위로 말아 올림
+  volley:(q,p,t)=>({rigX:-.28*q,rigY:-.45*q,hind:.5*q,headX:-q,jaw:.8*q,wing:.9*q,rigZ:sn(t*15)*.11*q,headZ:sn(t*15+1)*.22*q}), // 엉덩이를 깔고 앉아 하늘을 보며 온몸을 좌우로 털어 냄
+ },
+ hit:{
+  bite:()=>({headX:.5,jaw:.03,rigX:.1,pz:1.3}),
+  clawL:()=>({pawL:.8,rigZ:-.3,rigX:.12,yaw:-.3,pz:1}),
+  clawR:()=>({pawR:.8,rigZ:.3,rigX:.12,yaw:.3,pz:1}),
+  tail:(q,p)=>({spin:-1.45+p*(TAU+1.45),tailAmp:.05,tailSide:-.2}),
+  charge:()=>({rigX:.12,headX:.45,legAmp:.9}),
+  breath:(q,p)=>({headX:.12,jaw:.95,headY:sn(p*TAU)*.3}),
+  nova:()=>({rigX:.1,headX:-.7,jaw:.9,wing:1.2}),
+  slam:()=>({rigY:-.4,splay:.5}),
+  throw:()=>({headX:.6,headY:.4,rigX:.15,yaw:.25,pz:.8}),
+  sweep:()=>({headY:-1.2,headX:.25,rigZ:-.3,yaw:-.4,pz:1.2}),
+  lash:()=>({tailUp:1.75,rigX:.42,rigY:-.45,headX:.5}),
+  roar:(q,p,t)=>({rigX:-.1,headX:-.35+sn(t*40)*.04,jaw:1,wing:1.2,splay:.4}),
+  stomp:(q,p,t,B)=>{const k=Math.abs(sn(B.stateT/.36*Math.PI));return{rigX:lerp(.12,-.5,k),front:lerp(.2,-.8,k)}},
+ },
+ state:{
+  chase:()=>({legAmp:.5}),
+  rest:(q,p,t)=>({headX:.55+sn(t*7)*.06,jaw:.45+sn(t*7)*.1,rigY:-.25+sn(t*7)*.03}),
+  flinch:()=>({headX:-.6,headY:.6,rigZ:.22,rigX:-.15,jaw:.6}),
+  stun:(q,p,t)=>({headX:.75,rigZ:sn(t*9)*.05,rigY:-.3}),
+  topple:()=>({rigZ:1.35,rigY:-.75,legAmp:.25,jaw:.3}),
+  dead:()=>({rigZ:1.35,rigY:-.75,jaw:.3}),
+  enrage:()=>({headX:-.75,jaw:.95,wing:1.2}),
+ },
+};
+MOTION.quad.wind._=MOTION.quad.wind.volley;
+// ---------- 새 뼈대 공통 부품 ----------
+const GI=(d=1)=>new T.IcosahedronGeometry(1,d),cyl=(a,b,h,n=6)=>new T.CylinderGeometry(a,b,h,n),box=(x,y,z)=>new T.BoxGeometry(x,y,z),cone=(r,h,n=4)=>new T.ConeGeometry(r,h,n);
+const anc=(par,x,y,z,hr)=>{const o=new T.Object3D();o.position.set(x,y,z);par.add(o);if(hr)o.hr=hr;return o};
+function beastMats(h){return{mB:std(h.body),mU:std(h.belly),mA:std(h.accent,h.glow?{emissive:h.glow}:{}),mH:std(0xe9e1cd),mE:new T.MeshBasicMaterial({color:h.eye}),mArm:std(0xc9d2da,{roughness:.5,metalness:.15,emissive:0x2a3036}),mFx:new T.MeshBasicMaterial({color:h.fx||0xffb060})}}
+// 꼬리 마디 사슬. 마디마다 앞 마디에 매달려 휘어짐
+function tailChain(par,x,y,z,n,len,r0,r1,mat){const a=[];for(let i=0;i<n;i++){const p=new T.Group();p.position.set(i?0:x,i?0:y,i?-len:z);par.add(p);const r=lerp(r0,r1,i/(n-1));mesh(cyl(r,r*.85,len*1.1),mat,0,0,-len/2,p).rotation.x=Math.PI/2;p.r=r;a.push(p);par=p}return a}
+const tailArmor=(tail,len,mat)=>[1,2,3].map(i=>{const a=mesh(cyl(tail[i].r+.13,tail[i].r+.07,len*.8),mat,0,0,-len/2,tail[i]);a.rotation.x=Math.PI/2;return a});
+// 약점 구슬을 달고 장면에 올림. 게임이 쓰는 공통 항목: g, rig, mats, eyeM, horns, tail, anchors, hb, armor, core, reach
+function rigFinish(h,o){
+  const c=anc(o.coreAt[0],o.coreAt[1],o.coreAt[2],o.coreAt[3]);o.hb.core=c;
+  o.core=mesh(new T.IcosahedronGeometry(.34,0),new T.MeshBasicMaterial({color:0x7ef0ff,fog:false}),0,0,0,c,false);
+  o.coreHalo=mesh(new T.IcosahedronGeometry(.5,1),new T.MeshBasicMaterial({color:0x7ef0ff,transparent:true,opacity:.28,depthWrite:false,fog:false}),0,0,0,c,false);
+  o.mats=[o.M.mB,o.M.mU,o.M.mA,o.M.mH];o.eyeM=o.M.mE;o.K={};
+  o.g.scale.setScalar(h.size);scene.add(o.g);return o;
+}
+
+// ---------- 두 발 뼈대 ----------
+// rig > 몸통(body: 목 > 머리 > 턱, 머리 위 등불 줄기, 꼬리) + 다리 둘(허벅지 > 무릎 아래)
+function buildBiped(h){
+  const M=beastMats(h),{mB,mU,mA,mH,mE,mArm}=M,g=new T.Group(),rig=new T.Group();g.add(rig);
+  const body=new T.Group();body.position.set(0,2.45,0);rig.add(body);
+  mesh(GI(),mB,0,.75,-.2,body).scale.set(1.8,1.6,2.0);mesh(GI(),mU,0,.3,0,body).scale.set(1.6,1.25,1.8);
+  for(let i=0;i<4;i++)mesh(cone(.3,1.2-.18*i),mA,0,2.3-.3*i,-.6-.5*i,body).rotation.x=-.5;
+  for(const s of[1,-1]){const f=mesh(cone(.55,1.5),mA,s*1.8,.7,-.5,body);f.rotation.z=s*-1.2;f.scale.z=.3}
+  const neck=new T.Group();neck.position.set(0,.85,.9);body.add(neck);
+  const headP=new T.Group();neck.add(headP);
+  mesh(GI(),mB,0,.45,.75,headP).scale.set(1.75,1.0,1.55);
+  for(let i=-3;i<=3;i++)mesh(cone(.13,.55),mH,i*.42,-.2,2.0-Math.abs(i)*.16,headP).rotation.x=Math.PI;
+  for(const s of[1,-1])mesh(new T.SphereGeometry(.2,6,5),mE,s*1.05,.95,1.5,headP,false);
+  const jawP=new T.Group();jawP.position.set(0,-.25,0);headP.add(jawP);
+  mesh(GI(),mU,0,-.4,.8,jawP).scale.set(1.65,.6,1.55);
+  for(let i=-3;i<=3;i++)mesh(cone(.13,.6),mH,i*.44,.2,2.05-Math.abs(i)*.16,jawP);
+  const horns=[[.9,1.25,.6,-.5],[0,1.4,.2,0],[-.9,1.25,.6,.5]].map(([x,y,z,rz])=>{const c=mesh(cone(.2,.8),mA,x,y,z,headP);c.rotation.z=rz;return c});
+  // 등불 줄기: 머리 위에서 뒤로 솟았다가 앞으로 휘어 입 앞에 등불이 매달림
+  const lure=[];let par=headP;
+  for(let i=0;i<4;i++){const p=new T.Group();p.position.set(0,i?1.0:1.3,i?0:.8);par.add(p);mesh(cyl(.1,.14,1.0,5),mA,0,.5,0,p);lure.push(p);par=p}
+  const lamp=new T.Group();lamp.position.set(0,1.0,0);par.add(lamp);
+  mesh(cyl(.3,.38,.45),mA,0,-.1,0,lamp);mesh(cone(.42,.4,6),mA,0,.3,0,lamp);
+  const legs=[];
+  for(const s of[1,-1]){const p=new T.Group();p.position.set(s*1.05,2.4,-.15);rig.add(p);
+    mesh(cyl(.55,.42,1.3),mB,0,-.6,0,p);const k=new T.Group();k.position.set(0,-1.2,0);p.add(k);
+    mesh(cyl(.38,.3,1.2),mB,0,-.6,0,k);mesh(box(.95,.3,1.5),mA,0,-1.15,.35,k);p.knee=k;legs.push(p)}
+  const tail=tailChain(body,0,.5,-1.9,7,.6,.55,.14,mB);
+  const fin=mesh(cone(1.0,1.7),mA,0,0,-1.1,tail[6]);fin.rotation.x=-Math.PI/2;fin.scale.x=.22;
+  const armor={head:[mesh(box(2.4,.3,1.8),mArm,0,1.3,.8,headP),mesh(box(.25,.8,1.5),mArm,1.65,.5,.9,headP),mesh(box(.25,.8,1.5),mArm,-1.65,.5,.9,headP)],legs:legs.map(l=>mesh(cyl(.68,.56,1.0),mArm,0,-.55,0,l)),tail:tailArmor(tail,.6,mArm)};
+  return rigFinish(h,{g,rig,M,body,neck,headP,jawP,legs,tail,lure,lamp,horns,armor,
+    anchors:{head:anc(headP,0,0,2.2),pawL:anc(legs[0].knee,0,-1.1,.6),pawR:anc(legs[1].knee,0,-1.1,.6),tail:anc(tail[6],0,0,-1),tailCut:anc(tail[3],0,0,-.6),body:anc(body,0,.8,1),lure:anc(lamp,0,-.3,0)},
+    cueAt:{sweep:'lure',lash:'lure',nova:'lure',volley:'lure'},
+    hb:{head:anc(headP,0,.2,.8,1.45),body:[anc(body,0,.75,0,1.6),anc(body,0,.7,-1.1,1.3)],legs:legs.flatMap(l=>[anc(l,0,-.6,0,.62),anc(l.knee,0,-.7,0,.5)]),tail:tail.slice(1).map((t,i)=>anc(t,0,0,-.3,.55-.05*i))},
+    coreAt:[lamp,0,-.65,0],reach:{head:2.9,headR:1.5,legsR:2.0,tail:4.6,tailCut:3.2,tailR:1.2}});
+}
+function poseBiped(m,po,c){
+  const t=c.t,amp=c.amp,cr=clamp(po.crouch,0,1.3),hgt=2.4*Math.cos(.35+.5*cr)-2.4*Math.cos(.35);
+  m.rig.rotation.set(0,po.spin+po.yaw*.6,po.rigZ*.75);
+  m.rig.position.set(po.px,hgt+po.rigY+c.breath*.03-Math.abs(Math.cos(c.ph))*.1*amp,po.pz);
+  // 뒤뚱거리는 걸음: 디딘 발 쪽으로 몸이 기울고 좌우로 흔들림
+  m.body.rotation.set(po.rigX,po.yaw*.4+c.gait*.1*amp+c.bend,po.rigZ*.25+c.gait*.09*amp);
+  m.body.scale.setScalar(1+c.breath*(c.st==='rest'?.03:.012));
+  const hy=po.headY+clamp(po.turn*.14,-.5,.5);
+  m.neck.rotation.set(po.headX*.5,hy*.6,po.headZ*.5);m.headP.rotation.set(po.headX*.5,hy*.4,po.headZ*.5);m.jawP.rotation.x=po.jaw;
+  m.legs.forEach((l,i)=>{const phi=c.ph+(i?Math.PI:0),sw=Math.sin(phi)*amp*.7,lift=Math.max(0,-Math.cos(phi))*amp,k=i?po.legR:po.legL,up=clamp(-k,0,2);
+    l.rotation.x=-.35-.5*cr+sw+k-lift*.35;l.rotation.z=(i?-1:1)*po.splay;
+    l.knee.rotation.x=.7+cr+lift*.9+up*.9*(1-clamp(po.kick,0,1))-(po.kick>0?(.7+cr)*clamp(po.kick,0,1)*up/1.3:0)});
+  let sum=0;m.lure.forEach((s,i)=>{const r=[-.5,.6,.9,.8][i]+po.lure*(i?.5:.3)+Math.sin(t*2+i)*.03;s.rotation.x=r;s.rotation.z=po.lureSide*.4;sum+=r});
+  m.lamp.rotation.x=-(sum+po.headX+po.rigX);
+  m.tail.forEach((s,i)=>{s.rotation.y=Math.sin(t*1.6+i*.55)*po.tailAmp+po.tailSide-c.gait*.06*amp;s.rotation.x=(i?0:-.15)+po.tailUp*(i===0?.5:.3)});
+}
+MOTION.biped={
+ ch:{rigX:0,rigY:0,rigZ:0,yaw:0,px:0,pz:0,spin:0,headX:0,headY:0,headZ:0,jaw:.08,crouch:.15,legL:0,legR:0,kick:0,splay:0,lure:0,lureSide:0,tailAmp:.2,tailSide:0,tailUp:0,legAmp:0},
+ wind:{
+  bite:q=>({rigX:-.3*q,headX:-.55*q,jaw:1.25*q,crouch:.6*q,pz:-1.2*q,lure:-.5*q}), // 몸을 뒤로 젖히며 입을 머리통보다 크게 벌림
+  clawL:q=>({legL:-1.5*q,rigZ:.28*q,yaw:.35*q,px:-.4*q,rigX:-.15*q,headY:-.3*q}), // 한 발로 서서 다른 발을 높이 듦
+  clawR:q=>({legR:-1.5*q,rigZ:-.28*q,yaw:-.35*q,px:.4*q,rigX:-.15*q,headY:.3*q}),
+  tail:q=>({spin:-1.45*Math.min(1,q),tailSide:.5*q,tailAmp:.04,headY:-.7*q,crouch:.4*q,rigZ:.15*q}),
+  sweep:q=>({lure:-.7*q,lureSide:1.5*q,rigZ:.3*q,yaw:.35*q,headY:.5*q,crouch:.3*q}), // 등불을 옆 뒤로 길게 젖힘
+  lash:q=>({lure:-1.25*q,rigX:-.25*q,headX:-.2*q,crouch:.5*q,pz:-.5*q}), // 등불 줄기를 수직으로 곧게 세움
+  charge:(q,p,t)=>({rigX:.5*q,headX:.2*q,legL:(-.5+sn(t*12)*.5)*q,pz:-1.4*q,crouch:.35*q,lure:.3*q,tailUp:.4*q}), // 머리를 낮추고 한 발로 땅을 긁음
+  slam:(q,p)=>({crouch:p<.45?1.2*Math.min(1,p*2.6):.2,rigX:.2*Math.min(1,p*2.2),tailUp:.5*p,legL:p>.45?-.6:0,legR:p>.45?-.6:0}), // 깊게 주저앉았다가 뛰어오름
+  volley:(q,p,t)=>({rigX:-.45*q,headX:-.7*q,jaw:.9*q,lure:-.9*q,lureSide:sn(t*15)*.5*q,crouch:.8*q,rigZ:sn(t*15)*.08*q}), // 주저앉아 하늘을 보며 등불을 흔듦
+  nova:q=>({crouch:q,splay:.45*q,rigX:.35*q,lure:-1.1*q,headX:.3*q,tailUp:.6*q}), // 다리를 벌리고 낮게 엎드려 등불만 높이 세움
+  throw:q=>({headX:-.5*q,headY:-.8*q,yaw:-.4*q,rigZ:-.2*q,jaw:.6*q,rigX:-.2*q,pz:-.6*q,lure:-.4*q}),
+  roar:(q,p)=>({splay:.4*q,crouch:.3*q,headX:-q,rigX:-.35*q,jaw:.2+.8*p,lure:-.6*q}),
+  stomp:(q,p,t)=>({legL:Math.min(0,sn(t*9))*1.2*q,legR:Math.min(0,-sn(t*9))*1.2*q,rigX:.25*q,headX:.3*q}),
+  breath:(q,p,t)=>({rigX:-.4*q,headX:-.6*q,jaw:.4*q,headY:sn(t*3.2)*.3*q,crouch:.2*q}),
+ },
+ hit:{
+  bite:()=>({rigX:.45,headX:.25,jaw:.02,pz:1.4,crouch:.5}),
+  clawL:()=>({legL:-1.3,kick:1,rigZ:.1,rigX:-.3,yaw:-.3,pz:.9}),
+  clawR:()=>({legR:-1.3,kick:1,rigZ:-.1,rigX:-.3,yaw:.3,pz:.9}),
+  tail:(q,p)=>({spin:-1.45+p*(TAU+1.45),tailAmp:.05,tailSide:-.25,crouch:.4}),
+  sweep:()=>({lure:.25,lureSide:-1.5,rigZ:-.3,yaw:-.45,rigX:.3,crouch:.4}),
+  lash:()=>({lure:.75,rigX:.55,headX:.3,crouch:.6,pz:.6}),
+  charge:()=>({rigX:.45,legAmp:1,lure:.4,tailUp:.4}),
+  slam:()=>({crouch:1.1,rigX:.1,splay:.3}),
+  nova:()=>({crouch:.2,lure:-1.2,jaw:.9,headX:-.5,splay:.4}),
+  throw:()=>({headX:.3,headY:.3,yaw:.3,rigX:.3,jaw:1,pz:.6}),
+  roar:(q,p,t)=>({splay:.4,headX:-.5+sn(t*40)*.04,jaw:1.3,rigX:-.2,lure:-.6}),
+  stomp:(q,p,t,B)=>{const k=sn(B.stateT/.36*Math.PI);return{legL:Math.min(0,k)*1.3,legR:Math.min(0,-k)*1.3,rigZ:k*.12}},
+  breath:(q,p)=>({rigX:.2,jaw:1.2,headY:sn(p*TAU)*.3}),
+ },
+ state:{
+  chase:()=>({legAmp:.6,crouch:.25,rigX:.1}),
+  rest:(q,p,t)=>({rigX:.35,headX:.2,jaw:.6+sn(t*7)*.12,crouch:.5,lure:.5,rigY:sn(t*7)*.03}),
+  flinch:()=>({rigX:-.35,headY:.5,rigZ:.2,jaw:.7,lure:-.5,legL:-.5}),
+  stun:(q,p,t)=>({rigX:.45,crouch:.8,headX:.3,rigZ:sn(t*9)*.05,lure:.7,jaw:.3}),
+  topple:()=>({rigZ:1.45,rigY:-.5,legAmp:.3,jaw:.5,lure:.3,crouch:.4}),
+  dead:()=>({rigZ:1.45,rigY:-.5,jaw:.5,lure:.6,crouch:.2}),
+  enrage:()=>({headX:-.8,rigX:-.3,jaw:1.3,splay:.4,lure:-.8}),
+ },
+};
+MOTION.biped.wind._=MOTION.biped.wind.volley;
+
+// ---------- 앞다리형 뼈대 ----------
+// rig > 엉덩이(hip: 짧은 뒷다리) > 상체(torso: 허리에서 꺾여 일어섬. 굵은 팔 둘, 목 > 머리 > 턱, 등짐)
+function buildFore(h){
+  const M=beastMats(h),{mB,mU,mA,mH,mE,mArm,mFx}=M,g=new T.Group(),rig=new T.Group();g.add(rig);
+  const hip=new T.Group();hip.position.set(0,2.0,-1.3);rig.add(hip);
+  mesh(GI(),mB,0,.05,0,hip).scale.set(1.5,1.3,1.4);mesh(cone(.35,.7),mB,0,.2,-1.4,hip).rotation.x=-1.9;
+  const torso=new T.Group();hip.add(torso);
+  mesh(GI(),mB,0,.4,1.3,torso).scale.set(1.65,1.45,1.6);mesh(GI(),mU,0,-.05,1.6,torso).scale.set(1.4,1.15,1.35);
+  mesh(GI(),mB,0,.85,2.6,torso).scale.set(2.05,1.5,1.4);
+  // 등짐: 용광로와 굴뚝
+  const furn=new T.Group();furn.position.set(0,2.0,1.7);torso.add(furn);
+  mesh(cyl(.95,1.05,1.3,8),mA,0,0,0,furn);mesh(cyl(.7,.7,.2,8),mFx,0,.66,0,furn,false);
+  const stacks=[[.75,.9,-.5],[-.75,.7,-.5]].map(([x,y,z])=>mesh(cyl(.2,.26,1.6),mA,x,y,z,furn));
+  const neck=new T.Group();neck.position.set(0,1.2,3.5);torso.add(neck);
+  const headP=new T.Group();neck.add(headP);
+  mesh(GI(0),mB,0,0,.3,headP).scale.set(.85,.8,.9);mesh(box(.6,.45,.8),mB,0,-.05,1.2,headP);
+  for(const s of[1,-1])mesh(new T.SphereGeometry(.11,6,5),mE,s*.42,.3,.98,headP,false);
+  const jawP=new T.Group();jawP.position.set(0,-.3,.7);headP.add(jawP);mesh(box(.55,.16,.9),mU,0,0,.45,jawP);for(const x of[-.2,.2])mesh(cone(.07,.22),mH,x,.18,.8,jawP);
+  const horns=[[.6,.75,.1],[0,.85,-.2],[-.6,.75,.1]].map(([x,y,z])=>mesh(cone(.25,.5),mB,x,y,z,headP));
+  const arms=[];
+  for(const s of[1,-1]){const p=new T.Group();p.position.set(s*2.1,.85,2.7);torso.add(p);
+    mesh(new T.IcosahedronGeometry(.9,0),mA,0,.1,0,p);mesh(cyl(.72,.6,1.5),mB,0,-.75,0,p);
+    const k=new T.Group();k.position.set(0,-1.5,0);p.add(k);mesh(cyl(.6,.74,1.4),mB,0,-.7,0,k);
+    if(s>0)mesh(new T.DodecahedronGeometry(.85,0),mB,0,-1.55,.1,k);
+    else{mesh(cyl(1.0,.8,1.2,8),mA,0,-1.7,.1,k);mesh(cyl(.85,.85,.1,8),mFx,0,-1.12,.1,k,false)} // 오른팔은 쇳물 국자
+    p.knee=k;arms.push(p)}
+  const hind=[];
+  for(const s of[1,-1]){const p=new T.Group();p.position.set(s*1.15,-.1,0);hip.add(p);mesh(cyl(.6,.48,1.1),mB,0,-.5,0,p);
+    const k=new T.Group();k.position.set(0,-1.0,0);p.add(k);mesh(cyl(.45,.38,1.0),mB,0,-.45,0,k);mesh(box(.85,.3,1.3),mA,0,-.9,.3,k);p.knee=k;hind.push(p)}
+  const armor={head:[mesh(box(1.1,.25,1.2),mArm,0,.75,.4,headP),mesh(box(.75,.3,.9),mArm,0,.3,1.25,headP)],
+    legs:[...arms.map(l=>mesh(cyl(.78,.9,1.0),mArm,0,-.6,0,l.knee)),...hind.map(l=>mesh(cyl(.72,.6,.9),mArm,0,-.45,0,l))],
+    tail:[mesh(cyl(1.08,1.16,.5,8),mArm,0,-.1,0,furn),mesh(cyl(.3,.34,.6),mArm,.75,.9,-.5,furn),mesh(cyl(.3,.34,.6),mArm,-.75,.7,-.5,furn)]};
+  return rigFinish(h,{g,rig,M,hip,torso,neck,headP,jawP,arms,hind,legs:[...arms,...hind],furn,horns,armor,
+    cutTail:()=>{stacks.forEach(s=>s.visible=false)},
+    anchors:{head:anc(headP,0,0,1.6),pawL:anc(arms[0].knee,0,-1.6,.2),pawR:anc(arms[1].knee,0,-1.7,.2),tail:anc(furn,0,.9,0),tailCut:anc(furn,0,.3,0),body:anc(torso,0,.3,2.4)},
+    hb:{head:anc(headP,0,0,.5,.9),body:[anc(torso,0,.8,2.5,1.75),anc(torso,0,.35,1.0,1.6),anc(hip,0,.05,0,1.4)],legs:[...arms.flatMap(l=>[anc(l,0,-.7,0,.75),anc(l.knee,0,-1.0,0,.85)]),...hind.map(l=>anc(l,0,-.8,0,.65))],tail:[anc(furn,0,.1,0,1.1),anc(furn,0,1.1,-.5,.7)]},
+    coreAt:[torso,0,-.95,2.2],reach:{head:3.4,headR:1.3,legsR:2.6,tail:1.2,tailCut:1.2,tailR:1.9}});
+}
+function poseFore(m,po,c){
+  const amp=c.amp,sd=clamp(po.stand,0,1.2),four=1-clamp(sd,0,1);
+  m.rig.rotation.set(po.rigX*.5,po.spin+po.yaw*.6,po.rigZ*.75);
+  m.rig.position.set(po.px,po.rigY+c.breath*.03-Math.abs(Math.cos(c.ph))*.08*amp,po.pz);
+  m.hip.rotation.set(0,-po.yaw*.2-c.gait*.08*amp,-c.gait*.05*amp);
+  // 일어서기: 허리에서 상체를 세우고, 팔은 몸통을 따라 올라가 자유로워짐
+  m.torso.rotation.set(-sd*1.1+po.rigX*.5,po.yaw*.4+c.gait*.14*amp+c.bend,po.rigZ*.25+c.gait*.06*amp);
+  m.torso.scale.setScalar(1+c.breath*(c.st==='rest'?.03:.012));
+  const hy=po.headY+clamp(po.turn*.14,-.5,.5);
+  m.neck.rotation.set(po.headX*.5+sd*.85,hy*.5,po.headZ*.4);m.headP.rotation.set(po.headX*.5,hy*.5,po.headZ*.6);m.jawP.rotation.x=po.jaw;
+  m.arms.forEach((l,i)=>{const phi=c.ph+(i?Math.PI:0),sw=Math.sin(phi)*amp*.5*four,lift=Math.max(0,-Math.cos(phi))*amp*four,a=i?po.armR:po.armL;
+    l.rotation.x=lerp(.5,1.1,clamp(sd,0,1))+sw+a-lift*.25;l.rotation.z=(i?-1:1)*(.1+po.armOut);
+    l.knee.rotation.x=lerp(-1.0,-.3,clamp(sd,0,1))-lift*.5-po.elbow-clamp(-a-1.2,0,1.5)*.35});
+  m.hind.forEach((l,i)=>{const phi=c.ph+(i?0:Math.PI),sw=Math.sin(phi)*amp*.5,lift=Math.max(0,-Math.cos(phi))*amp;
+    l.rotation.x=-.3+sw-po.hind*.4-lift*.3;l.knee.rotation.x=.6+lift*.8+po.hind*.6});
+}
+MOTION.fore={
+ ch:{rigX:0,rigY:0,rigZ:0,yaw:0,px:0,pz:0,spin:0,stand:0,headX:0,headY:0,headZ:0,jaw:0,armL:0,armR:0,armOut:0,elbow:0,hind:0,legAmp:0},
+ wind:{
+  clawL:q=>({stand:.55*q,armL:-2.3*q,armOut:.5*q,rigZ:.2*q,yaw:.4*q,headY:-.3*q}), // 반쯤 일어서며 한 팔을 머리 위 옆으로 크게 젖힘
+  clawR:q=>({stand:.55*q,armR:-2.3*q,armOut:.5*q,rigZ:-.2*q,yaw:-.4*q,headY:.3*q}),
+  bite:q=>({stand:.8*q,armL:-2.0*q,armR:-2.0*q,headX:-.3*q,pz:-.6*q,elbow:.3*q}), // 두 발로 서서 양팔을 머리 위로 치켜듦
+  tail:q=>({spin:-1.45*Math.min(1,q),stand:.3*q,armL:-1.2*q,armR:-.3*q,armOut:q,headY:-.7*q,rigZ:.15*q}), // 옆으로 돌아서 양팔을 벌림
+  charge:(q,p,t)=>({rigX:.25*q,rigY:-.3*q,headX:.4*q,armL:(-.4+sn(t*12)*.5)*q,pz:-1.6*q,hind:.3*q}), // 네 발로 낮게 엎드려 주먹으로 땅을 긁음
+  slam:(q,p)=>({stand:.6*Math.min(1,p*2.2),armL:-1.6*p,armR:-1.6*p,armOut:.7*Math.min(1,p*2.2)}),
+  breath:(q,p,t)=>({stand:.75*q,armR:-2.5*q,armL:-.2*q,headX:-.5*q,headY:sn(t*3.2)*.25*q,yaw:-.2*q,jaw:.3*q}), // 서서 국자 팔만 높이 들어 기울임
+  roar:(q,p)=>({stand:1.05*q,armL:.5*q,armR:.5*q,armOut:1.1*q,headX:-1.1*q,jaw:.2+.7*p}), // 꼿꼿이 서서 양팔을 뒤로 벌리고 하늘을 봄
+  stomp:(q,p,t)=>({stand:.6*q,armL:(-1.6+sn(t*9)*.9)*q,armR:(-1.6-sn(t*9)*.9)*q,headX:.4*q}), // 양 주먹을 번갈아 치켜듦
+  throw:q=>({stand:.6*q,armR:-2.5*q,armL:-.9*q,yaw:-.45*q,rigZ:-.15*q,headY:.3*q,jaw:.3*q}), // 국자 팔을 등 뒤로 넘기고 반대 팔로 겨눔
+  sweep:q=>({stand:.4*q,armL:-1.4*q,armR:-1.4*q,armOut:-.3*q,yaw:.7*q,rigZ:.2*q}),
+  lash:q=>({stand:.7*q,armR:-2.1*q,headX:-.2*q,yaw:-.2*q}),
+  nova:q=>({stand:q,armL:-1.5*q,armR:-1.5*q,armOut:1.2*q,headX:-.6*q,jaw:.6*q}),
+  volley:(q,p,t)=>({rigX:.3*q,rigY:-.5*q,headX:.5*q,armOut:.5*q,rigZ:sn(t*15)*.08*q}), // 엎드려 등의 용광로를 내밂
+ },
+ hit:{
+  clawL:()=>({stand:.25,armL:-.9,armOut:-.25,rigZ:-.25,yaw:-.45,pz:1,elbow:.5}),
+  clawR:()=>({stand:.25,armR:-.9,armOut:-.25,rigZ:.25,yaw:.45,pz:1,elbow:.5}),
+  bite:()=>({stand:.1,armL:-.9,armR:-.9,rigX:.25,headX:.3,pz:1.2,elbow:.6}),
+  tail:(q,p)=>({spin:-1.45+p*(TAU+1.45),stand:.3,armL:-1.1,armR:-1.1,armOut:1.2}),
+  charge:()=>({rigX:.15,headX:.4,legAmp:1}),
+  slam:()=>({rigY:-.4,armOut:.8,armL:-.6,armR:-.6}),
+  breath:(q,p)=>({stand:.5,armR:-1.3,armL:-.2,headX:.1,jaw:.9,yaw:sn(p*TAU)*.25,elbow:.4}),
+  roar:(q,p,t)=>({stand:1,armL:.4,armR:.4,armOut:1.2,headX:-.4+sn(t*40)*.04,jaw:1}),
+  stomp:(q,p,t,B)=>{const k=sn(B.stateT/.36*Math.PI);return{stand:.4,armL:-1.2-k,armR:-1.2+k,rigX:.1}},
+  throw:()=>({stand:.4,armR:-1,yaw:.4,rigX:.2,pz:.8,elbow:.5}),
+  sweep:()=>({stand:.3,armL:-1.2,armR:-1.2,armOut:.4,yaw:-.7,pz:1}),
+  lash:()=>({stand:.2,armR:-.8,rigX:.3,pz:1,elbow:.5}),
+  nova:()=>({stand:.9,armL:.2,armR:.2,armOut:1.3,jaw:.9}),
+ },
+ state:{
+  chase:()=>({legAmp:.55}),
+  rest:(q,p,t)=>({rigY:-.3+sn(t*7)*.03,headX:.6+sn(t*7)*.06,jaw:.5+sn(t*7)*.1,armOut:.25}),
+  flinch:()=>({stand:.5,headX:-.5,headY:.6,rigZ:.2,armL:-.8,armOut:.6,jaw:.6}),
+  stun:(q,p,t)=>({rigY:-.45,headX:.8,rigZ:sn(t*9)*.05,armOut:.4}),
+  topple:()=>({rigZ:1.35,rigY:-.6,legAmp:.25,jaw:.3,armOut:.5}),
+  dead:()=>({rigZ:1.35,rigY:-.6,jaw:.3,armOut:.5}),
+  enrage:()=>({stand:1,armL:.4,armR:.4,armOut:1.1,headX:-.7,jaw:1}),
+ },
+};
+MOTION.fore.wind._=MOTION.fore.wind.volley;
+
+// ---------- 다리 없는 뼈대 ----------
+// rig > 바닥 지점(base) > 목 마디 5개(세워서 머리를 받침) > 머리 > 턱, 그리고 뒤로 끌리는 몸 마디 9개(끝 7개가 꼬리)
+function buildSerpent(h){
+  const M=beastMats(h),{mB,mU,mA,mH,mE,mArm,mFx}=M,g=new T.Group(),rig=new T.Group();g.add(rig);
+  const base=new T.Group();base.position.set(0,.9,0);rig.add(base);
+  // 마디 하나: 둥근 몸 위에 화물칸
+  const car=(par,d,r)=>{mesh(cyl(r,r,1.15,8),mU,0,0,d*.6,par).rotation.x=Math.PI/2;mesh(box(r*1.9,r*1.15,.95),mB,0,r*.45,d*.6,par);mesh(box(r*1.95,r*.25,.2),mA,0,r*.45,d*.6,par);par.r=r};
+  const neckS=[];let par=base;
+  for(let i=0;i<5;i++){const p=new T.Group();p.position.set(0,0,i?1.2:0);par.add(p);car(p,1,.85-.04*i);neckS.push(p);par=p}
+  const headP=new T.Group();headP.position.set(0,0,1.2);par.add(headP);
+  mesh(GI(0),mB,0,.15,.7,headP).scale.set(1.0,.7,1.25);mesh(box(.9,.4,.9),mB,0,.05,1.7,headP);
+  for(const s of[1,-1]){mesh(new T.SphereGeometry(.13,6,5),mE,s*.72,.45,1.2,headP,false);mesh(cone(.09,.5),mH,s*.3,-.35,1.95,headP).rotation.x=Math.PI}
+  const jawP=new T.Group();jawP.position.set(0,-.25,.5);headP.add(jawP);mesh(box(.85,.2,1.6),mU,0,0,.8,jawP);
+  // 머리 위 전조등과 목 옆 덮개
+  const lampM=mesh(cyl(.3,.3,.5,8),mA,0,.85,.9,headP);lampM.rotation.x=Math.PI/2;mesh(new T.SphereGeometry(.22,8,6),mFx,0,.85,1.2,lampM.parent,false);
+  const hood=[1,-1].map(s=>{const c=mesh(box(1.3,.12,1.7),mA,s*1.1,.1,-.3,headP);c.rotation.z=s*-.5;return c});
+  const rear=[];par=base;
+  for(let i=0;i<9;i++){const p=new T.Group();p.position.set(0,0,i?-1.25:0);par.add(p);car(p,-1,.85-.055*i);rear.push(p);par=p}
+  mesh(cone(.3,1.2),mA,0,0,-1.7,rear[8]).rotation.x=-Math.PI/2;
+  const tail=rear.slice(2),ring=(s,d)=>{const a=mesh(cyl(s.r+.22,s.r+.22,.7,8),mArm,0,.12,d*.6,s);a.rotation.x=Math.PI/2;return a};
+  const armor={head:[mesh(box(1.5,.2,1.2),mArm,0,.62,.3,headP),mesh(box(.2,.5,1.3),mArm,.85,.15,.8,headP),mesh(box(.2,.5,1.3),mArm,-.85,.15,.8,headP)],
+    legs:[ring(neckS[0],1),ring(neckS[1],1),ring(rear[0],-1),ring(rear[1],-1)],tail:[1,2,3].map(i=>ring(tail[i],-1))};
+  return rigFinish(h,{g,rig,M,base,neckS,rear,headP,jawP,tail,horns:[hood[0],lampM,hood[1]],armor,
+    anchors:{head:anc(headP,0,0,2.2),pawL:anc(headP,.7,0,1.2),pawR:anc(headP,-.7,0,1.2),tail:anc(tail[6],0,0,-1.3),tailCut:anc(tail[3],0,0,-1.1),body:anc(neckS[2],0,0,.6)},
+    hb:{head:anc(headP,0,.15,.8,1.0),body:[anc(neckS[3],0,.1,.6,.95),anc(neckS[4],0,.1,.6,.9)],legs:[neckS[0],neckS[1],neckS[2]].map(s=>anc(s,0,.1,.6,.98)).concat([rear[0],rear[1],rear[2]].map(s=>anc(s,0,.1,-.6,.98))),tail:tail.slice(1).map((s,i)=>anc(s,0,.1,-.6,.85-.06*i))},
+    coreAt:[tail[6],0,.1,-1.35],reach:{head:4.4,headR:1.4,legsR:2.3,tail:7.0,tailCut:4.8,tailR:1.8}});
+}
+const SERP_UP=[-.75,-.5,-.1,.45,.6]; // 목을 다 세웠을 때 마디별 각. 아래는 세우고 위는 앞으로 숙여 S자
+function poseSerpent(m,po,c){
+  const t=c.t,amp=c.amp,rise=clamp(po.rise,0,1.5);
+  m.rig.rotation.set(0,po.spin+po.yaw*.5,po.rigZ*.75);m.rig.position.set(po.px,po.rigY,po.pz);
+  m.neckS.forEach((s,i)=>{s.rotation.x=SERP_UP[i]*rise+po.rigX*(i<2?.5:.15);s.rotation.y=po.headY*.15+Math.sin(c.ph+i*.9)*.1*amp+c.bend*.5+Math.sin(t*1.3+i*.6)*.04;s.rotation.z=po.headZ*.1});
+  m.headP.rotation.set(po.headX+rise*.25,po.headY*.5+clamp(po.turn*.12,-.4,.4),po.headZ*.5);m.jawP.rotation.x=po.jaw;
+  // 몸 마디: 선로처럼 굽은 채로 놓였다가 움직일 때 물결이 뒤로 흘러감
+  m.rear.forEach((s,i)=>{s.rotation.y=(Math.sin(i*1.1)*.2+Math.sin(c.ph-i*.85)*(.08+.3*amp))*po.wave+Math.sin(t*1.1-i*.7)*po.tailAmp*.4+po.coil*.42+po.tailSide*(i>1?1:.3)-c.bend*(i<4?1:.4);
+    s.rotation.x=i>=5?po.tailUp*.3:i>=2?po.tailUp*.12:0});
+}
+MOTION.serpent={
+ ch:{rise:.55,rigX:0,rigY:0,rigZ:0,yaw:0,px:0,pz:0,spin:0,headX:0,headY:0,headZ:0,jaw:0,coil:0,wave:1,tailUp:0,tailSide:0,tailAmp:.1,legAmp:0},
+ wind:{
+  bite:q=>({rise:.55+.5*q,pz:-1.6*q,headX:.35*q,jaw:1.1*q,rigX:-.15*q}), // 목을 S자로 당겨 세우고 입을 벌림
+  clawL:q=>({rise:.55+.3*q,yaw:-.5*q,headY:-q,px:-.5*q,rigZ:-.2*q,jaw:.3*q}), // 머리를 한쪽 옆으로 크게 젖힘
+  clawR:q=>({rise:.55+.3*q,yaw:.5*q,headY:q,px:.5*q,rigZ:.2*q,jaw:.3*q}),
+  tail:q=>({spin:-1.45*Math.min(1,q),coil:.5*q,tailSide:.2*q,rise:.55+.2*q,headY:-.6*q,wave:.2}), // 몸을 둥글게 감음
+  lash:q=>({tailUp:q,rise:.55-.35*q,rigX:.2*q,headX:.2*q,wave:.3}), // 머리를 낮추고 꼬리를 등 위로 높이 세움
+  charge:(q,p,t)=>({rise:.55-.4*q,pz:-2*q,wave:1-q,headX:.1*q,jaw:.2*q,coil:sn(t*12)*.05*q}), // 몸을 일직선으로 펴고 낮게 뒤로 당김
+  slam:(q,p)=>({rise:.55+.8*Math.min(1,p*2.2),headX:.5*p,jaw:.6*p}),
+  breath:(q,p,t)=>({rise:.55+.7*q,headX:-.5*q,jaw:.35*q,headY:sn(t*3.2)*.35*q,rigZ:sn(t*3.2)*.08*q}), // 높이 서서 고개를 젖히고 좌우로 흔듦
+  roar:(q,p)=>({rise:.55+.85*q,headX:-q,jaw:.2+.8*p,coil:.3*q}), // 끝까지 곧추서서 하늘을 봄
+  stomp:(q,p,t)=>({rise:.55+(.6+sn(t*9)*.25)*q,headX:.7*q,jaw:.3*q,coil:.2*q}), // 높이 세운 머리로 땅을 내려다보며 끄덕임
+  throw:q=>({rise:.55+.4*q,headX:-.5*q,headY:-.9*q,yaw:-.3*q,jaw:.7*q,pz:-.8*q}),
+  sweep:q=>({rise:.55-.2*q,headY:1.2*q,yaw:.4*q,rigZ:.2*q,px:.5*q}),
+  nova:q=>({rise:.55+.8*q,coil:.6*q,headX:-.7*q,jaw:.6*q}),
+  volley:(q,p,t)=>({rise:.55+.6*q,headX:-.9*q,jaw:.8*q,rigZ:sn(t*15)*.1*q,coil:.4*q}),
+ },
+ hit:{
+  bite:()=>({rise:.3,pz:1.8,rigX:.5,headX:.2,jaw:.02}),
+  clawL:()=>({rise:.35,yaw:.55,headY:.9,px:.5,rigX:.3}),
+  clawR:()=>({rise:.35,yaw:-.55,headY:-.9,px:-.5,rigX:.3}),
+  tail:(q,p)=>({spin:-1.45+p*(TAU+1.45),coil:.25,rise:.5,wave:.2,tailSide:-.2}),
+  lash:()=>({tailUp:1.75,rise:.15,rigX:.25,headX:.3}),
+  charge:()=>({rise:.12,wave:.5,legAmp:1,jaw:.5,rigX:.1}),
+  slam:()=>({rise:.1,rigX:.3,jaw:.1}),
+  breath:(q,p)=>({rise:.9,headX:.25,jaw:.95,headY:sn(p*TAU)*.35}),
+  roar:(q,p,t)=>({rise:1.35,headX:-.4+sn(t*40)*.04,jaw:1,coil:.3}),
+  stomp:(q,p,t,B)=>{const k=Math.abs(sn(B.stateT/.36*Math.PI));return{rise:lerp(.1,1.1,k),rigX:lerp(.5,0,k),headX:.4}},
+  throw:()=>({rise:.7,headX:.5,headY:.3,yaw:.25,pz:.8,jaw:1}),
+  sweep:()=>({rise:.3,headY:-1.2,yaw:-.5,px:-.5,rigX:.3}),
+  nova:()=>({rise:1.2,coil:.2,jaw:1}),
+ },
+ state:{
+  chase:()=>({legAmp:.7}),
+  rest:(q,p,t)=>({rise:.3,headX:.5+sn(t*7)*.05,jaw:.5+sn(t*7)*.1,wave:.5}),
+  flinch:()=>({rise:.9,headX:-.6,headY:.7,rigZ:.25,jaw:.6}),
+  stun:(q,p,t)=>({rise:.12,headX:.3,rigZ:sn(t*9)*.05,jaw:.3,coil:.2}),
+  topple:()=>({rise:.06,rigZ:.9,legAmp:.3,jaw:.4,coil:.3,headZ:.8}),
+  dead:()=>({rise:.04,rigZ:.9,jaw:.4,coil:.3,headZ:.8}),
+  enrage:()=>({rise:1.4,headX:-.7,jaw:1,coil:.35}),
+ },
+};
+MOTION.serpent.wind._=MOTION.serpent.wind.volley;
+
+// ---------- 비행 뼈대 ----------
+// rig > 몸통(body: 공중에 뜸. 머리 > 턱, 날개 둘(안쪽 > 바깥쪽), 꼬리)
+function buildFlyer(h){
+  const M=beastMats(h),{mB,mU,mA,mH,mE,mArm,mFx}=M,g=new T.Group(),rig=new T.Group();g.add(rig);
+  const body=new T.Group();body.position.set(0,3,0);rig.add(body);
+  mesh(GI(),mB,0,0,0,body).scale.set(1.9,.8,2.7);mesh(GI(),mU,0,-.28,.1,body).scale.set(1.6,.62,2.3);
+  for(const[x,z]of[[.7,-.5],[-.7,-.5],[0,-1.3]])mesh(cyl(.22,.3,1.0),mA,x,.85,z,body).rotation.x=-.3; // 등의 배기관
+  mesh(cyl(.8,.8,.25,8),mA,0,-.84,.7,body); // 가슴 송풍기
+  const headP=new T.Group();headP.position.set(0,0,2.2);body.add(headP);
+  mesh(GI(0),mB,0,0,.2,headP).scale.set(1.2,.55,.9);
+  for(const s of[1,-1])mesh(new T.SphereGeometry(.14,6,5),mE,s*1.0,.22,.45,headP,false);
+  const horns=[[.75,-.1,1.1,1.35,-.25],[0,.4,0,-.4,0],[-.75,-.1,1.1,1.35,.25]].map(([x,y,z,rx,rz])=>{const c=mesh(cone(.3,1.5),x?mB:mA,x,y,z,headP);c.rotation.set(rx,0,rz);return c});
+  const jawP=new T.Group();jawP.position.set(0,-.3,.2);headP.add(jawP);mesh(box(1.3,.14,.9),mU,0,0,.4,jawP);
+  const wm=new T.MeshStandardMaterial({color:h.body,flatShading:true,side:T.DoubleSide,roughness:.9}),wm2=new T.MeshStandardMaterial({color:h.belly,flatShading:true,side:T.DoubleSide,roughness:.9,emissive:h.glow||0});
+  const tri=(v,mat,par)=>{const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(new Float32Array(v),3));geo.computeVertexNormals();const o=new T.Mesh(geo,mat);o.castShadow=true;par.add(o);return o};
+  const wings=[];
+  for(const s of[1,-1]){const p=new T.Group();p.position.set(s*1.3,0,.2);body.add(p);
+    tri([0,0,2.0, s*3.2,0,.7, s*3.2,0,-1.3, 0,0,2.0, s*3.2,0,-1.3, 0,0,-2.2],wm,p);
+    mesh(box(3.4,.18,.22),mA,s*1.6,.06,1.35,p).rotation.y=s*.39;
+    const o=new T.Group();o.position.set(s*3.2,0,0);p.add(o);
+    tri([0,0,.7, s*3.6,0,-1.0, 0,0,-1.3],wm2,o);mesh(box(3.9,.14,.18),mA,s*1.8,.05,-.15,o).rotation.y=s*.44;
+    p.tip=o;wings.push(p)}
+  const tail=tailChain(body,0,0,-2.4,7,.85,.26,.07,mB);mesh(cone(.22,1.0),mA,0,0,-1.3,tail[6]).rotation.x=-Math.PI/2;
+  const armor={head:[mesh(box(2.2,.2,1.3),mArm,0,.42,.3,headP)],legs:wings.map((w,i)=>mesh(box(2.6,.14,2.2),mArm,(i?-1:1)*1.7,.12,-.1,w)),tail:tailArmor(tail,.85,mArm)};
+  return rigFinish(h,{g,rig,M,body,headP,jawP,wings,tail,horns,armor,
+    anchors:{head:anc(headP,0,0,1.2),pawL:anc(wings[0].tip,1.8,0,-.3),pawR:anc(wings[1].tip,-1.8,0,-.3),tail:anc(tail[6],0,0,-1),tailCut:anc(tail[3],0,0,-.8),body:anc(body,0,-.7,.7)},
+    hb:{head:anc(headP,0,0,.3,1.1),body:[anc(body,0,0,.6,1.45),anc(body,0,0,-1.3,1.3)],legs:wings.flatMap((w,i)=>{const s=i?-1:1;return[anc(w,s*1.7,0,0,1.25),anc(w.tip,s*1.3,0,-.3,1.0)]}),tail:tail.slice(1).map((t,i)=>anc(t,0,0,-.4,.6-.04*i))},
+    coreAt:[body,0,-1.02,.7],reach:{head:3.0,headR:1.3,legsR:3.6,tail:5.6,tailCut:4.0,tailR:1.3}});
+}
+function poseFlyer(m,po,c){
+  const t=c.t,down=c.st==='topple'||c.st==='dead'||c.st==='stun';
+  po.fph=(po.fph||0)+po.flapHz*c.dt;
+  m.rig.rotation.set(0,po.spin+po.yaw*.6,0);m.rig.position.set(po.px,0,po.pz);
+  const y=Math.max(.75,3+po.alt+(down?0:Math.sin(t*2.1)*.18));m.body.position.y=y;
+  // 선회할 때 안쪽으로 몸을 기울임
+  m.body.rotation.set(po.rigX,po.yaw*.3+c.bend,po.rigZ-clamp(po.turn*.14,-.45,.45));
+  const lim=-Math.asin(clamp((y-.2)/6.8,0,1));
+  m.wings.forEach((w,i)=>{const s=i?-1:1,b=i?po.wingR:po.wingL,a=Math.max(lim,b+Math.sin(po.fph)*po.flap);
+    w.rotation.z=s*a;w.tip.rotation.z=s*Math.max(lim-a,b*.5+Math.sin(po.fph-1)*po.flap*1.3)});
+  m.headP.rotation.set(po.headX,po.headY*.5+clamp(po.turn*.12,-.4,.4),0);m.jawP.rotation.x=po.jaw;
+  m.tail.forEach((s,i)=>{s.rotation.y=Math.sin(t*1.6+i*.55)*po.tailAmp+po.tailSide;s.rotation.x=po.tailUp*(i===0?.5:.3)-po.rigX*.12});
+}
+MOTION.flyer={
+ ch:{alt:0,rigX:0,rigZ:0,yaw:0,px:0,pz:0,spin:0,wingL:.1,wingR:.1,flap:.35,flapHz:3.2,headX:0,headY:0,jaw:0,tailUp:0,tailSide:0,tailAmp:.18,legAmp:0},
+ wind:{
+  clawL:q=>({wingL:1.2*q,wingR:-.2*q,rigZ:.4*q,yaw:.3*q,flap:.06,px:-.5*q}), // 한쪽 날개를 수직으로 세움
+  clawR:q=>({wingR:1.2*q,wingL:-.2*q,rigZ:-.4*q,yaw:-.3*q,flap:.06,px:.5*q}),
+  sweep:q=>({wingL:.85*q,wingR:.85*q,rigX:-.2*q,flap:.05,alt:.6*q,pz:-.6*q}), // 양 날개를 V자로 치켜세움
+  bite:q=>({rigX:.45*q,pz:-1.8*q,wingL:-.35*q,wingR:-.35*q,flap:.08,alt:-.9*q,headX:.2*q,jaw:.8*q}), // 날개를 접어 내리고 낮게 뒤로 물러남
+  tail:q=>({spin:-1.45*Math.min(1,q),tailSide:.45*q,tailAmp:.03,rigZ:.3*q,flap:.2}),
+  lash:q=>({tailUp:q,rigX:.4*q,alt:-.5*q,flap:.15,wingL:.4*q,wingR:.4*q}), // 꼬리를 등 위로 전갈처럼 세움
+  charge:(q,p,t)=>({alt:-1.3*q,rigX:.12*q,wingL:-.15*q,wingR:-.15*q,flap:.06,pz:-1.8*q,rigZ:sn(t*12)*.08*q}), // 땅에 닿을 듯 낮게 깔려 좌우로 흔들림
+  slam:(q,p)=>({alt:1.2*Math.min(1,p*2.2),rigX:p<.45?-.5*Math.min(1,p*2.2):.8,wingL:.9,wingR:.9,flap:.1}), // 솟구쳤다가 머리부터 내리꽂음
+  breath:(q,p,t)=>({rigX:-.85*q,alt:.5*q,flap:.5,flapHz:5,headY:sn(t*3.2)*.3*q,rigZ:sn(t*3.2)*.12*q,jaw:.5*q,pz:-.7*q}), // 몸을 세워 배를 보이며 좌우로 흔듦
+  nova:q=>({alt:1.8*q,wingL:-1.2*q,wingR:-1.2*q,flap:.03,rigX:-.2*q,tailUp:.5*q}), // 높이 떠서 날개로 몸을 감쌈
+  roar:(q,p)=>({rigX:-.55*q,alt:.3*q,flap:.2+.8*q,flapHz:3.2+6*q,jaw:.2+.6*p}), // 몸을 세우고 날갯짓이 점점 빨라짐
+  stomp:(q,p,t)=>({alt:.9*q,wingL:(.6+sn(t*9)*.7)*q,wingR:(.6-sn(t*9)*.7)*q,flap:.05,rigX:.25*q}), // 양 날개를 번갈아 치켜듦
+  throw:q=>({rigX:-.45*q,yaw:-.5*q,rigZ:-.3*q,headY:-.4*q,jaw:.7*q,pz:-.8*q,alt:.3*q}),
+  volley:(q,p,t)=>({rigX:-1.1*q,alt:.4*q,flap:.15,rigZ:sn(t*15)*.12*q,wingL:.5*q,wingR:.5*q}), // 배를 앞으로 세워 온몸을 떪
+ },
+ hit:{
+  clawL:()=>({wingL:-.7,wingR:.3,rigZ:-.45,yaw:-.35,pz:1,flap:.05}),
+  clawR:()=>({wingR:-.7,wingL:.3,rigZ:.45,yaw:.35,pz:1,flap:.05}),
+  sweep:()=>({wingL:-.8,wingR:-.8,rigX:.3,pz:1.2,flap:.05,alt:-.5}),
+  bite:()=>({rigX:.25,pz:1.8,alt:-.9,wingL:.3,wingR:.3,jaw:.05}),
+  tail:(q,p)=>({spin:-1.45+p*(TAU+1.45),tailSide:-.2,tailAmp:.05,rigZ:.2}),
+  lash:()=>({tailUp:1.75,rigX:.6,alt:-.6}),
+  charge:()=>({alt:-1.3,rigX:.1,wingL:-.1,wingR:-.1,flap:.05,legAmp:1}),
+  slam:()=>({alt:-2,rigX:.1,wingL:.3,wingR:.3,flap:.05}),
+  breath:(q,p)=>({rigX:.15,alt:.3,jaw:1,yaw:sn(p*TAU)*.3,flap:.5,flapHz:5}),
+  nova:()=>({alt:1.2,wingL:1.3,wingR:1.3,flap:.2,flapHz:16}),
+  roar:()=>({rigX:-.5,alt:.3,flap:1,flapHz:10,jaw:1}),
+  stomp:(q,p,t,B)=>{const k=sn(B.stateT/.36*Math.PI);return{alt:.5,wingL:.4+k*.9,wingR:.4-k*.9,flap:.05,rigZ:k*.15}},
+  throw:()=>({rigX:.3,yaw:.3,pz:.8,jaw:1}),
+ },
+ state:{
+  chase:()=>({legAmp:.5,rigX:.14,flap:.45,flapHz:3.8}),
+  rest:(q,p,t)=>({alt:-1.6,rigX:.2,flap:.15,flapHz:7,wingL:-.15,wingR:-.15,jaw:.5+sn(t*7)*.1}), // 지쳐서 낮게 내려앉음
+  flinch:()=>({rigX:-.4,rigZ:.5,alt:-.4,wingL:.8,wingR:-.3,flap:.1,jaw:.6}),
+  stun:(q,p,t)=>({alt:-2.2,rigX:.25,flap:.03,wingL:-.2,wingR:-.2,rigZ:sn(t*9)*.05}),
+  topple:()=>({alt:-2.3,rigZ:.3,rigX:.1,flap:.25,flapHz:14,wingL:.5,wingR:-.25,jaw:.3}), // 떨어져 한쪽 날개로 퍼덕임
+  dead:()=>({alt:-2.35,rigZ:.3,flap:0,wingL:-.2,wingR:-.25,jaw:.3}),
+  enrage:()=>({rigX:-.6,alt:.8,flap:1,flapHz:9,jaw:1}),
+ },
+};
+MOTION.flyer.wind._=MOTION.flyer.wind.volley;
+
+const REACH={head:3.9,headR:1.3,legsR:2.3,tail:5.2,tailCut:3.4,tailR:1.4};
+const SKEL={
+ quad:{build:buildQuad,pose:poseQuad,motion:MOTION.quad},
+ biped:{build:buildBiped,pose:poseBiped,motion:MOTION.biped,stride:.6},
+ fore:{build:buildFore,pose:poseFore,motion:MOTION.fore,stride:.7},
+ serpent:{build:buildSerpent,pose:poseSerpent,motion:MOTION.serpent,stride:.5},
+ flyer:{build:buildFlyer,pose:poseFlyer,motion:MOTION.flyer,stride:.5},
+};
 const skelOf=h=>SKEL[h.skel||'quad'];
 function buildBeast(h){return skelOf(h).build(h)}
-function animBeast(dt){skelOf(B.h).anim(dt)}
 
 // ---------- 상태 ----------
 const P={x:0,z:20,h:Math.PI,y:0,hp:100,maxHp:100,st:100,maxSt:100,stDelay:0,stRegen:24,dodgeCost:25,atk:1,potMax:4,potions:4,lives:1,
@@ -744,8 +1216,8 @@ const CUE_AT={sweep:'head',lash:'tail',throw:'head',bite:'head',breath:'head',ro
 function updCue(){
   const c=cue;
   if(G.state!=='hunt'||!B||B.state!=='windup'||!B.atk){c.m.visible=false;c.on=false;return}
-  const p=clamp(B.stateT/B.dur,0,1),left=B.dur-B.stateT,A=ATK[B.atk];
-  let key=CUE_AT[B.atk];if(key==='tail'&&B.broken.tail)key='tailCut';
+  const p=clamp(B.stateT/B.dur,0,1),left=B.dur-B.stateT,A=AT(B.mv||B.atk);
+  let key=(B.m.cueAt&&B.m.cueAt[B.atk])||CUE_AT[B.atk];if(key==='tail'&&B.broken.tail)key='tailCut';
   B.m.anchors[key].getWorldPosition(c.m.position);c.on=true; // 저지 판정용 위치는 빛을 꺼도 유지
   if(!G.cueOn){c.m.visible=false;return}
   let sc=B.mod==='!'?1.3:B.mod==='~'?(p<.5?lerp(.4,1.0,p/.5):p<.62?lerp(1.0,.45,(p-.5)/.12):lerp(.45,1.5,(p-.62)/.38)):lerp(.4,1.5,p);
@@ -759,11 +1231,12 @@ function updCue(){
 // ---------- 거수 부위 ----------
 function beastParts(){
   const s=B.h.size,fx=Math.sin(B.hd),fz=Math.cos(B.hd);
-  const tl=B.broken.tail?3.4:5.2;
-  return[{id:'head',x:B.x+fx*3.9*s,z:B.z+fz*3.9*s,r:1.3*s,mult:1.25},{id:'legs',x:B.x,z:B.z,r:2.3*s,mult:.9},{id:'tail',x:B.x-fx*tl*s,z:B.z-fz*tl*s,r:1.4*s,mult:1.05}];
+  const R=B.m.reach||REACH,tl=B.broken.tail?R.tailCut:R.tail;
+  return[{id:'head',x:B.x+fx*R.head*s,z:B.z+fz*R.head*s,r:R.headR*s,mult:1.25},{id:'legs',x:B.x,z:B.z,r:R.legsR*s,mult:.9},{id:'tail',x:B.x-fx*tl*s,z:B.z-fz*tl*s,r:R.tailR*s,mult:1.05}];
 }
 function nearestPart(){let best=null,bd=1e9;for(const p of beastParts()){const d=Math.hypot(P.x-p.x,P.z-p.z)-p.r;if(d<bd){bd=d;best=p}}best.gap=bd;return best}
 const PART_KO={head:'머리',legs:'다리',tail:'꼬리'};
+const partKo=id=>(B&&B.h.parts&&B.h.parts[id])||PART_KO[id];
 
 function hitBeast(part,base,heavy,quiet){
   if(B.state==='dead')return;
@@ -787,11 +1260,11 @@ function hitBeast(part,base,heavy,quiet){
   const id=part.id;
   if(B.php[id]!==undefined)B.php[id]-=dmg;
   if(B.php[id]<=0){
-    if(id==='legs'){B.pmax.legs*=1.45;B.php.legs=B.pmax.legs;if(!B.broken.legs){B.broken.legs=true;G.huntBreaks++}topple(5.5);say('다리 붕괴','거수가 쓰러진 틈')}
+    if(id==='legs'){B.pmax.legs*=1.45;B.php.legs=B.pmax.legs;if(!B.broken.legs){B.broken.legs=true;G.huntBreaks++}topple(5.5);say(partKo('legs')+' 붕괴','거수가 쓰러진 틈')}
     else if(!B.broken[id]){
       B.broken[id]=true;G.huntBreaks++;B.php[id]=0;
-      if(id==='head'){B.m.horns.forEach((hn,i)=>{if(i!==1)hn.visible=false;else hn.scale.y=.5});setState('stun');B.dur=4.5;say('머리 파괴',B.h.core==='brow'?'거수 기절. 이제 숨 고를 때마다 이마 약점 노출':'거수 기절')}
-      else{for(let i=4;i<7;i++)B.m.tail[i].visible=false;if(B.h.core==='tailtip'){B.m.tail[3].add(B.m.hb.core);B.m.hb.core.position.set(0,0,-1.15);B.coreForce=true}topple(3.5);say('꼬리 절단',B.h.core==='tailtip'?'잘린 자리에 약점 상시 노출':'꼬리 공격 범위 감소');const t=beastParts()[2];burst(t.x,1.5,t.z,20,B.h.body,8,8,1.6)}
+      if(id==='head'){B.m.horns.forEach((hn,i)=>{if(i!==1)hn.visible=false;else hn.scale.y=.5});setState('stun');B.dur=4.5;say('머리 파괴',B.h.core==='brow'?'거수 기절. 이제 숨 고를 때마다 '+(B.h.coreKo||'이마')+' 약점 노출':'거수 기절')}
+      else{if(B.m.cutTail)B.m.cutTail();else for(let i=4;i<7;i++)B.m.tail[i].visible=false;if(B.h.core==='tailtip'){B.m.tail[3].add(B.m.hb.core);B.m.hb.core.position.set(0,0,-1.15);B.coreForce=true}topple(3.5);say(B.h.parts&&B.h.parts.tail?partKo('tail')+' 파괴':'꼬리 절단',B.h.core==='tailtip'?'잘린 자리에 약점 상시 노출':'회전 공격 범위 감소');const t=beastParts()[2];burst(t.x,1.5,t.z,20,B.h.body,8,8,1.6)}
       sfx.brk();
     }
   }
@@ -805,9 +1278,9 @@ const PMULT={head:1.3,core:2.6,body:.5,legs:.95,tail:1.05},PBONUS={core:1.6,head
 function updSpheres(){
   const m=B.m,s=B.h.size,out=[];
   const add=(o,r,part)=>{o.getWorldPosition(_v);out.push({x:_v.x,y:_v.y,z:_v.z,r:r*s,part})};
-  add(m.hb.head,.95,'head');add(m.hb.bodyF,1.5,'body');add(m.hb.bodyB,1.5,'body');
-  m.hb.legs.forEach(o=>add(o,.66,'legs'));
-  m.hb.tail.forEach((o,i)=>{if(!(B.broken.tail&&i>=3))add(o,.62-.06*i,'tail')});
+  add(m.hb.head,m.hb.head.hr||.95,'head');(m.hb.body||[m.hb.bodyF,m.hb.bodyB]).forEach(o=>add(o,o.hr||1.5,'body'));
+  m.hb.legs.forEach(o=>add(o,o.hr||.66,'legs'));
+  m.hb.tail.forEach((o,i)=>{if(!(B.broken.tail&&i>=3))add(o,o.hr||.62-.06*i,'tail')});
   if(B.coreOpen)add(m.hb.core,.38,'core');
   G.sph=out;
 }
@@ -920,9 +1393,9 @@ function updShots(dt){
 function throwRock(){
   const s=B.h.size,hp=B.m.anchors.head;hp.getWorldPosition(_v);
   const lead=.55,tx=TG.x+TG.vx*lead,tz=TG.z+TG.vz*lead,dx=tx-_v.x,dz=tz-_v.z,d=Math.hypot(dx,dz)||1,spd=24+3*G.hunt,tt=d/spd;
-  const col=B.h.id==='frost'?0xbfe6f7:B.h.id==='ash'?0xff7a3c:B.h.id==='night'?0x9a7cff:B.h.id==='thorn'?0x9cff6a:0x8b8577;
-  const m=mesh(B.h.id==='frost'?new T.OctahedronGeometry(.9,0):new T.DodecahedronGeometry(.9,0),B.h.id==='stone'?std(col):new T.MeshBasicMaterial({color:col}),_v.x,_v.y,_v.z,scene);
-  G.shots.push({m,x:_v.x,y:_v.y,z:_v.z,vx:dx/d*spd,vz:dz/d*spd,vy:(1.2-_v.y)/tt+9*tt/2,t:0,r:1.1*s,dmg:ATK.throw.dmg*B.h.dmg,col});
+  const col=B.h.fx||0x8b8577;
+  const m=mesh(B.h.id==='frost'?new T.OctahedronGeometry(.9,0):new T.DodecahedronGeometry(.9,0),B.h.fx?new T.MeshBasicMaterial({color:col}):std(col),_v.x,_v.y,_v.z,scene);
+  G.shots.push({m,x:_v.x,y:_v.y,z:_v.z,vx:dx/d*spd,vz:dz/d*spd,vy:(1.2-_v.y)/tt+9*tt/2,t:0,r:1.1*s,dmg:AT('throw').dmg*B.h.dmg,col});
 }
 // 약점: 평소에는 닫혀 있고 정해진 동작과 상태에서만 열림. 부위 파괴로 상시 노출 가능
 const finOpen=()=>!!B&&['rest','topple','stun','flinch'].includes(B.state)&&!B.soft;
@@ -970,7 +1443,7 @@ function startFin(exec){
 }
 function breakArmor(id,at){
   B.arm[id]=0;chipsDirty=true;sfx.brk();G.shake=Math.max(G.shake,.5);burst(at.x,at.y!=null?at.y:1.8,at.z,24,0xaab4be,10,7,1.4);
-  const c=CORE_ARM[B.h.core]===id;say(PART_KO[id]+' 갑각 파괴',c?'이제 이 부위 약점이 열리기 시작':'이제 피해가 온전히 적용');logEv('갑각 파괴',id);
+  const c=CORE_ARM[B.h.core]===id;say(partKo(id)+' 갑각 파괴',c?'이제 이 부위 약점이 열리기 시작':'이제 피해가 온전히 적용');logEv('갑각 파괴',id);
   if(G.tut)G.tut.armBroke=1;else addStagger(15);
 }
 // 결정타: 체간이 무너진 거수의 체력 한 칸을 끊음
@@ -992,7 +1465,7 @@ function killBeast(){logEv('토벌 성공');
 
 // ---------- 거수 두뇌: 콤보 → 휴식 ----------
 function firstOK(a){
-  a=a.replace(/[~!]$/,'');
+  a=kindOf(a.replace(/[~!]$/,''));
   const s=B.h.size,dx=TG.x-B.x,dz=TG.z-B.z,d=Math.hypot(dx,dz),ang=Math.abs(wrapA(Math.atan2(dx,dz)-B.hd));
   switch(a){
     case'bite':case'clawL':case'clawR':return d<8*s&&ang<1.1;
@@ -1007,7 +1480,7 @@ function firstOK(a){
     default:return d<15;
   }
 }
-const RANGED=[[['throw'],['throw','charge'],['slam','throw']],[['throw','throw'],['volley','throw'],['slam','charge']],[['throw','roar'],['throw','throw','charge'],['slam','tail']],[['throw','throw','slam'],['volley','throw','charge']],[['throw','throw','throw'],['slam','throw','charge'],['volley','slam']]];
+const RANGED=[[['throw'],['throw','charge'],['slam','throw']],[['throw','throw'],['volley','throw'],['slam','charge']],[['throw','roar'],['throw','throw','charge'],['slam','tail']],[['throw','throw','slam'],['throw','charge','lash']],[['throw','throw','throw'],['slam','throw','charge'],['volley','slam']]];
 function chooseCombo(){
   // 멀리 있는 사냥꾼에게는 던지기, 돌진, 도약으로 압박
   const far=Math.hypot(TG.x-B.x,TG.z-B.z)>11;
@@ -1021,9 +1494,9 @@ function chooseCombo(){
 }
 const windScale=()=>[1,.9,.8][B.enr];
 function startAttack(raw){
-  const mod=/[~!]$/.test(raw)?raw.slice(-1):'',a=mod?raw.slice(0,-1):raw;
-  const s=B.h.size,A=ATK[a];
-  setState('windup');B.atk=a;B.mod=mod;B.dur=A.wind*windScale()*(B.ci?.85:1)*(B.h.wind||1)*(mod==='~'?TUNE.slowMul:mod==='!'?TUNE.quickMul:1);
+  const mod=/[~!]$/.test(raw)?raw.slice(-1):'',mv=mod?raw.slice(0,-1):raw,a=kindOf(mv);
+  const s=B.h.size,A=AT(mv);
+  setState('windup');B.atk=a;B.mv=mv;B.mod=mod;B.dur=A.wind*windScale()*(B.ci?.85:1)*(B.h.wind||1)*(mod==='~'?TUNE.slowMul:mod==='!'?TUNE.quickMul:1);
   const h=B.hd;let sh=null;
   if(a==='bite')sh={k:'cone',x:B.x,z:B.z,h,half:.55,r:8*s};
   else if(a==='clawL'||a==='clawR')sh={k:'cone',x:B.x,z:B.z,h:h+A.off,half:.85,r:7.2*s};
@@ -1036,19 +1509,20 @@ function startAttack(raw){
   else if(a==='stomp')sh={k:'circle',x:B.x,z:B.z,r:13.5};
   else if(a==='charge'){B.chargeH=Math.atan2(TG.x-B.x,TG.z-B.z);sh={k:'rect',x:B.x,z:B.z,h:B.chargeH,len:28,wid:5.4*s}}
   else if(a==='slam'){let tx=TG.x,tz=TG.z;const r=Math.hypot(tx,tz);if(r>AR-5){tx*=(AR-5)/r;tz*=(AR-5)/r}B.sx=B.x;B.sz=B.z;B.tx=tx;B.tz=tz;sh={k:'circle',x:tx,z:tz,r:6.6*s}}
+  if(sh&&A.sh)Object.assign(sh,A.sh);
   B.shape=sh;if(sh&&B.h.tele)B.tele=teleMesh(sh);
   if(A.noRoll){B.m.eyeM.color.set(0x3aa0ff);sfx.warn2()}else sfx.warn();
 }
 function strike(){
-  const a=B.atk,A=ATK[a],dm=A.dmg*B.h.dmg*(a==='bite'&&B.broken.head?.7:1);
+  const a=B.atk,A=AT(B.mv||a),dm=A.dmg*B.h.dmg*(a==='bite'&&B.broken.head?.7:1);
   const sh=B.shape;bLz.visible=false;
   if(G.decoy&&sh&&inside(sh,G.decoy.x,G.decoy.z,1))popDecoy();
   if(a==='volley'){
-    const n=B.enr>=2?5:3,col=B.h.id==='frost'?0xbfe6f7:B.h.id==='ash'?0xff7a3c:B.h.id==='night'?0x9a7cff:0x8b8577;
+    const n=B.enr>=2?5:3,col=B.h.fx||0x8b8577;
     for(let i=0;i<n;i++){
       const x=TG.x+TG.vx*.45*i+rand(-1.6,1.6)*(i?1:0),z=TG.z+TG.vz*.45*i+rand(-1.6,1.6)*(i?1:0);
       const hz=teleMesh({k:'circle',x,z,r:3.3},!B.h.tele);
-      const pr=mesh(B.h.id==='frost'?new T.ConeGeometry(1,4,5):new T.DodecahedronGeometry(1.3,0),std(col,B.h.id==='ash'?{emissive:0xaa3a08}:B.h.id==='night'?{emissive:0x3a2a88}:{}),x,40,z,scene);if(B.h.id==='frost')pr.rotation.x=Math.PI;
+      const pr=mesh(B.h.id==='frost'?new T.ConeGeometry(1,4,5):new T.DodecahedronGeometry(1.3,0),std(col,B.h.fx?{emissive:new T.Color(col).multiplyScalar(.45).getHex()}:{}),x,40,z,scene);if(B.h.id==='frost')pr.rotation.x=Math.PI;
       Object.assign(hz,{t:0,total:1.0+i*.42,dmg:dm,proj:pr,col});G.hazards.push(hz);
     }
     sfx.roar(.4);
@@ -1084,7 +1558,7 @@ function updBeast(dt){
     else if(B.think<=0&&!P.down)chooseCombo();
     break}
    case'windup':{
-    const p=B.stateT/B.dur,a=B.atk,A=ATK[a],sh=B.shape;
+    const p=B.stateT/B.dur,a=B.atk,A=AT(B.mv||a),sh=B.shape;
     if(a==='charge'){if(p<.6){B.chargeH=want;sh.h=want}B.hd+=wrapA(B.chargeH-B.hd)*damp(dt,10);sh.x=B.x;sh.z=B.z}
     else if(a==='slam'){B.hd+=wrapA(Math.atan2(B.tx-B.x,B.tz-B.z)-B.hd)*damp(dt,6);if(p>.45){const k=(p-.45)/.55;B.x=lerp(B.sx,B.tx,k);B.z=lerp(B.sz,B.tz,k);B.y=Math.sin(k*Math.PI)*7}}
     else if(a==='volley'){turn(1.5)}
@@ -1106,14 +1580,14 @@ function updBeast(dt){
    case'strike':{
     const a=B.atk;
     if(a==='charge'){
-      const v=28/ATK.charge.act;const nx=B.x+Math.sin(B.chargeH)*v*dt,nz=B.z+Math.cos(B.chargeH)*v*dt;
+      const CA=AT(B.mv||'charge'),v=28/CA.act;const nx=B.x+Math.sin(B.chargeH)*v*dt,nz=B.z+Math.cos(B.chargeH)*v*dt;
       if(Math.hypot(nx,nz)<AR-3){B.x=nx;B.z=nz;B.walk+=v*dt}else if(!B.hitOnce){B.hitOnce=true;G.shake=.6;burst(B.x,1,B.z,16,0xd8cdb8,8,6);sfx.boom();B.stateT=B.dur}
       if(G.decoy&&d<3.5*s)popDecoy();
-      if(!B.hitOnce&&dP<2.6*s+1){B.hitOnce=true;hurt(ATK.charge.dmg*h.dmg,B.x,B.z,ATK.charge);if(B.state!=='strike')break}
+      if(!B.hitOnce&&dP<2.6*s+1){B.hitOnce=true;hurt(CA.dmg*h.dmg,B.x,B.z,CA);if(B.state!=='strike')break}
     }
     if(B.linger){
       B.linger.s.x=B.x;B.linger.s.z=B.z;
-      if(inside(B.linger.s,P.x,P.z))hurt(B.linger.dmg,B.x,B.z,ATK[a]);
+      if(inside(B.linger.s,P.x,P.z))hurt(B.linger.dmg,B.x,B.z,AT(B.mv||a));
       if(!B.linger)break;
       B.fxT-=dt;
       if(B.fxT<=0){B.fxT=a==='stomp'?.36:.14;const r=B.linger.s.r;
@@ -1150,71 +1624,47 @@ function windQ(p,left,mod){
   if(left<TUNE.snap)q+=TUNE.snapAmp*e(1-left/TUNE.snap);
   return q;
 }
-function animQuad(dt){
-  const m=B.m,st=B.state,t=G.time,p=B.dur?clamp(B.stateT/B.dur,0,1):0,a=B.atk;
+// 모든 뼈대 공통: 상태에 맞는 자세 목표값을 모션 표에서 찾고, 부드럽게 따라간 뒤, 뼈대별 pose 함수가 관절에 적용
+function animBeast(dt){
+  const S=skelOf(B.h),M=S.motion,hm=B.h.motion||{},m=B.m,st=B.state,t=G.time,p=B.dur?clamp(B.stateT/B.dur,0,1):0,a=B.atk,mv=B.mv||a;
   const left=st==='windup'?B.dur-B.stateT:9,snap=left<TUNE.snap;
   if(st==='windup'){if(snap&&!B.snapS){B.snapS=true;sfx.glint()}}else B.snapS=false;
   let q=st==='windup'?windQ(p,left,B.mod):0;
   if(st==='windup'&&!snap)q*=1+.02*Math.sin(t*42)*p; // 힘을 모으는 떨림
-  let headX=0,headY=0,headZ=0,jaw=0,rigZ=0,rigY=0,rigX=0,yaw=0,spin=0,tailAmp=.14,tailSide=0,wing=.15,legAmp=0,pawL=0,pawR=0,front=0,hind=0,splay=0,pz=0,px=0,tailUp=0;
-  if(st==='chase')legAmp=.5;
-  if(st==='windup'){
-    // 공격마다 들리는 부위와 몸 기울기가 겹치지 않는 실루엣
-    if(a==='bite'){headX=-.55*q;jaw=1.05*q;rigX=.14*q;rigY=-.4*q;pz=-1.4*q} // 낮게 웅크려 뒤로 빠지며 입을 크게 벌림
-    else if(a==='clawL'){pawL=-1.7*q;rigZ=.34*q;rigX=-.2*q;yaw=.28*q;headY=-.4*q;px=-.5*q;pz=-.6*q} // 왼쪽 어깨와 앞발을 높이 들고 몸을 왼쪽으로 비틂
-    else if(a==='clawR'){pawR=-1.7*q;rigZ=-.34*q;rigX=-.2*q;yaw=-.28*q;headY=.4*q;px=.5*q;pz=-.6*q}
-    else if(a==='tail'){spin=-1.45*Math.min(1,q);tailSide=.42*q;tailAmp=.04;headY=-.85*q;rigZ=.2*q;rigX=.12*q;rigY=-.2*q} // 옆구리를 보이며 꼬리를 한쪽으로 감아 당김
-    else if(a==='charge'){rigX=.28*q;headX=.55*q;rigY=-.3*q;pawL=(-.5+Math.sin(t*12)*.6)*q;pz=-1.6*q;tailUp=.1*q} // 머리를 숙이고 엉덩이를 든 채 앞발로 땅을 긁음
-    else if(a==='slam'){rigX=-.3*Math.min(1,p*2.2);wing=1.1;front=-.5*p;splay=.4*Math.min(1,p*2.2)}
-    else if(a==='breath'){headX=-.8*q;jaw=.3*q;rigX=-.12*q;rigY=.22*q;headY=Math.sin(t*3.2)*.26*q;rigZ=Math.sin(t*3.2)*.1*q;pz=-.7*q} // 꼿꼿이 서서 고개를 젖히고 좌우로 천천히 흔듦
-    else if(a==='nova'){rigX=-.55*q;headX=-.75*q;jaw=.6*q;wing=1.0*q;front=-.6*q;splay=.75*q;tailUp=.36*q} // 상체를 세워 앞발을 양옆으로 벌리고 꼬리를 수직으로 세움
-    else if(a==='roar'){rigX=.1*q;rigY=-.22*q;headX=-1.15*q;jaw=.15+.5*p;wing=.6*q;splay=.4*q} // 네 발을 넓게 딛고 목만 하늘로
-    else if(a==='stomp'){rigX=-.7*q;headX=.6*q;pawL=(-.9+Math.sin(t*9)*.5)*q;pawR=(-.9-Math.sin(t*9)*.5)*q;wing=.8*q} // 상체를 세우고 땅을 내려다보며 앞발을 번갈아 구름
-    else if(a==='throw'){headX=-.6*q;headY=-1.0*q;headZ=.4*q;rigZ=-.2*q;yaw=-.3*q;jaw=.7*q;pz=-.8*q} // 머리를 오른쪽 뒤로 크게 젖힘
-    else if(a==='sweep'){headY=1.2*q;headX=.45*q;headZ=-.5*q;rigZ=.3*q;yaw=.2*q;rigX=.16*q;pz=-.6*q;px=.4*q} // 머리를 왼쪽 아래로 낮게 틂
-    else if(a==='lash'){tailUp=1.0*q;rigX=.34*q;headX=.45*q;rigY=-.35*q;splay=.3*q} // 앞을 낮추고 꼬리를 머리 위로 말아 올림
-    else{rigX=-.28*q;rigY=-.45*q;hind=.5*q;headX=-1.0*q;jaw=.8*q;wing=.9*q;rigZ=Math.sin(t*15)*.11*q;headZ=Math.sin(t*15+1)*.22*q}} // 낙하물: 엉덩이를 깔고 앉아 하늘을 보며 온몸을 좌우로 털어 냄
-  else if(st==='strike'){
-    if(a==='bite'){headX=.5;jaw=.03;rigX=.1;pz=1.3}
-    else if(a==='clawL'){pawL=.8;rigZ=-.3;rigX=.12;yaw=-.3;pz=1.0}
-    else if(a==='clawR'){pawR=.8;rigZ=.3;rigX=.12;yaw=.3;pz=1.0}
-    else if(a==='tail'){spin=-1.45+p*(TAU+1.45);tailAmp=.05;tailSide=-.2}
-    else if(a==='charge'){rigX=.12;headX=.45;legAmp=.9}
-    else if(a==='breath'){headX=.12;jaw=.95;headY=Math.sin(p*Math.PI*2)*.3}
-    else if(a==='nova'){rigX=.1;headX=-.7;jaw=.9;wing=1.2}
-    else if(a==='slam'){rigY=-.4;splay=.5}
-    else if(a==='throw'){headX=.6;headY=.4;rigX=.15;yaw=.25;pz=.8}
-    else if(a==='sweep'){headY=-1.2;headX=.25;rigZ=-.3;yaw=-.4;pz=1.2}
-    else if(a==='lash'){tailUp=1.75;rigX=.42;rigY=-.45;headX=.5}
-    else if(a==='roar'){rigX=-.1;headX=-.35+Math.sin(t*40)*.04;jaw=1.0;wing=1.2;splay=.4}
-    else if(a==='stomp'){const k=Math.abs(Math.sin(B.stateT/.36*Math.PI));rigX=lerp(.12,-.5,k);front=lerp(.2,-.8,k)}}
-  else if(st==='rest'){headX=.55+Math.sin(t*7)*.06;jaw=.45+Math.sin(t*7)*.1;rigY=-.25+Math.sin(t*7)*.03}
-  else if(st==='flinch'){headX=-.6;headY=.6;rigZ=.22;rigX=-.15;jaw=.6}
-  else if(st==='stun'){headX=.75;rigZ=Math.sin(t*9)*.05;rigY=-.3}
-  else if(st==='topple'||st==='dead'){rigZ=1.35;rigY=-.75;legAmp=st==='topple'?.25:0;jaw=.3}
-  else if(st==='enrage'){headX=-.75;jaw=.95;wing=1.2}
-  if(st==='windup'&&a!=='tail')tailAmp=.02;
-  const po=B.pose,fast=st==='strike';
+  // 찾는 순서: 거수의 덮어쓰기 > 뼈대 기본 > (새 공격이면) 판정을 빌린 공격의 모션 > 뼈대의 기본 준비 자세
+  const tab=st==='windup'?'wind':st==='strike'?'hit':'state',pick=k=>(hm[tab]&&hm[tab][k])||M[tab][k];
+  const f=tab==='state'?pick(st):pick(mv)||pick(a)||M[tab]._;
+  const o=f?f(q,p,t,B):null,tg=Object.assign({},M.ch,o);
+  if(st==='windup'&&a!=='tail'&&'tailAmp' in M.ch&&!(o&&'tailAmp' in o))tg.tailAmp=.02;
+  const po=B.pose,fast=st==='strike',down=st==='topple'||st==='dead';
   // 공격 직후에는 무게감 있게 천천히 자세 회복
   if(po.lastSt==='strike'&&st!=='strike')po.rec=.45;po.lastSt=st;po.rec=Math.max(0,(po.rec||0)-dt);
   const k=damp(dt,fast?26:snap?24:po.rec>0?6:11);
-  // 방향 전환: 머리가 먼저 돌고 가슴이 따라가며 꼬리는 늦게 따라옴. 제자리 회전 중에도 발을 디딤
+  // 방향 전환: 머리가 먼저 돌고 몸이 따라가며 꼬리는 늦게 따라옴. 제자리 회전 중에도 발을 디딤
   const rate=dt>0&&po.hd0!==undefined?clamp(wrapA(B.hd-po.hd0)/dt,-4,4):0;po.hd0=B.hd;
   const turning=st==='chase'||st==='link'||st==='windup';
   po.turn=lerp(po.turn||0,turning?rate:0,damp(dt,7));
   po.tph=(po.tph||0)+Math.abs(po.turn)*1.5*dt;
+  let legAmp=tg.legAmp||0;
   if(turning&&st!=='windup')legAmp=Math.max(legAmp,Math.min(.4,Math.abs(po.turn)*.22));
   po.legAmp=lerp(po.legAmp||0,legAmp,damp(dt,st==='topple'?20:9));
-  const amp=po.legAmp,ph=st==='topple'?t*9:B.walk*.75+po.tph,gait=Math.sin(ph),bend=po.turn*.08;
-  po.headX=lerp(po.headX,headX,k);po.headY=lerp(po.headY||0,headY,k);po.headZ=lerp(po.headZ||0,headZ,k);po.jaw=lerp(po.jaw,jaw,k);po.rigZ=lerp(po.rigZ,rigZ,damp(dt,st==='topple'||st==='dead'?6:fast?26:11));po.rigY=lerp(po.rigY,rigY,k);po.rigX=lerp(po.rigX,rigX,k);
-  po.yaw=lerp(po.yaw||0,yaw,k);po.px=lerp(po.px||0,px,k);po.hind=lerp(po.hind||0,hind,k);po.splay=lerp(po.splay||0,splay,k);po.tailSide=lerp(po.tailSide||0,tailSide-po.turn*.06,k);
-  po.tailUp=lerp(po.tailUp||0,tailUp,damp(dt,st==='strike'?30:snap?24:9));
-  po.pawL=lerp(po.pawL||0,pawL+front,k);po.pawR=lerp(po.pawR||0,pawR+front,k);
-  po.spin=(st==='windup'||st==='strike')&&a==='tail'?(st==='windup'?lerp(po.spin,spin,k):spin):lerp(po.spin,0,damp(dt,10));
-  const alive=st!=='dead',breath=alive?Math.sin(t*(st==='rest'?7:1.9)):0;
+  for(const c in M.ch){
+    if(c==='legAmp'||c==='spin')continue;
+    const kk=c==='rigZ'?damp(dt,down?6:fast?26:11):c==='tailUp'?damp(dt,fast?30:snap?24:9):k;
+    po[c]=lerp(po[c]===undefined?M.ch[c]:po[c],tg[c]-(c==='tailSide'?po.turn*.06:0),kk)}
+  // 한 바퀴 도는 공격: 준비 중에는 따라가고, 치는 동안에는 표의 값 그대로
+  if(st==='strike'&&tg.spin)po.spin=tg.spin;else{if(st!=='windup')po.spin=wrapA(po.spin||0);po.spin=lerp(po.spin||0,tg.spin||0,st==='windup'?k:damp(dt,10))}
+  const amp=po.legAmp,ph=st==='topple'?t*9:B.walk*(S.stride||.75)+po.tph;
   m.g.position.set(B.x,B.y,B.z);m.g.rotation.y=B.hd;
+  S.pose(m,po,{st,t,p,a,dt,amp,ph,gait:Math.sin(ph),bend:po.turn*.08,snap,breath:st!=='dead'?Math.sin(t*(st==='rest'?7:1.9)):0});
+  B.flash=Math.max(0,B.flash-dt*6);const e=B.flash*.6+(B.enr&&st!=='dead'?(.06+.04*Math.sin(t*6))*B.enr:0);
+  m.mats[0].emissive.setRGB(e+(B.enr?.05*B.enr:0),e*.8,e*.7);m.mats[1].emissive.setRGB(e,e*.8,e*.7);
+}
+// 네발 뼈대의 관절 적용
+function poseQuad(m,po,c){
+  const st=c.st,t=c.t,amp=c.amp,ph=c.ph,gait=c.gait,bend=c.bend,breath=c.breath;
   m.rig.rotation.set(po.rigX,po.spin+po.yaw*.6,po.rigZ*.75);
-  po.pz=lerp(po.pz||0,pz,k);m.rig.position.set(po.px,(m.baseY||0)+po.rigY+(st==='windup'?0:breath*.03)-Math.abs(Math.cos(ph))*.07*amp,po.pz);
+  m.rig.position.set(po.px,(m.baseY||0)+po.rigY+(st==='windup'?0:breath*.03)-Math.abs(Math.cos(ph))*.07*amp,po.pz);
   // 척추: 가슴과 엉덩이가 걸음에 맞춰 반대로 흔들리고, 몸 비틀기와 기울기는 가슴이 더 크게 받음
   m.chest.rotation.set(0,po.yaw*.4+gait*.07*amp+bend,po.rigZ*.25+gait*.05*amp);
   m.hip.rotation.set(0,-po.yaw*.25-gait*.09*amp-bend*.8,-gait*.05*amp);
@@ -1223,14 +1673,12 @@ function animQuad(dt){
   m.neck.rotation.set(po.headX*.4,hy*.45,po.headZ*.4);m.headP.rotation.set(po.headX*.6-gait*.03*amp,hy*.55,po.headZ*.6);m.jawP.rotation.x=po.jaw;
   // 다리: 허벅지가 앞뒤로 흔들리고, 발을 앞으로 옮기는 동안 무릎을 접어 들어 올림
   const rear=Math.max(0,-po.rigX)*.85;
-  m.legs.forEach((l,i)=>{const fr=i<2,phi=ph+(i===0||i===3?0:Math.PI),sw=Math.sin(phi)*amp*.62,lift=Math.max(0,-Math.cos(phi))*amp,paw=i===0?po.pawL:i===1?po.pawR:rear+po.hind,cock=fr?clamp(-paw/1.7,0,1.3):0;
+  m.legs.forEach((l,i)=>{const fr=i<2,phi=ph+(i===0||i===3?0:Math.PI),sw=Math.sin(phi)*amp*.62,lift=Math.max(0,-Math.cos(phi))*amp,paw=i===0?po.pawL+po.front:i===1?po.pawR+po.front:rear+po.hind,cock=fr?clamp(-paw/1.7,0,1.3):0;
     l.rotation.x=(fr?.2:-.25)+sw+paw-lift*.3;l.rotation.z=i===0?po.splay:i===1?-po.splay:0;
     l.knee.rotation.x=(fr?-.4:.5)+(fr?-1:1)*lift*.95-cock*.55+(fr?Math.max(0,paw)*.3:0)});
   const curl=m.K.tailCurl;
-  m.tail.forEach((s,i)=>{s.rotation.y=Math.sin(t*1.6+i*.55)*tailAmp+po.tailSide-gait*.03*amp;s.rotation.x=(i===0?.12:(st==='rest'?-.05:.03))+curl+po.tailUp*(i===0?.5:.3)});
-  if(m.wings)m.wings.forEach((w,i)=>{const s=i?-1:1;w.rotation.z=s*(wing*.7+Math.sin(t*(wing>.8?14:2))*.08*(wing>.8?2:1))});
-  B.flash=Math.max(0,B.flash-dt*6);const e=B.flash*.6+(B.enr&&st!=='dead'?(.06+.04*Math.sin(t*6))*B.enr:0);
-  m.mats[0].emissive.setRGB(e+(B.enr?.05*B.enr:0),e*.8,e*.7);m.mats[1].emissive.setRGB(e,e*.8,e*.7);
+  m.tail.forEach((s,i)=>{s.rotation.y=Math.sin(t*1.6+i*.55)*po.tailAmp+po.tailSide-gait*.03*amp;s.rotation.x=(i===0?.12:(st==='rest'?-.05:.03))+curl+po.tailUp*(i===0?.5:.3)});
+  if(m.wings)m.wings.forEach((w,i)=>{const s=i?-1:1,wing=po.wing;w.rotation.z=s*(wing*.7+Math.sin(t*(wing>.8?14:2))*.08*(wing>.8?2:1))});
 }
 function updHazards(dt){
   for(let i=G.hazards.length-1;i>=0;i--){
@@ -1250,7 +1698,7 @@ function hurt(dmg,sx,sz,A){
       // 완벽한 막기
       P.parryT=.45;P.inv=1.2;P.st=Math.min(P.maxSt,P.st+20);P.buff=4;addCharge(.5);addFin(10);if(!(A&&A.mob))B.parryOpen=3.5;G.parries++;if(G.tut)G.tut.parries++;
       G.stop=.12;G.shake=Math.max(G.shake,.45);burst(P.x+ -dx/d,1.4,P.z+ -dz/d,22,0x9ad0ff,10,7,1.2);sfx.parry();
-      say('완벽한 막기',B.h.core==='brow'&&!(A&&A.mob)?'이마 약점 3초 노출':'필살기 게이지와 장비 스킬 충전');
+      say('완벽한 막기',B.h.core==='brow'&&!(A&&A.mob)?(B.h.coreKo||'이마')+' 약점 3초 노출':'필살기 게이지와 장비 스킬 충전');
       if(!(A&&A.mob))addStagger(A&&A.melee?34:16);
       return;
     }
@@ -1625,20 +2073,20 @@ const PRAC=[
  [{t:'바닥의 붉은 범위',d:'이 사냥터에서만 공격 범위가 바닥에 붉게 표시. 범위가 다 차오르는 순간이 공격. 덮치기의 붉은 원 밖으로 벗어나기',atk:'slam'},
   {t:'준비 자세 읽기',d:'공격마다 준비 자세가 다름. 옆구리를 보이며 꼬리를 한쪽으로 감아 당기면 꼬리 휘두르기. 한 번 더 확 움츠리면 공격 직전. 구르거나 막거나 범위 밖으로 이탈',atk:'tail'},
   {t:'약점: 상체를 일으킬 때',d:'돌등이의 약점은 가슴 아래. 덮치기 직전에 몸을 일으키는 짧은 순간과 돌을 던지려 상체를 든 동안에만 노출. 던지기를 준비하는 동안 가슴의 <b>하늘색 빛</b> 맞히기',atk:'throw',need:'core',retry:'가슴 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
- [{t:'동작 읽기: 뿔 휘두르기',d:'여기서부터 붉은 범위 표시 없음. 고개를 옆으로 크게 젖히면 뿔 휘두르기. 앞쪽 넓은 범위라 뒤로 빠지거나 막기',atk:'sweep'},
-  {t:'동작 읽기: 돌진',d:'몸을 낮추고 앞발로 땅을 긁으면 돌진. 옆으로 구르기. 돌진에 맞은 엄폐 바위는 파괴',atk:'charge'},
-  {t:'약점: 고개를 들 때',d:'서리뿔의 약점은 이마. 완벽한 막기 직후 3초, 그리고 낙하물과 던지기, 폭풍을 준비하며 고개를 든 동안에만 노출. 머리를 부수면 숨 고를 때마다 노출. 낙하물을 준비하는 동안 이마의 <b>하늘색 빛</b> 맞히기',atk:'volley',need:'core',retry:'이마 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
- [{t:'파란 눈: 구르기 불가',d:'눈이 파랗게 빛나면 1초 가까이 이어지는 공격. 네 발을 넓게 딛고 목을 하늘로 뻗으면 포효, 상체를 세우고 앞발을 번갈아 구르면 발 구르기. 구르기의 무적보다 길어서 구르기로는 회피 불가. <b>막기를 유지</b>하거나 범위 밖으로 멀리 이탈',atk:'roar',retry:'Shift를 누른 채 버티거나 멀리 이탈'},
-  {t:'꼬리 내리찍기',d:'꼬리를 머리 위로 말아 올리면 앞으로 길게 내리찍기. 직선 공격이라 옆으로 회피',atk:'lash'},
-  {t:'약점: 치켜든 꼬리',d:'가시꼬리의 약점은 꼬리 끝. 꼬리를 휘두르거나 내리찍으려고 치켜든 동안에만 노출. 꼬리를 자르면 잘린 자리에 상시 노출. 꼬리 내리찍기를 준비하는 동안 꼬리 끝의 <b>하늘색 빛</b> 맞히기',atk:'lash',need:'core',retry:'옆으로 비켜서서 치켜든 꼬리 끝을 사격'}],
+ [{t:'동작 읽기: 등불 휘두르기',d:'여기서부터 붉은 범위 표시 없음. 등불 줄기를 옆 뒤로 길게 젖히면 등불 휘두르기. 앞쪽 넓은 범위라 뒤로 빠지거나 막기',atk:'sweep'},
+  {t:'동작 읽기: 등불 내려치기',d:'등불 줄기를 수직으로 곧게 세우면 앞으로 길게 내려치기. 직선 공격이라 옆으로 회피',atk:'lash'},
+  {t:'약점: 치켜든 등불',d:'등불아귀의 약점은 머리 위 등불. 완벽한 막기 직후 3초, 그리고 불씨 비와 불씨 뱉기, 섬광을 준비하며 등불을 치켜든 동안에만 노출. 머리를 부수면 숨 고를 때마다 노출. 불씨 비를 준비하는 동안 등불의 <b>하늘색 빛</b> 맞히기',atk:'volley',need:'core',retry:'등불 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
+ [{t:'파란 눈: 구르기 불가',d:'눈이 파랗게 빛나면 1초 가까이 이어지는 공격. 꼿꼿이 서서 양팔을 뒤로 벌리고 하늘을 보면 포효, 양 주먹을 번갈아 치켜들면 땅 두드리기. 구르기의 무적보다 길어서 구르기로는 회피 불가. <b>막기를 유지</b>하거나 범위 밖으로 멀리 이탈',atk:'roar',retry:'Shift를 누른 채 버티거나 멀리 이탈'},
+  {t:'쇳물 쏟기',d:'서서 국자 팔만 높이 들면 쇳물 쏟기. 정면으로 긴 부채꼴이라 옆구리나 뒤로 이동',atk:'breath'},
+  {t:'약점: 일어설 때',d:'쇳물곰의 약점은 가슴 아래 화구. 포효, 땅 두드리기, 쇳덩이 던지기처럼 두 발로 일어서는 동작에서만 노출. 포효를 준비하는 동안 가슴의 <b>하늘색 빛</b>을 맞히고 막기 유지',atk:'roar',need:'core',retry:'빛이 켜지면 바로 쏘고 Shift로 막기'}],
  [{t:'엇박: 늦게 치는 공격',d:'당겼던 자세를 한 번 풀었다가 다시 당기면 한 박자 늦게 치는 공격. 일찍 구르면 맞는 구조. 다시 당긴 뒤 확 움츠릴 때 대응',atk:'tail~'},
   {t:'엇박: 빠르게 치는 공격',d:'자세를 잡고 멈추는 구간 없이 곧장 끝까지 당기면 평소보다 빠른 공격. 보자마자 대응',atk:'clawL!'},
-  {t:'불 숨결',d:'고개를 뒤로 젖히고 입에 불씨가 모이면 불 숨결. 정면으로 긴 부채꼴이라 옆구리나 뒤로 이동',atk:'breath'},
-  {t:'약점: 상체를 일으킬 때',d:'잿불 날개의 약점은 가슴 아래. 포효, 폭풍, 발 구르기, 덮치기 직전처럼 상체를 일으키는 동작에서만 노출. 포효를 준비하는 동안 가슴의 <b>하늘색 빛</b>을 맞히고 막기 유지',atk:'roar',need:'core',retry:'빛이 켜지면 바로 쏘고 Shift로 막기'}],
- [{t:'섞어 쓰는 공격: 늦은 할퀴기',d:'지금까지의 기믹을 모두 섞어 쓰는 마지막 거수. 먼저 한 박자 늦게 치는 할퀴기',atk:'clawR~'},
-  {t:'섞어 쓰는 공격: 포효',d:'파란 눈의 포효. 구르기 불가, 막기 유지 또는 이탈',atk:'roar'},
-  {t:'섞어 쓰는 공격: 빠른 뿔 휘두르기',d:'머리를 멈춤 없이 곧장 옆으로 틀면 즉시 대응. 실전에서는 이 공격들이 다섯 번까지 연속',atk:'sweep!'},
-  {t:'약점: 고개를 들 때',d:'달그림자의 약점은 이마. 완벽한 막기 직후 3초, 숨결과 포효, 폭풍, 낙하물을 준비하며 고개를 든 동안에만 노출. 숨결을 준비하는 동안 옆으로 비켜서서 이마의 <b>하늘색 빛</b> 맞히기',atk:'breath',need:'core',retry:'정면을 피해 옆에서 이마를 사격'}],
+  {t:'기차 돌진',d:'몸을 일직선으로 펴고 낮게 뒤로 물러나면 돌진. 옆으로 구르기',atk:'charge'},
+  {t:'약점: 치켜든 꼬리',d:'철길뱀의 약점은 꼬리 끝. 몸을 감아 휩쓸거나 꼬리를 내리찍으려고 치켜든 동안에만 노출. 꼬리를 자르면 잘린 자리에 상시 노출. 꼬리 내리찍기를 준비하는 동안 꼬리 끝의 <b>하늘색 빛</b> 맞히기',atk:'lash',need:'core',retry:'옆으로 비켜서서 치켜든 꼬리 끝을 사격'}],
+ [{t:'섞어 쓰는 공격: 늦은 날개 후려치기',d:'지금까지의 기믹을 모두 섞어 쓰는 마지막 거수. 먼저 한 박자 늦게 치는 날개 후려치기',atk:'clawR~'},
+  {t:'섞어 쓰는 공격: 열풍',d:'파란 눈의 열풍. 구르기 불가, 막기 유지 또는 이탈',atk:'roar'},
+  {t:'섞어 쓰는 공격: 빠른 양 날개 후려치기',d:'양 날개를 멈춤 없이 곧장 치켜세우면 즉시 대응. 실전에서는 이 공격들이 다섯 번까지 연속',atk:'sweep!'},
+  {t:'약점: 몸을 세울 때',d:'잿불 날개의 약점은 배의 송풍기. 열풍, 잿불 폭풍, 불씨 비처럼 몸을 세우거나 높이 뜨는 동작에서만 노출. 열풍을 준비하는 동안 배의 <b>하늘색 빛</b>을 맞히고 막기 유지',atk:'roar',need:'core',retry:'빛이 켜지면 바로 쏘고 Shift로 막기'}],
 ];
 function tutStart(kind){G.tut={kind,steps:kind==='train'?TRAIN_STEPS:PRAC[G.hunt],i:-1,fails:0};$('#tut').hidden=false;tutNext()}
 function tutNext(){const T=G.tut;T.i++;T.fails=0;if(T.i>=T.steps.length)return tutDone();tutBegin()}
@@ -1813,7 +2261,7 @@ function renderTown(){
 function showIntro(){
   const h=hunt();G.state='intro';$('#hudAll').hidden=true;recalc();
   $('#iEye').textContent=`${G.hunt+1}단계 · ${h.place}`;$('#iTitle').textContent=h.name;$('#iText').textContent=h.text;
-  $('#iTips').innerHTML=['머리, 다리, 꼬리를 덮은 갑각. 깨기 전에는 그 부위 피해가 35%만 적용','체력 바 아래 주황색 체간이 가득 차면 E로 결정타, 체력 한 칸 절단. 칸이 끊길 때마다 공격 묶음 교체',CORE_TIP[h.core]].concat(h.tips).map(t=>`<li>${t}</li>`).join('');
+  $('#iTips').innerHTML=['머리, 다리, 꼬리를 덮은 갑각. 깨기 전에는 그 부위 피해가 35%만 적용','체력 바 아래 주황색 체간이 가득 차면 E로 결정타, 체력 한 칸 절단. 칸이 끊길 때마다 공격 묶음 교체',h.coreTip||CORE_TIP[h.core]].concat(h.tips).map(t=>`<li>${t}</li>`).join('');
   {const first=!S.prac[G.hunt];$('#bGo').textContent=first?'기믹 연습 후 사냥':'사냥터로';$('#bPrac').textContent=first?'연습 없이 바로 사냥':'기믹 연습 다시'}
   show('#sIntro');
 }
@@ -1823,7 +2271,7 @@ function ending(){
   G.state='end';
   $('#eRank').textContent=`마지막 사냥 ${fmt(G.huntT)}`;
   $('#eStats').innerHTML=`<div><b>${S.hunts}</b><span>총 사냥 횟수</span></div><div><b>${S.perks.length+S.mods.length+S.weps.length+S.gads.length-3}</b><span>고른 보상</span></div><div><b>${G.parries}</b><span>완벽한 막기</span></div>`;
-  $('#eBest').textContent=S.best?`달그림자 최단 기록: ${fmt(S.best)}`:'';sfx.win();show('#sEnd');
+  $('#eBest').textContent=S.best?`${HUNTS[HUNTS.length-1].name} 최단 기록: ${fmt(S.best)}`:'';sfx.win();show('#sEnd');
 }
 function backdrop(){
   G.hunt=Math.min(G.hunt,HUNTS.length-1);$('#fade').style.opacity=0;
@@ -1841,13 +2289,13 @@ const fmt=s=>{s=Math.floor(s);return String(Math.floor(s/60)).padStart(2,'0')+':
 
 // ---------- 계기판 ----------
 let chipsDirty=true,lastH={};
-function buildPartChips(){$('#parts').innerHTML=['head','legs','tail'].map(id=>`<div class="chip" id="chip-${id}"><span>${PART_KO[id]}</span><span class="pb"><i></i></span></div>`).join('');chipsDirty=true}
+function buildPartChips(){$('#parts').innerHTML=['head','legs','tail'].map(id=>`<div class="chip" id="chip-${id}"><span>${partKo(id)}</span><span class="pb"><i></i></span></div>`).join('');chipsDirty=true}
 function hudForce(){lastH={};hud()}
 function setT(k,sel,v){if(lastH[k]!==v){lastH[k]=v;$(sel).textContent=v}}
 function hud(){
   $('#bHp i').style.transform=`scaleX(${B.hp/B.maxHp})`;
   const nm=B.h.name+(B.enr?'|'+B.enr:'');if(lastH.nm!==nm){lastH.nm=nm;$('#bName').innerHTML=B.h.name+`<span class="pip">${'◆'.repeat(3-B.enr)+'◇'.repeat(B.enr)}</span>`}
-  if(chipsDirty){chipsDirty=false;for(const id of['head','legs','tail']){const c=$('#chip-'+id);c.classList.toggle('broken',!!B.broken[id]);const ar=B.arm[id]>0;c.classList.toggle('arm',ar);c.querySelector('span').textContent=PART_KO[id]+(ar?' 갑각':B.broken[id]?(id==='legs'?' 붕괴':id==='tail'?' 절단':' 파괴'):'');c.querySelector('.pb i').style.transform=`scaleX(${ar?clamp(B.arm[id]/B.armMax[id],0,1):clamp(B.php[id]/B.pmax[id],0,1)})`;c.querySelector('.pb').hidden=B.broken[id]&&id!=='legs'}}
+  if(chipsDirty){chipsDirty=false;for(const id of['head','legs','tail']){const c=$('#chip-'+id);c.classList.toggle('broken',!!B.broken[id]);const ar=B.arm[id]>0;c.classList.toggle('arm',ar);c.querySelector('span').textContent=partKo(id)+(ar?' 갑각':B.broken[id]?(id==='legs'?' 붕괴':id==='tail'?' 절단':' 파괴'):'');c.querySelector('.pb i').style.transform=`scaleX(${ar?clamp(B.arm[id]/B.armMax[id],0,1):clamp(B.php[id]/B.pmax[id],0,1)})`;c.querySelector('.pb').hidden=B.broken[id]&&id!=='legs'}}
   $('#hpB i').style.transform=`scaleX(${P.hp/P.maxHp})`;$('#stB i').style.transform=`scaleX(${P.st/P.maxSt})`;
   setT('tm','#timer',fmt(G.huntT));setT('pot','#potTxt','물약 '+P.potions);
   
@@ -1871,7 +2319,7 @@ function hud(){
   {const pl=xh.querySelector('.pl');let t='',nm='';if(G.sph.length){_o.copy(camera.position);_d.set(sx,sy,.5).unproject(camera).sub(_o).normalize();const h=rayHit(_o,_d,150);if(h)t=h.sp.part;
      const mh=mobRay(_o.x,_o.y,_o.z,_d.x,_d.y,_d.z,h?h.t:150,Math.hypot(_o.x-P.x,_o.z-P.z)+.5);if(mh){t='mob';nm=mh.m.D.name}}
    G.aimPart=t==='mob'?'':t;
-   const ak=t&&B.arm[t]>0?'a':'';if(lastH.pl!==t+nm+ak){lastH.pl=t+nm+ak;pl.textContent=t==='mob'?nm:t?LOCK_KO[t]+(t==='body'?' (단단함)':ak?' (갑각)':''):'';pl.className='pl '+t}}
+   const ak=t&&B.arm[t]>0?'a':'';if(lastH.pl!==t+nm+ak){lastH.pl=t+nm+ak;pl.textContent=t==='mob'?nm:t?(partKo(t)||LOCK_KO[t])+(t==='body'?' (단단함)':ak?' (갑각)':''):'';pl.className='pl '+t}}
   G.hitT=Math.max(0,G.hitT-1/60);xh.querySelector('.hm').style.opacity=G.hitT>0?1:0;
   // 화면 밖 거수 방향 화살표 (공격 준비 중이면 붉게)
   const eg=$('#edge');pv.set(B.x,2.4*B.h.size,B.z).project(camera);
@@ -2017,7 +2465,7 @@ let last=performance.now();
 function frame(now){const raw=(now-last)/1000,dt=Math.min(.05,raw);last=now;readKeys();update(dt);logTick(dt,raw);renderer.render(scene,camera);requestAnimationFrame(frame)}
 loadSave();recalc();toTitle();requestAnimationFrame(frame);
 
-window.__game={scene,camera,renderer,AR,cue,FIN,PERKS,MODS,WEP,finOpen,spawnMob,useGadget,startTrain,tutSkip,GAD,logText,fire,aimPoint,lockSphere,LOCKS,TUNE,ATK,G,P,get B(){return B},get S(){return S},update,startHunt,newGame,showIntro,goTown,inside,nearestPart,beastParts,HUNTS,
+window.__game={scene,camera,renderer,AR,cue,FIN,PERKS,MODS,WEP,finOpen,spawnMob,useGadget,startTrain,tutSkip,GAD,logText,fire,aimPoint,lockSphere,LOCKS,TUNE,ATK,AT,MOTION,SKEL,G,P,get B(){return B},get S(){return S},update,startHunt,newGame,showIntro,goTown,inside,nearestPart,beastParts,HUNTS,
   simulate(sec){const st=1/60;for(let i=0;i<sec*60&&G.state==='hunt';i++)update(st)}};
 })();
 </script>
