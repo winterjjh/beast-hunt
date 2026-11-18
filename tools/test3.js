@@ -20,7 +20,7 @@ const WI=+(process.env.WI||0),mode=process.argv[2]||'rhythm',stages=(process.arg
     stat.st[B.state]=(stat.st[B.state]||0)+dt;if(P.hp<lastHp)stat.dmgIn+=lastHp-P.hp;lastHp=P.hp;
     if(P.finA&&!wasFin){stat.fin++;lastB=B.hp}if(!P.finA&&wasFin)stat.finDmg+=lastB-B.hp;wasFin=!!P.finA;
     const open=g.finOpen(),W=g.WEP[P.w];
-    const gate={chest:'legs',brow:'head',tailtip:'tail'}[B.h.core],wantP=B.arm[gate]>0?gate:B.arm.head>0?'head':'head';let tsp=null,bd=1e9;for(const q of G.sph){if(q.part==='core'){tsp=q;break}if(q.part===wantP){const dd=Math.hypot(q.x-P.x,q.z-P.z);if(dd<bd){bd=dd;tsp=q}}}
+    const gate={chest:'legs',brow:'head',tailtip:'tail'}[B.h.core],wantP=B.arm[gate]>0?gate:B.arm.head>0?'head':'head';let tsp=null,bd=1e9;for(const q of G.sph){if(q.part==='chim'){tsp=q;break}}if(!tsp)for(const q of G.sph){if(q.part==='core'){tsp=q;break}if(q.part===wantP){const dd=Math.hypot(q.x-P.x,q.z-P.z);if(dd<bd){bd=dd;tsp=q}}}
     let mob=null,md=1e9;for(const m of G.mobs){if(m.state==='dead'||m.state==='spawn')continue;const d=Math.hypot(m.x-P.x,m.z-P.z);if(d<md){md=d;mob=m}}
     if(mob&&md>[32,9,26][WI])mob=null;
     const left=B.state==='windup'?B.dur-B.stateT:9,cueOn=WI===0&&B.state==='windup'&&g.cue.on&&left>.35&&!mob;
@@ -49,7 +49,10 @@ const WI=+(process.env.WI||0),mode=process.argv[2]||'rhythm',stages=(process.arg
      if(P.hp<P.maxHp*.45&&P.potions>0&&B.state!=='windup')I.pot=true;
      if(!NOGAD){if(P.gcd[0]<=0&&(mob||['rest','topple','stun','flinch','stuck'].includes(B.state)))I.g1=true;if(P.gcd[1]<=0&&B.state==='windup'&&d<14)I.g2=true}
      if(mode!=='kite'){
-      for(const z of G.hazards){if(inside(z.s,P.x,P.z,.8)&&z.total-z.t<.45){const hx=P.x-z.s.x,hz=P.z-z.s.z,hl=Math.hypot(hx,hz)||1;I.x=hx/hl;I.z=hz/hl;I.dodge=true}}
+      for(const f of G.burns||[]){const fd=Math.hypot(P.x-f.x,P.z-f.z);if(fd<f.r+1.5){I.x=(P.x-f.x)/(fd||1);I.z=(P.z-f.z)/(fd||1)}}
+      if(B.mv==='glide'&&(B.state==='windup'||B.state==='strike')){const hx=Math.sin(B.hd),hz=Math.cos(B.hd),side=(P.x-B.x)*hz-(P.z-B.z)*hx;I.x=hz*(side>=0?1:-1);I.z=-hx*(side>=0?1:-1)}
+      for(const z of G.hazards){if(inside(z.s,P.x,P.z,.8)){const hx=P.x-z.s.x,hz=P.z-z.s.z,hl=Math.hypot(hx,hz)||1;I.x=hx/hl;I.z=hz/hl;if(z.total-z.t<.45)I.dodge=true}}
+      if(g.LITE&&B.state==='windup'&&B.shape&&B.shape.k!=='circle'&&inside(B.shape,P.x,P.z,2)){const side=(P.x-B.x)*Math.cos(B.hd)-(P.z-B.z)*Math.sin(B.hd)>=0?1:-1;I.x=Math.cos(B.hd)*side;I.z=-Math.sin(B.hd)*side}
       if(B.state==='windup'){const A=g.ATK[B.atk];const danger=B.shape?inside(B.shape,P.x,P.z,1.2):d<10;
        if(danger&&left<.3)I.fire=false;
        if(danger&&left<.14){if(A.noRoll||(WI!==1&&Math.random()<.5))I.block=true;else I.dodge=true}}
@@ -62,7 +65,7 @@ const WI=+(process.env.WI||0),mode=process.argv[2]||'rhythm',stages=(process.arg
    let t=0;const T=600;
    while(t<T&&G.state==='hunt'){g.simulate(5);t+=5}
    const B=g.B;
-   return {st,w:g.WEP[WI].id,state:G.state,huntT:Math.round(G.huntT),hpPct:Math.round(B.hp/B.maxHp*100),breaks:G.huntBreaks,parries:G.parries,myHp:Math.round(P.hp)+'/'+P.maxHp,pots:P.potions,mobKills:G.mobKills,fin:stat.fin,execs:G.execs,arm:Object.values(B.arm).filter(v=>v<=0).length,dmgIn:Math.round(stat.dmgIn),fl:Math.round(stat.st.flinch||0)};
+   return {st,w:g.WEP[WI].id,chim:B.chim&&B.chim.map(v=>Math.round(v)),stops:G.stops,state:G.state,huntT:Math.round(G.huntT),hpPct:Math.round(B.hp/B.maxHp*100),breaks:G.huntBreaks,parries:G.parries,myHp:Math.round(P.hp)+'/'+P.maxHp,pots:P.potions,mobKills:G.mobKills,fin:stat.fin,execs:G.execs,arm:Object.values(B.arm).filter(v=>v<=0).length,dmgIn:Math.round(stat.dmgIn),fl:Math.round(stat.st.flinch||0)};
   },[st,mode,WI,NOMOB,NOGAD,NOFIN,process.env.NOEXEC==='1']);
   console.log(JSON.stringify(res));
  }

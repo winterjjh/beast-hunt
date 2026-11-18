@@ -40,7 +40,7 @@ const {chromium}=require('playwright');const fs=require('fs');const path=require
  },[maxT]);
  console.log('train',JSON.stringify(await run('train',200)));
  await pg.waitForTimeout(300);await pg.screenshot({path:'s_town.png'});
- for(const st of [0,1,2,3,4]){
+ for(let st=0,n=await pg.evaluate(()=>window.__game.HUNTS.length);st<n;st++){
   await pg.evaluate(st=>{const g=window.__game;g.G.hunt=st;g.showIntro()},st);
   if(st===2)await pg.screenshot({path:'s_intro.png'});
   await pg.click('#bGo');
