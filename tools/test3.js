@@ -37,7 +37,7 @@ const WI=+(process.env.WI||0),mode=process.argv[2]||'rhythm',stages=(process.arg
     let fire=canShoot;
     if(!mob){
      if(WI===0){ // 단발 사냥총: 쉬는 틈과 공격 준비 중의 예고 부위
-      fire=fire&&P.aimT>1.1&&(['rest','topple','stun','flinch'].includes(B.state)||cueOn||(B.state==='chase'&&B.think>.6));}
+      fire=fire&&P.aimT>1.1&&(['rest','topple','stun','flinch','stuck'].includes(B.state)||cueOn||(B.state==='chase'&&B.think>.6));}
      else if(WI===1){fire=fire&&d<8&&left>.3}
      else{fire=fire&&d<22&&left>.25}
     }else if(left<.4)fire=false;
@@ -47,7 +47,7 @@ const WI=+(process.env.WI||0),mode=process.argv[2]||'rhythm',stages=(process.arg
     if(B.broke&&B.state==='flinch'&&!P.finA&&!NOEXEC){I.fin=true;stat.ex++}else if(!NOFIN&&P.fin>=100&&open&&!P.finA&&B.dur-B.stateT>.2)I.fin=true;
     if(mode!=='lazy'){
      if(P.hp<P.maxHp*.45&&P.potions>0&&B.state!=='windup')I.pot=true;
-     if(!NOGAD){if(P.gcd[0]<=0&&(mob||['rest','topple','stun','flinch'].includes(B.state)))I.g1=true;if(P.gcd[1]<=0&&B.state==='windup'&&d<14)I.g2=true}
+     if(!NOGAD){if(P.gcd[0]<=0&&(mob||['rest','topple','stun','flinch','stuck'].includes(B.state)))I.g1=true;if(P.gcd[1]<=0&&B.state==='windup'&&d<14)I.g2=true}
      if(mode!=='kite'){
       for(const z of G.hazards){if(inside(z.s,P.x,P.z,.8)&&z.total-z.t<.45){const hx=P.x-z.s.x,hz=P.z-z.s.z,hl=Math.hypot(hx,hz)||1;I.x=hx/hl;I.z=hz/hl;I.dodge=true}}
       if(B.state==='windup'){const A=g.ATK[B.atk];const danger=B.shape?inside(B.shape,P.x,P.z,1.2):d<10;
