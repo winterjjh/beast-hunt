@@ -576,16 +576,35 @@ const hero=(()=>{
   return{g,rig,legL,legR,armL,armR,sword,arc,arcM,blade,bow,back,guns:[rifleM,sgM,xbM]};
 })();
 
-// ---------- 거수 모델 ----------
-function buildBeast(h){
+// ---------- 거수 뼈대와 덧붙임 ----------
+// 뼈대(SKEL): 관절 구조와 모션. 같은 뼈대를 쓰는 거수는 걷기, 회전, 공격 동작을 그대로 물려받음
+// 덧붙임(SKIN): 뼈대의 관절에 붙는 뿔, 등 장식, 꼬리 끝과 체형 값. 새 거수는 HUNTS 항목의 skel(기본 quad)과 SKIN 항목만 추가
+// 뿔 한 줄: [x,y,z,굵기,길이,기울기x,기울기z]. 머리 파괴 때 둘째 뿔만 남으므로 순서 유지
+const SKIN={
+ stone:{spineH:.7,rocks:8,tip:'club',horns:[[.55,.8,1.2,.2,.9,-.3,-.5],[-.55,.8,1.2,.2,.9,-.3,.5]]},
+ frost:{legLen:1.08,hornAccent:true,horns:[[0,.75,2.4,.26,2.2,.9,0],[.6,.8,1.1,.16,1.0,-.5,-.7],[-.6,.8,1.1,.16,1.0,-.5,.7]]},
+ thorn:{legLen:.9,tailCurl:.3,tipR:.42,tipL:2.1,horns:[[.42,.0,2.9,.13,1.3,1.35,-.35],[0,.9,1.2,.2,.8,-.4,0],[-.42,.0,2.9,.13,1.3,1.35,.35]]},
+ ash:{horns:[[.5,.9,1.0,.18,1.6,-1.0,-.35],[-.5,.9,1.0,.18,1.6,-1.0,.35],[0,.85,1.9,.14,.7,-.2,0]]},
+ night:{horns:[[.55,.9,1.0,.2,2.1,-1.1,-.5],[-.55,.9,1.0,.2,2.1,-1.1,.5],[.3,.95,1.7,.11,.9,-.3,-.25],[-.3,.95,1.7,.11,.9,-.3,.25]]},
+};
+const SKIN_DEF={legLen:1,spineH:1.1,tailCurl:0,tipR:.3,tipL:1.5,rocks:0,tip:'spike',hornAccent:false,horns:[]};
+// 네발 뼈대: g(위치와 방향) > rig(몸 전체) > 가슴(chest: 앞다리, 목 > 머리 > 턱, 날개) + 엉덩이(hip: 뒷다리, 꼬리 마디). 다리는 허벅지 > 무릎 아래
+function buildQuad(h){
+  const K=Object.assign({},SKIN_DEF,SKIN[h.skin||h.id]||{}),L=K.legLen;
   const g=new T.Group(),rig=new T.Group();g.add(rig);
   const mB=std(h.body),mU=std(h.belly),mA=std(h.accent,h.id==='ash'?{emissive:0x7a2a08}:h.id==='frost'?{emissive:0x18394a,roughness:.4}:h.id==='night'?{emissive:0x3a2a88}:{}),mH=std(0xe9e1cd),mE=new T.MeshBasicMaterial({color:h.eye});
-  const mats=[mB,mU,mA,mH];
-  const b=mesh(new T.IcosahedronGeometry(1,1),mB,0,2.15,0,rig);b.scale.set(1.5,1.25,2.5);
-  const u=mesh(new T.IcosahedronGeometry(1,1),mU,0,1.8,.1,rig);u.scale.set(1.3,1.0,2.25);
-  for(let i=0;i<7;i++){const k=Math.sin(i/6*Math.PI),c=mesh(new T.ConeGeometry(.26+.16*k,(h.id==='stone'?.7:1.1)+.6*k,4),mA,0,3.25+.3*k,-1.9+i*.62,rig);c.rotation.x=-.25}
-  if(h.id==='stone'){for(let i=0;i<8;i++){const m=mesh(new T.DodecahedronGeometry(rand(.45,.75),0),mA,rand(-1,1),2.9+rand(0,.3),rand(-1.6,1.4),rig);m.rotation.set(rand(0,3),rand(0,3),0)}}
-  const headP=new T.Group();headP.position.set(0,2.5,2.1);rig.add(headP);
+  const mats=[mB,mU,mA,mH],ico=new T.IcosahedronGeometry(1,1);
+  const chest=new T.Group();chest.position.set(0,2.15,.95);rig.add(chest);
+  const hip=new T.Group();hip.position.set(0,2.15,-.95);rig.add(hip);
+  mesh(ico,mB,0,0,0,chest).scale.set(1.5,1.25,1.55);mesh(ico,mU,0,-.35,.1,chest).scale.set(1.3,1.0,1.4);
+  mesh(ico,mB,0,-.02,0,hip).scale.set(1.44,1.2,1.6);mesh(ico,mU,0,-.35,0,hip).scale.set(1.26,.96,1.4);
+  mesh(ico,mB,0,2.13,0,rig).scale.set(1.36,1.13,1.3);mesh(ico,mU,0,1.8,.05,rig).scale.set(1.22,.95,1.25);
+  // 등 장식은 가까운 몸통 덩어리에 붙어 함께 움직임
+  const onBack=(o,x,y,z)=>{const par=z>.5?chest:z<-.5?hip:rig;par.add(o);o.position.set(x-par.position.x,y-par.position.y,z-par.position.z)};
+  for(let i=0;i<7;i++){const k=Math.sin(i/6*Math.PI),c=new T.Mesh(new T.ConeGeometry(.26+.16*k,K.spineH+.6*k,4),mA);c.castShadow=true;c.rotation.x=-.25;onBack(c,0,3.25+.3*k,-1.9+i*.62)}
+  for(let i=0;i<K.rocks;i++){const o=new T.Mesh(new T.DodecahedronGeometry(rand(.45,.75),0),mA);o.castShadow=true;o.rotation.set(rand(0,3),rand(0,3),0);onBack(o,rand(-1,1),2.9+rand(0,.3),rand(-1.6,1.4))}
+  const neck=new T.Group();neck.position.set(0,.2,.85);chest.add(neck);
+  const headP=new T.Group();headP.position.set(0,.15,.3);neck.add(headP);
   mesh(new T.CylinderGeometry(.6,.85,1.3,6),mB,0,0,.5,headP).rotation.x=Math.PI/2;
   const sk=mesh(new T.IcosahedronGeometry(1,0),mB,0,.12,1.5,headP);sk.scale.set(.82,.68,1.0);
   mesh(new T.BoxGeometry(.9,.42,1.0),mB,0,.08,2.3,headP);
@@ -593,42 +612,45 @@ function buildBeast(h){
   mesh(new T.BoxGeometry(.8,.2,1.5),mU,0,0,.65,jawP);
   for(const x of[-.3,0,.3])mesh(new T.ConeGeometry(.08,.25,4),mH,x,.2,1.3,jawP);
   mesh(new T.SphereGeometry(.12,6,5),mE,.52,.42,1.85,headP,false);mesh(new T.SphereGeometry(.12,6,5),mE,-.52,.42,1.85,headP,false);
-  const horns=[];
-  const horn=(x,y,z,r,l,rx,rz)=>{const m=mesh(new T.ConeGeometry(r,l,5),h.id==='frost'?mA:mH,x,y,z,headP);m.rotation.set(rx,0,rz);horns.push(m);return m};
-  if(h.id==='stone'){horn(.55,.8,1.2,.2,.9,-.3,-.5);horn(-.55,.8,1.2,.2,.9,-.3,.5)}
-  else if(h.id==='frost'){horn(0,.75,2.4,.26,2.2,.9,0);horn(.6,.8,1.1,.16,1.0,-.5,-.7);horn(-.6,.8,1.1,.16,1.0,-.5,.7)}
-  else if(h.id==='ash'){horn(.5,.9,1.0,.18,1.6,-1.0,-.35);horn(-.5,.9,1.0,.18,1.6,-1.0,.35);horn(0,.85,1.9,.14,.7,-.2,0)}
-  else if(h.id==='thorn'){horn(.42,.0,2.9,.13,1.3,1.35,-.35);horn(0,.9,1.2,.2,.8,-.4,0);horn(-.42,.0,2.9,.13,1.3,1.35,.35)}
-  else{horn(.55,.9,1.0,.2,2.1,-1.1,-.5);horn(-.55,.9,1.0,.2,2.1,-1.1,.5);horn(.3,.95,1.7,.11,.9,-.3,-.25);horn(-.3,.95,1.7,.11,.9,-.3,.25)}
+  const horns=K.horns.map(([x,y,z,r,l,rx,rz])=>{const m=mesh(new T.ConeGeometry(r,l,5),K.hornAccent?mA:mH,x,y,z,headP);m.rotation.set(rx,0,rz);return m});
   const legs=[];
-  for(const[x,z]of[[1.15,1.5],[-1.15,1.5],[1.15,-1.5],[-1.15,-1.5]]){const p=new T.Group();p.position.set(x,1.75,z);rig.add(p);mesh(new T.CylinderGeometry(.45,.3,1.55,6),mB,0,-.75,0,p);mesh(new T.BoxGeometry(.72,.3,.95),mA,0,-1.6,.15,p);legs.push(p)}
-  const tail=[];let par=rig;
-  for(let i=0;i<7;i++){const p=new T.Group();p.position.set(0,i?0:2.2,i?-1.0:-2.2);par.add(p);const r=.62-.07*i;mesh(new T.CylinderGeometry(r,r*.8,1.15,6),mB,0,0,-.5,p).rotation.x=Math.PI/2;if(i%2===0)mesh(new T.ConeGeometry(.14,.5,4),mA,0,r+.15,-.5,p);tail.push(p);par=p}
-  const tip=h.id==='stone'?mesh(new T.DodecahedronGeometry(.6,0),mA,0,0,-1.2,par):mesh(new T.ConeGeometry(h.id==='thorn'?.42:.3,h.id==='thorn'?2.1:1.5,4),mA,0,0,-1.6,par);if(h.id!=='stone')tip.rotation.x=-Math.PI/2;
+  for(const[x,z]of[[1.15,1.5],[-1.15,1.5],[1.15,-1.5],[-1.15,-1.5]]){
+    const par=z>0?chest:hip,p=new T.Group();p.position.set(x,1.75-2.15,z-par.position.z);par.add(p);
+    mesh(new T.CylinderGeometry(.47,.38,.9*L,6),mB,0,-.4*L,0,p);
+    const k=new T.Group();k.position.set(0,-.8*L,0);p.add(k);
+    mesh(new T.CylinderGeometry(.38,.3,.85*L,6),mB,0,-.4*L,0,k);mesh(new T.BoxGeometry(.72,.3,.95),mA,0,-.8*L,.15,k);
+    p.knee=k;legs.push(p)}
+  const tail=[];let par=hip;
+  for(let i=0;i<7;i++){const p=new T.Group();p.position.set(0,i?0:.05,i?-1.0:-1.25);par.add(p);const r=.62-.07*i;mesh(new T.CylinderGeometry(r,r*.8,1.15,6),mB,0,0,-.5,p).rotation.x=Math.PI/2;if(i%2===0)mesh(new T.ConeGeometry(.14,.5,4),mA,0,r+.15,-.5,p);tail.push(p);par=p}
+  const tip=K.tip==='club'?mesh(new T.DodecahedronGeometry(.6,0),mA,0,0,-1.2,par):mesh(new T.ConeGeometry(K.tipR,K.tipL,4),mA,0,0,-1.6,par);if(K.tip!=='club')tip.rotation.x=-Math.PI/2;
   let wings=null;
   if(h.wings){
     wings=[];
-    for(const s of[1,-1]){const p=new T.Group();p.position.set(s*1.1,3.0,.6);rig.add(p);
+    for(const s of[1,-1]){const p=new T.Group();p.position.set(s*1.1,.85,-.35);chest.add(p);
       const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(new Float32Array([0,0,.8, s*4.6,.9,.2, s*3.6,.2,-2.6, 0,0,.8, s*3.6,.2,-2.6, 0,0,-1.6]),3));geo.computeVertexNormals();
       const m=new T.Mesh(geo,new T.MeshStandardMaterial({color:h.belly,flatShading:true,side:T.DoubleSide,roughness:.9,emissive:h.id==='night'?0x1a1040:0x3a1206}));m.castShadow=true;p.add(m);
       mesh(new T.CylinderGeometry(.14,.1,4.7,5),mB,s*2.3,.45,.5,p).rotation.z=s*-1.38;wings.push(p)}
   }
   g.scale.setScalar(h.size);scene.add(g);
   const an=(par,x,y,z)=>{const o=new T.Object3D();o.position.set(x,y,z);par.add(o);return o};
-  const anchors={head:an(headP,0,0,2.7),pawL:an(legs[0],0,-1.6,.4),pawR:an(legs[1],0,-1.6,.4),tail:an(tail[6],0,0,-1.2),tailCut:an(tail[3],0,0,-1),body:an(rig,0,2.8,1.4)};
+  const anchors={head:an(headP,0,0,2.7),pawL:an(legs[0].knee,0,-.8*L,.4),pawR:an(legs[1].knee,0,-.8*L,.4),tail:an(tail[6],0,0,-1.2),tailCut:an(tail[3],0,0,-1),body:an(chest,0,.65,.45)};
   // 사격 판정용 구: 머리, 몸통 앞뒤, 다리 넷, 꼬리 마디, 약점
-  const corePos=h.core==='brow'?[headP,0,.62,1.75]:h.core==='tailtip'?[tail[6],0,0,-1.3]:[rig,0,1.35,1.75];
-  const hb={head:an(headP,0,.1,1.5),bodyF:an(rig,0,2.1,1.05),bodyB:an(rig,0,2.1,-1.05),legs:legs.map(l=>an(l,0,-.85,0)),tail:tail.slice(1).map(t=>an(t,0,0,-.5)),core:an(corePos[0],corePos[1],corePos[2],corePos[3])};
+  const corePos=h.core==='brow'?[headP,0,.62,1.75]:h.core==='tailtip'?[tail[6],0,0,-1.3]:[chest,0,-.8,.8];
+  const hb={head:an(headP,0,.1,1.5),bodyF:an(chest,0,-.05,.1),bodyB:an(hip,0,-.05,-.1),legs:legs.map(l=>an(l,0,-.8*L,0)),tail:tail.slice(1).map(t=>an(t,0,0,-.5)),core:an(corePos[0],corePos[1],corePos[2],corePos[3])};
   const coreM=new T.MeshBasicMaterial({color:0x7ef0ff,fog:false});
   const core=mesh(new T.IcosahedronGeometry(.34,0),coreM,0,0,0,hb.core,false);
   const coreHalo=mesh(new T.IcosahedronGeometry(.5,1),new T.MeshBasicMaterial({color:0x7ef0ff,transparent:true,opacity:.28,depthWrite:false,fog:false}),0,0,0,hb.core,false);
   // 갑각: 머리, 다리, 꼬리를 덮는 금속 판. 깨지면 사라짐
   const mArm=std(0xc9d2da,{roughness:.5,metalness:.15,emissive:0x2a3036}),armor={head:[],legs:[],tail:[]};
   armor.head.push(mesh(new T.BoxGeometry(1.15,.28,1.5),mArm,0,.66,1.45,headP),mesh(new T.BoxGeometry(.2,.6,1.2),mArm,.72,.2,1.5,headP),mesh(new T.BoxGeometry(.2,.6,1.2),mArm,-.72,.2,1.5,headP));
-  legs.forEach(l=>armor.legs.push(mesh(new T.CylinderGeometry(.56,.44,.95,6),mArm,0,-.7,0,l)));
+  legs.forEach(l=>armor.legs.push(mesh(new T.CylinderGeometry(.58,.48,.8*L,6),mArm,0,-.42*L,0,l)));
   for(let i=1;i<=3;i++){const r=.62-.07*i,a=mesh(new T.CylinderGeometry(r+.13,r+.06,.85,6),mArm,0,0,-.5,tail[i]);a.rotation.x=Math.PI/2;armor.tail.push(a)}
-  return{g,rig,headP,jawP,legs,tail,mats,horns,wings,eyeM:mE,anchors,hb,core,coreHalo,armor};
+  return{g,rig,chest,hip,neck,headP,jawP,legs,tail,mats,horns,wings,eyeM:mE,anchors,hb,core,coreHalo,armor,K,baseY:(L-1)*1.6-.04};
 }
+const SKEL={quad:{build:buildQuad,anim:animQuad}};
+const skelOf=h=>SKEL[h.skel||'quad'];
+function buildBeast(h){return skelOf(h).build(h)}
+function animBeast(dt){skelOf(B.h).anim(dt)}
 
 // ---------- 상태 ----------
 const P={x:0,z:20,h:Math.PI,y:0,hp:100,maxHp:100,st:100,maxSt:100,stDelay:0,stRegen:24,dodgeCost:25,atk:1,potMax:4,potions:4,lives:1,
@@ -1128,7 +1150,7 @@ function windQ(p,left,mod){
   if(left<TUNE.snap)q+=TUNE.snapAmp*e(1-left/TUNE.snap);
   return q;
 }
-function animBeast(dt){
+function animQuad(dt){
   const m=B.m,st=B.state,t=G.time,p=B.dur?clamp(B.stateT/B.dur,0,1):0,a=B.atk;
   const left=st==='windup'?B.dur-B.stateT:9,snap=left<TUNE.snap;
   if(st==='windup'){if(snap&&!B.snapS){B.snapS=true;sfx.glint()}}else B.snapS=false;
@@ -1172,19 +1194,40 @@ function animBeast(dt){
   else if(st==='topple'||st==='dead'){rigZ=1.35;rigY=-.75;legAmp=st==='topple'?.25:0;jaw=.3}
   else if(st==='enrage'){headX=-.75;jaw=.95;wing=1.2}
   if(st==='windup'&&a!=='tail')tailAmp=.02;
-  const fast=st==='strike',k=damp(dt,fast?26:snap?24:11),po=B.pose;
+  const po=B.pose,fast=st==='strike';
+  // 공격 직후에는 무게감 있게 천천히 자세 회복
+  if(po.lastSt==='strike'&&st!=='strike')po.rec=.45;po.lastSt=st;po.rec=Math.max(0,(po.rec||0)-dt);
+  const k=damp(dt,fast?26:snap?24:po.rec>0?6:11);
+  // 방향 전환: 머리가 먼저 돌고 가슴이 따라가며 꼬리는 늦게 따라옴. 제자리 회전 중에도 발을 디딤
+  const rate=dt>0&&po.hd0!==undefined?clamp(wrapA(B.hd-po.hd0)/dt,-4,4):0;po.hd0=B.hd;
+  const turning=st==='chase'||st==='link'||st==='windup';
+  po.turn=lerp(po.turn||0,turning?rate:0,damp(dt,7));
+  po.tph=(po.tph||0)+Math.abs(po.turn)*1.5*dt;
+  if(turning&&st!=='windup')legAmp=Math.max(legAmp,Math.min(.4,Math.abs(po.turn)*.22));
+  po.legAmp=lerp(po.legAmp||0,legAmp,damp(dt,st==='topple'?20:9));
+  const amp=po.legAmp,ph=st==='topple'?t*9:B.walk*.75+po.tph,gait=Math.sin(ph),bend=po.turn*.08;
   po.headX=lerp(po.headX,headX,k);po.headY=lerp(po.headY||0,headY,k);po.headZ=lerp(po.headZ||0,headZ,k);po.jaw=lerp(po.jaw,jaw,k);po.rigZ=lerp(po.rigZ,rigZ,damp(dt,st==='topple'||st==='dead'?6:fast?26:11));po.rigY=lerp(po.rigY,rigY,k);po.rigX=lerp(po.rigX,rigX,k);
-  po.yaw=lerp(po.yaw||0,yaw,k);po.px=lerp(po.px||0,px,k);po.hind=lerp(po.hind||0,hind,k);po.splay=lerp(po.splay||0,splay,k);po.tailSide=lerp(po.tailSide||0,tailSide,k);
+  po.yaw=lerp(po.yaw||0,yaw,k);po.px=lerp(po.px||0,px,k);po.hind=lerp(po.hind||0,hind,k);po.splay=lerp(po.splay||0,splay,k);po.tailSide=lerp(po.tailSide||0,tailSide-po.turn*.06,k);
   po.tailUp=lerp(po.tailUp||0,tailUp,damp(dt,st==='strike'?30:snap?24:9));
   po.pawL=lerp(po.pawL||0,pawL+front,k);po.pawR=lerp(po.pawR||0,pawR+front,k);
   po.spin=(st==='windup'||st==='strike')&&a==='tail'?(st==='windup'?lerp(po.spin,spin,k):spin):lerp(po.spin,0,damp(dt,10));
+  const alive=st!=='dead',breath=alive?Math.sin(t*(st==='rest'?7:1.9)):0;
   m.g.position.set(B.x,B.y,B.z);m.g.rotation.y=B.hd;
-  m.rig.rotation.set(po.rigX,po.spin+po.yaw,po.rigZ);m.rig.position.y=po.rigY+(st==='windup'?0:Math.sin(t*2)*.04);po.pz=lerp(po.pz||0,pz,k);m.rig.position.z=po.pz;m.rig.position.x=po.px;
-  m.headP.rotation.set(po.headX,po.headY+(st==='chase'?Math.sin(t*1.3)*.12:0),po.headZ);m.jawP.rotation.x=po.jaw;
-  const ph=st==='topple'?t*9:B.walk*.75,rear=Math.max(0,-po.rigX)*.85;
-  m.legs.forEach((l,i)=>{l.rotation.x=Math.sin(ph+(i===0||i===3?0:Math.PI))*legAmp+(i===0?po.pawL:i===1?po.pawR:rear+po.hind);l.rotation.z=i===0?po.splay:i===1?-po.splay:0});
-  const curl=B.h.id==='thorn'?.3:0;
-  m.tail.forEach((s,i)=>{s.rotation.y=Math.sin(t*1.6+i*.55)*tailAmp+po.tailSide;s.rotation.x=(i===0?.12:(st==='rest'?-.05:.03))+curl+po.tailUp*(i===0?.5:.3)});
+  m.rig.rotation.set(po.rigX,po.spin+po.yaw*.6,po.rigZ*.75);
+  po.pz=lerp(po.pz||0,pz,k);m.rig.position.set(po.px,(m.baseY||0)+po.rigY+(st==='windup'?0:breath*.03)-Math.abs(Math.cos(ph))*.07*amp,po.pz);
+  // 척추: 가슴과 엉덩이가 걸음에 맞춰 반대로 흔들리고, 몸 비틀기와 기울기는 가슴이 더 크게 받음
+  m.chest.rotation.set(0,po.yaw*.4+gait*.07*amp+bend,po.rigZ*.25+gait*.05*amp);
+  m.hip.rotation.set(0,-po.yaw*.25-gait*.09*amp-bend*.8,-gait*.05*amp);
+  m.chest.scale.setScalar(1+breath*(st==='rest'?.035:.012));
+  const hy=po.headY+(st==='chase'?Math.sin(t*1.3)*.12:0)+clamp(po.turn*.14,-.5,.5);
+  m.neck.rotation.set(po.headX*.4,hy*.45,po.headZ*.4);m.headP.rotation.set(po.headX*.6-gait*.03*amp,hy*.55,po.headZ*.6);m.jawP.rotation.x=po.jaw;
+  // 다리: 허벅지가 앞뒤로 흔들리고, 발을 앞으로 옮기는 동안 무릎을 접어 들어 올림
+  const rear=Math.max(0,-po.rigX)*.85;
+  m.legs.forEach((l,i)=>{const fr=i<2,phi=ph+(i===0||i===3?0:Math.PI),sw=Math.sin(phi)*amp*.62,lift=Math.max(0,-Math.cos(phi))*amp,paw=i===0?po.pawL:i===1?po.pawR:rear+po.hind,cock=fr?clamp(-paw/1.7,0,1.3):0;
+    l.rotation.x=(fr?.2:-.25)+sw+paw-lift*.3;l.rotation.z=i===0?po.splay:i===1?-po.splay:0;
+    l.knee.rotation.x=(fr?-.4:.5)+(fr?-1:1)*lift*.95-cock*.55+(fr?Math.max(0,paw)*.3:0)});
+  const curl=m.K.tailCurl;
+  m.tail.forEach((s,i)=>{s.rotation.y=Math.sin(t*1.6+i*.55)*tailAmp+po.tailSide-gait*.03*amp;s.rotation.x=(i===0?.12:(st==='rest'?-.05:.03))+curl+po.tailUp*(i===0?.5:.3)});
   if(m.wings)m.wings.forEach((w,i)=>{const s=i?-1:1;w.rotation.z=s*(wing*.7+Math.sin(t*(wing>.8?14:2))*.08*(wing>.8?2:1))});
   B.flash=Math.max(0,B.flash-dt*6);const e=B.flash*.6+(B.enr&&st!=='dead'?(.06+.04*Math.sin(t*6))*B.enr:0);
   m.mats[0].emissive.setRGB(e+(B.enr?.05*B.enr:0),e*.8,e*.7);m.mats[1].emissive.setRGB(e,e*.8,e*.7);
