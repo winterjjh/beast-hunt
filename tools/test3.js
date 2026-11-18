@@ -52,6 +52,7 @@ const WI=+(process.env.WI||0),mode=process.argv[2]||'rhythm',stages=(process.arg
       for(const f of G.burns||[]){const fd=Math.hypot(P.x-f.x,P.z-f.z);if(fd<f.r+1.5){I.x=(P.x-f.x)/(fd||1);I.z=(P.z-f.z)/(fd||1)}}
       if(B.mv==='glide'&&(B.state==='windup'||B.state==='strike')){const hx=Math.sin(B.hd),hz=Math.cos(B.hd),side=(P.x-B.x)*hz-(P.z-B.z)*hx;I.x=hz*(side>=0?1:-1);I.z=-hx*(side>=0?1:-1)}
       for(const z of G.hazards){if(inside(z.s,P.x,P.z,.8)){const hx=P.x-z.s.x,hz=P.z-z.s.z,hl=Math.hypot(hx,hz)||1;I.x=hx/hl;I.z=hz/hl;if(z.total-z.t<.45)I.dodge=true}}
+      if(g.LITE&&B.state==='windup'&&B.shape&&B.shape.k!=='circle'&&inside(B.shape,P.x,P.z,2)){const side=(P.x-B.x)*Math.cos(B.hd)-(P.z-B.z)*Math.sin(B.hd)>=0?1:-1;I.x=Math.cos(B.hd)*side;I.z=-Math.sin(B.hd)*side}
       if(B.state==='windup'){const A=g.ATK[B.atk];const danger=B.shape?inside(B.shape,P.x,P.z,1.2):d<10;
        if(danger&&left<.3)I.fire=false;
        if(danger&&left<.14){if(A.noRoll||(WI!==1&&Math.random()<.5))I.block=true;else I.dodge=true}}
