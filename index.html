@@ -306,7 +306,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:1.8,speed:6.6,accel:46,d
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v37';
+const VER='v38';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -423,9 +423,9 @@ const HUNTS=[
   sky:0xe8b480,ground:0x73914f,ground2:0x62803f,sun:0xffe9c4,amb:0x9a8a78,
   body:0x7d7667,belly:0xbcab8b,accent:0x56613f,eye:0xffd24a,
   // 정면 결투형. 공격마다 끝난 자리에 틈: 덮치기 뒤 앞발이 박힘, 내려찍기는 반대편이 사각, 돌진은 바위에 박으면 비틀거림, 날개바람은 옆과 뒤가 안전
-  atk:{slam:{n:'덮치기',stuck:1.9},charge:{n:'박치기 돌진',crash:1},
-       poundL:{like:'clawL',n:'앞발 내려찍기',wind:.7,act:.25,dmg:17,off:.8,sh:{half:.75},chain:1,stuck:.9},
-       poundR:{like:'clawR',n:'앞발 내려찍기',wind:.7,act:.25,dmg:17,off:-.8,sh:{half:.75},chain:1,stuck:.9},
+  atk:{slam:{n:'덮치기',stuck:3.2},charge:{n:'박치기 돌진',crash:1},
+       poundL:{like:'clawL',n:'앞발 내려찍기',wind:.7,act:.25,dmg:17,off:.8,sh:{half:.75},chain:1,stuck:1.6},
+       poundR:{like:'clawR',n:'앞발 내려찍기',wind:.7,act:.25,dmg:17,off:-.8,sh:{half:.75},chain:1,stuck:1.6},
        gale:{like:'roar',n:'날개바람',wind:1.2,act:2.2,dmg:9,push:9,sh:{k:'cone',half:.6,r:19}}},
   motion:{wind:{poundL:q=>({pawL:-2*q,rigZ:.3*q,rigX:-.25*q,headY:-.3*q,px:-.4*q}),poundR:q=>({pawR:-2*q,rigZ:-.3*q,rigX:-.25*q,headY:.3*q,px:.4*q}),
                 gale:q=>({splay:.5*q,rigY:-.35*q,rigX:.12*q,headX:.6*q,hind:.25*q,tailUp:.25*q})},
@@ -456,11 +456,11 @@ const HUNTS=[
   sky:0x141a2e,ground:0x2c3346,ground2:0x232a3b,sun:0xaec4ff,amb:0x2a3350,
   body:0xa03a30,belly:0xd9c79a,accent:0x5a3a30,eye:0xfff2a0,fx:0xfff2a0,parts:{legs:'몸통',tail:'화차'},
   // 해체전. 체력 대신 화차 넷. 맨 뒤 연결부부터 끊어 나가고, 다 끊으면 목의 약점이 드러남. 연결부는 몸이 휘거나 공격 뒤 멈춘 동안에만 열림
-  atk:{charge:{n:'기차 돌진',stuck:1.7},
+  atk:{charge:{n:'기차 돌진',stuck:2.8},
        coil:{like:'tail',n:'똬리 가두기',wind:1.5,dmg:24},
-       headslam:{like:'lash',n:'머리 내려찍기',wind:1.15,dmg:27,stuck:2.1,ok:(d,ang)=>d<15&&ang<.8},
+       headslam:{like:'lash',n:'머리 내려찍기',wind:1.15,dmg:27,stuck:3.2,ok:(d,ang)=>d<15&&ang<.8},
        tsweep:{like:'sweep',n:'꼬리 쓸기',wind:1.0,dmg:22,off:Math.PI,lockP:.001,sh:{half:2.15,r:12},ok:(d,ang)=>d<11&&ang>.9},
-       roll:{like:'own',n:'화차 굴리기',wind:1.1,act:.5,dmg:24,turn:2.6,stuck:1.2,ok:d=>d>9,
+       roll:{like:'own',n:'화차 굴리기',wind:1.1,act:.5,dmg:24,turn:2.6,stuck:2.0,ok:d=>d>9,
          hit(dm){B.m.anchors.tail.getWorldPosition(_v);const dx=TG.x-_v.x,dz=TG.z-_v.z,l=Math.hypot(dx,dz)||1;addRoll(_v.x,_v.z,dx/l,dz/l,dm);sfx.whoosh(.5)}}},
   motion:{wind:{headslam:q=>({rise:.55+.8*q,headX:-.3*q,jaw:.4*q,pz:-1*q}), // 목을 끝까지 세워 뒤로 당김
                 tsweep:q=>({tailSide:.5*q,coil:.3*q,rise:.4,wave:.2,headX:.2*q}), // 꼬리를 한쪽으로 길게 당김
@@ -478,12 +478,12 @@ const HUNTS=[
   sky:0x3b2428,ground:0x4b3d3c,ground2:0x3a2f30,sun:0xffb080,amb:0x6a4a48,
   body:0x4a3f44,belly:0xc8643a,accent:0xff7a3c,eye:0xffe27a,glow:0x7a2a08,fx:0xff7a3c,parts:{legs:'날개'},
   // 대공전. 땅에 내려오지 않는 상대라 등의 굴뚝 넷을 꺼서 떨어뜨려야 함. 굴뚝은 불을 뿜는 동안과 공격 뒤 몸이 묶인 동안에만 열림
-  atk:{glide:{like:'own',n:'활공 폭격',wind:1.3,act:1.7,dmg:14,stuck:1.7,turn:2.8,ok:d=>d>8,
+  atk:{glide:{like:'own',n:'활공 폭격',wind:1.3,act:1.7,dmg:14,stuck:2.6,turn:2.8,ok:d=>d>8,
          hit(){B.chargeH=B.hd;B.dropT=0;sfx.roar(.4)},
          run(dt){const v=24,nx=B.x+Math.sin(B.chargeH)*v*dt,nz=B.z+Math.cos(B.chargeH)*v*dt;
            if(Math.hypot(nx,nz)<AR-4){B.x=nx;B.z=nz;B.walk+=v*dt}else B.stateT=B.dur;
            B.dropT-=dt;if(B.dropT<=0){B.dropT=.15;addBurn(B.x,B.z,2.8,5,this.dmg*B.h.dmg)}}},
-       dive:{like:'slam',n:'내리꽂기',wind:1.5,dmg:30,stuck:2.1,sh:{r:6.5}},
+       dive:{like:'slam',n:'내리꽂기',wind:1.5,dmg:30,stuck:3.2,sh:{r:6.5}},
        ash:{like:'own',n:'재 뿌리기',wind:1.1,act:1.15,dmg:15,ok:d=>d>6,
          hit(dm){B.seq=B.chim.map((v,i)=>i).filter(i=>B.chim[i]>0);B.sk=-1;B.dur=this.act*B.seq.length},
          run(){const k=Math.min(B.seq.length-1,Math.floor(B.stateT/this.act));
@@ -505,7 +505,7 @@ const HUNTS=[
 if(LITE){ // 뼈대 판: 돌등이와 잿불 날개 두 마리, 체력과 피해 축소
   WEP[1].dmg=26; // 산탄총: 쓰러진 거수에게 몰아 쏘는 용도라 한 발의 무게를 올림
   const k=HUNTS.filter(h=>h.id==='stone'||h.id==='rail'||h.id==='ash');HUNTS.length=0;HUNTS.push(...k);
-  for(const h of HUNTS){h.hp=Math.round(h.hp*.6);if(h.air){h.dmg=1.25;h.hp=20000;h.chimHp=1200}if(h.rail){h.dmg=1.12;h.hp=20000;h.coupHp=700;h.neckHp=1600}
+  for(const h of HUNTS){h.hp=Math.round(h.hp*.6);if(h.air){h.dmg=1.25;h.hp=20000;h.chimHp=1500}if(h.rail){h.dmg=1.12;h.hp=20000;h.coupHp=950;h.neckHp=2100}
     h.tips=h.tips.map(t=>t.replace(', 그때 E로 결정타','').replace('공격이 끊기고 체간이 크게 깎이는 저지 사격','공격이 끊기고 큰 틈이 생기는 저지 사격'))}
 }
 // 같은 네발 뼈대를 쓰는 거수. 본편 단계에는 아직 넣지 않음
@@ -1618,7 +1618,7 @@ function fire(kind){
     else num(cueHit.x,cueHit.y+1.4,cueHit.z,'저지',false,true)}
   // 저지 사격: 준비 동작 중에 열린 약점을 맞히면 무기와 상관없이 공격이 끊기고 체간이 크게 깎임
   if(((hits.core&&!B.h.rail)||hits.chim||hits.coup)&&B.state==='windup'&&!G.tut){const e=hits.coup||hits.chim||hits.core;addStagger(TUNE.stopStg);addFin(8);
-    if(B.state==='windup'){setState('flinch');if(B.h.air){B.dur=2.6;say('저지 성공','추락한 틈. 등의 굴뚝이 모두 열림')}else if(LITE||B.h.rail){B.dur=2.2;say('저지 성공','공격이 끊긴 틈. 약점이 열려 있음')}else{B.soft=true;B.dur=1.3}}
+    if(B.state==='windup'){setState('flinch');if(B.h.air){B.dur=3.4;say('저지 성공','추락한 틈. 등의 굴뚝이 모두 열림')}else if(LITE||B.h.rail){B.dur=3.0;say('저지 성공','공격이 끊긴 틈. 약점이 열려 있음')}else{B.soft=true;B.dur=1.3}}
     num(e.x,e.y+1.4,e.z,'저지 성공',true,true);sfx.brk();G.stops=(G.stops||0)+1;logEv('저지 사격',B.atk)}
   let any=false;
   for(const[m,d]of mobDmg){hitMob(m,d);G.hitT=.22;G.hitWeak=false}
@@ -2156,7 +2156,7 @@ function updHero(dt){
   // 무기 바꿔 들기
   if(I.swap!=null&&I.swap!==P.w&&ownW(I.swap)&&!P.dodge&&!P.skill&&!P.finA){P.bag[P.w]={ammo:P.ammo,reserve:P.reserve};P.w=I.swap;P.ammo=P.bag[P.w].ammo;P.reserve=P.bag[P.w].reserve;P.swap=.5;P.reload=0;P.noAuto=false;P.fireCd=Math.max(P.fireCd,.5);sfx.bolt();say(WEP[P.w].name,'')}
   I.swap=null;P.swap=Math.max(0,P.swap-dt);
-  if(P.reload>0){P.reload-=dt;if(P.reload<=0){if(P.reserve>0&&P.ammo<magOf(W)){P.ammo=W.magReload?magOf(W):P.ammo+1;if(!TUNE.infAmmo)P.reserve--;P.noAuto=false;sfx.reload(1);burst(P.x+Math.sin(P.h)*.6,P.y+1.3,P.z+Math.cos(P.h)*.6,2,0xe8c060,2,3,.5)}P.reload=(P.ammo<magOf(W)&&P.reserve>0&&!I.fire&&!(I.dodge>0))?W.reloadOne:0}}
+  if(P.reload>0){P.reload-=dt;if(P.reload<=0){if(P.reserve>0&&P.ammo<magOf(W)){P.ammo=W.magReload?magOf(W):P.ammo+1;if(!TUNE.infAmmo)P.reserve--;P.noAuto=false;sfx.reload(1);burst(P.x+Math.sin(P.h)*.6,P.y+1.3,P.z+Math.cos(P.h)*.6,2,0xe8c060,2,3,.5)}P.reload=(P.ammo<magOf(W)&&P.reserve>0&&!I.fire)?W.reloadOne:0}}
   if(I.reload>0&&P.reload<=0&&P.ammo<magOf(W)&&P.reserve>0){I.reload=0;P.noAuto=false;P.reload=W.reloadOne;sfx.reload(0)}
   P.fireCd-=dt;
   // 탄창이 비고 가방에 탄이 있으면 상황과 관계없이 자동 장전 시작(피격, 무기 교체 후 포함)
@@ -2174,10 +2174,10 @@ function updHero(dt){
   const part=nearestPart();
   // 구르기
   if(I.dodge>0&&!P.dodge&&!P.skill&&P.stag<=0&&P.recov<=0&&P.st>=P.dodgeCost){I.dodge=0;
-    // 구르기로 장전을 끊으면 다음 장전은 수동(R 또는 빈 총 사격 입력)
+    // 구르는 동안에도 장전은 끊기지 않고 이어짐
     // 산탄총은 구르는 동작으로 한 발 장전
     if(W.rollLoad){if(P.ammo<magOf(W)){const n=Math.min(has('s2')?2:1,magOf(W)-P.ammo);P.ammo+=n;sfx.reload(1);num(P.x,2.5,P.z,n>1?'두 발 장전':'한 발 장전',false,true)}P.reload=0;P.noAuto=false}
-    else if(P.reload>0){P.reload=0;P.noAuto=true;logEv('장전 취소','구르기')}
+    
     P.finA=null;
     let dx=mx,dz=mz;if(ml<.2){const d=Math.hypot(P.x-B.x,P.z-B.z)||1;dx=(P.x-B.x)/d;dz=(P.z-B.z)/d}else{dx/=Math.min(ml,1)||1;dz/=Math.min(ml,1)||1}
     P.dodge={t:0,dx,dz};P.st-=P.dodgeCost;P.stDelay=.55;P.inv=Math.max(P.inv,TUNE.dodgeInv);P.swing=null;P.drink=0;P.draw=-1;if(P.block){P.block=false;P.blockCd=.1;P.parryPen++;P.relT=0}sfx.whoosh(.25);
