@@ -573,94 +573,286 @@ let world=new T.Group();scene.add(world);
 function resize(){const w=innerWidth,h=innerHeight;renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(w,h,false);camera.aspect=w/h;G.fov0=w<h?68:52;camera.fov=G.fov0;camera.updateProjectionMatrix()}
 addEventListener('resize',resize);
 
-const std=(c,o={})=>new T.MeshStandardMaterial(Object.assign({color:c,flatShading:true,roughness:.92,metalness:0},o));
+// ---------- 그래픽 공통: 툰 재질, 하늘, 빛 번짐, 외곽선 후처리 ----------
+const GRAD=(()=>{const t=new T.DataTexture(new Uint8Array([54,78,182,255]),4,1,T.LuminanceFormat);t.minFilter=t.magFilter=T.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;return t})();
+const std=(c,o={})=>{const p={color:c,gradientMap:GRAD};for(const k in o)if(k!=='roughness'&&k!=='metalness'&&k!=='flatShading')p[k]=o[k];const m=new T.MeshToonMaterial(p);m.flatShading=true;return m};
 const mesh=(geo,mat,x,y,z,par,sh=true)=>{const m=new T.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=sh;par.add(m);return m};
+const basic=(c,o={})=>new T.MeshBasicMaterial(Object.assign({color:c},o));
+// 위아래 크기가 다른 상자. 각진 옷자락, 칼날, 탑 같은 형태에 사용
+const taper=(wb,db,wt,dt,h,sx=0,sz=0)=>{const g=new T.BoxGeometry(1,h,1),p=g.attributes.position;for(let i=0;i<p.count;i++){const top=p.getY(i)>0;p.setX(i,p.getX(i)*(top?wt:wb)+(top?sx:0));p.setZ(i,p.getZ(i)*(top?dt:db)+(top?sz:0))}g.computeVertexNormals();return g};
+const hash2=(x,z)=>{const s=Math.sin(x*127.1+z*311.7)*43758.5453;return s-Math.floor(s)};
+const vnoise=(x,z)=>{const xi=Math.floor(x),zi=Math.floor(z),fx=x-xi,fz=z-zi,u=fx*fx*(3-2*fx),v=fz*fz*(3-2*fz);return lerp(lerp(hash2(xi,zi),hash2(xi+1,zi),u),lerp(hash2(xi,zi+1),hash2(xi+1,zi+1),u),v)};
+// 사냥터 바깥 지형 높이. 싸움터 안쪽은 항상 평지
+const groundY=(x,z)=>{const r=Math.hypot(x,z),k=clamp((r-AR-7)/75,0,1);if(k<=0)return 0;return k*k*(3-2*k)*30*(.45+1.0*vnoise(x*.03+7,z*.03+3))+(vnoise(x*.16,z*.16)-.5)*1.6*Math.min(1,(r-AR-7)/8)};
+const GFX=(()=>{
+  const off=/[?&]nofx\b/.test(location.search),force=/[?&]fx\b/.test(location.search); // 주소 뒤 ?nofx 후처리 끔, ?fx 항상 켬
+  let rt=null,ok=!off,time=0,slow=0;
+  const ticks=[],size=new T.Vector2(),qs=new T.Scene(),qc=new T.OrthographicCamera(-1,1,1,-1,0,1);
+  const pm=new T.ShaderMaterial({depthTest:false,depthWrite:false,
+    uniforms:{tC:{value:null},tD:{value:null},px:{value:new T.Vector2()},ink:{value:new T.Color(0x1c1620)},amt:{value:.85},zn:{value:.1},zf:{value:400},w:{value:1}},
+    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+    fragmentShader:`precision highp float;varying vec2 vUv;uniform sampler2D tC,tD;uniform vec2 px;uniform vec3 ink;uniform float amt,zn,zf,w;
+float iz(vec2 uv){return 1./zn-texture2D(tD,uv).x*(1./zn-1./zf);}
+float lum(vec3 c){return dot(c,vec3(.299,.587,.114));}
+void main(){
+  vec3 m=texture2D(tC,vUv).rgb,nw=texture2D(tC,vUv+vec2(-1.,-1.)*px).rgb,ne=texture2D(tC,vUv+vec2(1.,-1.)*px).rgb,sw=texture2D(tC,vUv+vec2(-1.,1.)*px).rgb,se=texture2D(tC,vUv+vec2(1.,1.)*px).rgb;
+  float lm=lum(m),lnw=lum(nw),lne=lum(ne),lsw=lum(sw),lse=lum(se),lmin=min(lm,min(min(lnw,lne),min(lsw,lse))),lmax=max(lm,max(max(lnw,lne),max(lsw,lse)));
+  vec2 dir=vec2(-((lnw+lne)-(lsw+lse)),(lnw+lsw)-(lne+lse));
+  float red=max((lnw+lne+lsw+lse)*.03125,1./128.),rm=1./(min(abs(dir.x),abs(dir.y))+red);dir=clamp(dir*rm,-8.,8.)*px;
+  vec3 a=.5*(texture2D(tC,vUv+dir*(1./3.-.5)).rgb+texture2D(tC,vUv+dir*(2./3.-.5)).rgb),b=a*.5+.25*(texture2D(tC,vUv-dir*.5).rgb+texture2D(tC,vUv+dir*.5).rgb);
+  float lb=lum(b);vec3 col=(lb<lmin||lb>lmax)?a:b;
+  // 외곽선: 깊이의 역수는 평면 위에서 곧게 변하므로, 그 꺾임만 골라내면 윤곽과 모서리가 남음
+  vec2 o=px*w;float c=iz(vUv),e=abs(iz(vUv+vec2(o.x,0.))+iz(vUv-vec2(o.x,0.))+iz(vUv+vec2(0.,o.y))+iz(vUv-vec2(0.,o.y))-4.*c)/c;
+  float z=1./c,line=smoothstep(.006,.02,e)*(1.-smoothstep(55.,140.,z))*amt;
+  col=mix(col,ink+col*.12,line);
+  float l=lum(col);col=mix(vec3(l),col,1.12);
+  vec2 q=vUv-.5;col*=1.-.32*dot(q,q)*1.6;
+  gl_FragColor=vec4(col,1.);}`});
+  qs.add(new T.Mesh(new T.PlaneGeometry(2,2),pm));
+  function ensure(){
+    renderer.getDrawingBufferSize(size);
+    if(rt&&rt.width===size.x&&rt.height===size.y)return;
+    if(rt){rt.depthTexture.dispose();rt.dispose()}
+    rt=new T.WebGLRenderTarget(size.x,size.y,{minFilter:T.LinearFilter,magFilter:T.LinearFilter,format:T.RGBAFormat,stencilBuffer:false});
+    rt.depthTexture=new T.DepthTexture(size.x,size.y);rt.depthTexture.type=T.UnsignedIntType;
+    pm.uniforms.tC.value=rt.texture;pm.uniforms.tD.value=rt.depthTexture;pm.uniforms.px.value.set(1/size.x,1/size.y);pm.uniforms.w.value=Math.max(1,size.y/900);
+  }
+  function render(dt){
+    time+=dt;for(const f of ticks)f(dt,time);
+    // 느린 기기: 2초 넘게 초당 22장 아래면 후처리를 끄고 기본 그리기로 전환
+    if(ok&&!force){slow=dt>.045?slow+dt:Math.max(0,slow-dt*2);if(slow>2)ok=false}
+    if(ok){try{ensure();pm.uniforms.zn.value=camera.near;pm.uniforms.zf.value=camera.far;renderer.setRenderTarget(rt);renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(qs,qc);return}catch(e){ok=false;renderer.setRenderTarget(null)}}
+    renderer.render(scene,camera);
+  }
+  // 빛 번짐: 둥근 빛 그림을 겹쳐 그려 발광처럼 보이게 함
+  const gt=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.25,'rgba(255,255,255,.55)');g.addColorStop(.6,'rgba(255,255,255,.12)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return new T.CanvasTexture(c)})();
+  function glow(par,x,y,z,s,color,op=.8,fog=true){const sp=new T.Sprite(new T.SpriteMaterial({map:gt,color,transparent:true,opacity:op,blending:T.AdditiveBlending,depthWrite:false,fog}));sp.position.set(x,y,z);sp.scale.setScalar(s);par.add(sp);return sp}
+  // 하늘: 지평선에서 천정으로 번지는 색과 해(또는 달)
+  function sky(par,top,hor,low,sunDir,sunCol,sunSize){
+    const m=new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,uniforms:{top:{value:new T.Color(top)},hor:{value:new T.Color(hor)},low:{value:new T.Color(low)},sd:{value:sunDir.clone().normalize()},sc:{value:new T.Color(sunCol)},ss:{value:sunSize}},
+      vertexShader:'varying vec3 vD;void main(){vD=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader:`varying vec3 vD;uniform vec3 top,hor,low,sd,sc;uniform float ss;void main(){vec3 d=normalize(vD);float h=d.y;
+vec3 c=h>0.?mix(hor,top,smoothstep(0.,.6,h)):mix(hor,low,smoothstep(0.,-.25,h));
+float s=dot(d,sd);c=mix(c,sc,smoothstep(1.-ss,1.-ss*.82,s));c+=sc*pow(max(s,0.),24.)*.22;gl_FragColor=vec4(c,1.);}`});
+    const s=new T.Mesh(new T.SphereGeometry(360,24,14),m);s.renderOrder=-10;par.add(s);return s;
+  }
+  return{render,ticks,glow,sky,get on(){return ok}};
+})();
 
 // ---------- 사냥터 ----------
 let embers=null;
+// 사냥터별 하늘과 먼 풍경 색. top 천정, low 지평선 아래, hill 바깥 언덕, far 먼 산 두 겹
+const SCENE={
+  stone:{top:0x6fa9c4,low:0xd9a070,hill:0x4f7040,far:[0xc79a78,0xa98a78],sun:[30,50,20],sunC:0xfff4d8,sunS:.0016,cloud:0xfff0dc},
+  frost:{top:0x7fa6cf,low:0xb4c8dc,hill:0x7f97b2,far:[0xa9c0d8,0x8fa9c6],sun:[30,50,20],sunC:0xffffff,sunS:.0014,cloud:0xffffff},
+  thorn:{top:0x7fb0c6,low:0xd8b07c,hill:0xa87848,far:[0xd2a878,0xb98a60],sun:[30,50,20],sunC:0xfff6de,sunS:.0018,cloud:0xfff2dc},
+  night:{top:0x070b1a,low:0x10162a,hill:0x1c2233,far:[0x1b2440,0x131a30],sun:[70,75,-110],sunC:0xeef2ff,sunS:.0042},
+  ash:{top:0x150c12,low:0x2a1418,hill:0x2a2022,far:[0x2c1a1e,0x1f1216],sun:[-60,26,-100],sunC:0xff7a3a,sunS:.0016}
+};
 function buildWorld(h){
-  const E=h.env||h.id; // 사냥터 풍경 종류
-  scene.remove(world);world=new T.Group();scene.add(world);embers=null;
-  scene.background=new T.Color(h.sky);scene.fog=new T.Fog(h.sky,45,150);
+  const E=h.env||h.id,S=SCENE[E]||SCENE.stone; // 사냥터 풍경 종류
+  scene.remove(world);world=new T.Group();scene.add(world);embers=null;GFX.ticks.length=0;
+  scene.background=new T.Color(h.sky);scene.fog=new T.Fog(h.sky,60,230);
   hemi.color.set(h.sun);hemi.groundColor.set(h.amb);sun.color.set(h.sun);
-  const dark=E==='ash'||E==='night';hemi.intensity=dark?.6:E==='frost'?.55:.8;sun.intensity=dark?.8:E==='frost'?.6:1.0;
-  const g=mesh(new T.CircleGeometry(AR+90,56),std(h.ground2),0,0,0,world,false);g.rotation.x=-Math.PI/2;g.receiveShadow=true;
-  const a=mesh(new T.CircleGeometry(AR,56),std(h.ground),0,.02,0,world,false);a.rotation.x=-Math.PI/2;a.receiveShadow=true;
-  const patch=std(h.ground2);
-  for(let i=0;i<46;i++){const r=Math.sqrt(Math.random())*(AR-2),t=Math.random()*TAU,p=mesh(new T.CircleGeometry(rand(.8,2.6),7),patch,Math.cos(t)*r,.04,Math.sin(t)*r,world,false);p.rotation.x=-Math.PI/2;p.receiveShadow=true}
+  const dark=E==='ash'||E==='night';hemi.intensity=dark?.62:E==='frost'?.55:.62;sun.intensity=dark?.85:E==='frost'?.6:.92;
+  const sunDir=new T.Vector3(...S.sun);
+  const dome=GFX.sky(world,S.top,h.sky,S.low,sunDir,S.sunC,S.sunS);GFX.ticks.push(()=>dome.position.copy(camera.position));
+  const at=(m,x,z,dy=0)=>{m.position.set(x,groundY(x,z)+dy,z);return m};
+  const ring=(n,r0,r1,f)=>{for(let i=0;i<n;i++){const t=Math.random()*TAU,r=rand(r0,r1);f(Math.cos(t)*r,Math.sin(t)*r,i,t)}};
+  // 땅: 면마다 색이 조금씩 다른 각진 지형. 싸움터는 평지, 바깥은 골짜기 벽으로 솟음
+  {
+    const rs=[0];for(let r=4;r<=48;r+=4)rs.push(r);rs.push(53,60,69,80,94,112,135,170,215);
+    const N=72,V=rs.map((r,ri)=>{const a=[];for(let i=0;i<N;i++){const t=(i+(ri%2)*.5+(ri?(hash2(ri,i)-.5)*.5:0))/N*TAU,rr=ri&&r<170?r+(hash2(i,ri)-.5)*Math.min(3,r*.08):r,x=Math.cos(t)*rr,z=Math.sin(t)*rr;a.push([x,groundY(x,z),z])}return a});
+    const pos=[],col=[],c1=new T.Color(h.ground),c2=new T.Color(h.ground2),ch=new T.Color(S.hill),c=new T.Color();
+    const tri=(a,b,d)=>{const cx=(a[0]+b[0]+d[0])/3,cz=(a[2]+b[2]+d[2])/3,r=Math.hypot(cx,cz),n=vnoise(cx*.11+20,cz*.11+9);
+      if(r<AR-.5)c.copy(c1).lerp(c2,n>.58?.75:n<.3?-.12:.1);else if(r<AR+7)c.copy(c2).multiplyScalar(.9+.12*n);else c.copy(c2).lerp(ch,clamp((r-AR-7)/40+n*.4-.2,0,1));
+      c.multiplyScalar(.95+.1*hash2(cx*3.1,cz*2.7));
+      pos.push(...a,...b,...d);for(let k=0;k<3;k++)col.push(c.r,c.g,c.b)};
+    for(let ri=0;ri<rs.length-1;ri++)for(let i=0;i<N;i++){const j=(i+1)%N,a=V[ri][i],b=V[ri][j],d=V[ri+1][i],e=V[ri+1][j];if(ri===0){tri(a,e,d)}else if(ri%2){tri(a,b,d);tri(b,e,d)}else{tri(a,b,e);tri(a,e,d)}}
+    const gg=new T.BufferGeometry();gg.setAttribute('position',new T.Float32BufferAttribute(pos,3));gg.setAttribute('color',new T.Float32BufferAttribute(col,3));gg.computeVertexNormals();
+    const gm=std(0xffffff,{vertexColors:true}),g=new T.Mesh(gg,gm);g.receiveShadow=true;world.add(g);
+  }
   const rockM=std(E==='frost'?0xaec4d8:E==='ash'?0x2e2729:E==='thorn'?0xb08a5a:E==='night'?0x3a4052:0x8b8577);
-  for(let i=0;i<54;i++){const t=i/54*TAU+rand(-.04,.04),r=AR+rand(1.5,6),s=rand(1.4,3.8);const m=mesh(new T.DodecahedronGeometry(s,0),rockM,Math.cos(t)*r,s*.35,Math.sin(t)*r,world);m.rotation.set(rand(0,3),rand(0,3),rand(0,3));m.scale.y=rand(.6,1.5)}
+  for(let i=0;i<54;i++){const t=i/54*TAU+rand(-.04,.04),r=AR+rand(1.5,6),s=rand(1.4,3.8);const m=mesh(new T.DodecahedronGeometry(s,0),rockM,Math.cos(t)*r,s*.35,Math.sin(t)*r,world);m.rotation.set(rand(0,3),rand(0,3),rand(0,3));m.scale.y=rand(.6,1.5);m.receiveShadow=true}
   // 엄폐 바위
   G.covers=[];
   {const cm=std(new T.Color(rockM.color).multiplyScalar(1.12).getHex()),n=8;for(let i=0;i<n;i++){const t=(i+.5)/n*TAU+rand(-.2,.2),r=rand(13,AR-12),x=Math.sin(t)*r,z=Math.cos(t)*r;if(Math.hypot(x,z-24)<6||Math.hypot(x,z+8)<7)continue;addCover(x,z,rand(2,2.7),cm)}}
-  // 먼 산
-  const mtM=new T.MeshBasicMaterial({color:new T.Color(h.sky).multiplyScalar(E==='ash'?.55:E==='night'?1.5:.78)});
-  for(let i=0;i<16;i++){const t=i/16*TAU+rand(-.1,.1),r=rand(95,125),hh=rand(22,48);mesh(new T.ConeGeometry(rand(22,38),hh,5),mtM,Math.cos(t)*r,hh/2-2,Math.sin(t)*r,world,false)}
+  // 먼 산: 안개에 묻히지 않는 실루엣 두 겹
+  S.far.forEach((fc,k)=>{const mm=basic(fc,{fog:false}),n=k?22:18;for(let i=0;i<n;i++){const t=i/n*TAU+rand(-.1,.1),r=k?rand(230,260):rand(290,320),hh=k?rand(40,85):rand(80,150),m=mesh(new T.ConeGeometry(rand(40,70),hh,5),mm,Math.cos(t)*r,hh/2-6,Math.sin(t)*r,world,false);m.rotation.y=rand(0,3);m.scale.x=rand(.8,1.6)}});
+  if(S.cloud){const cm=basic(S.cloud,{fog:false}),cl=[];for(let i=0;i<11;i++){const cg=new T.Group(),t=Math.random()*TAU,r=rand(150,240);cg.position.set(Math.cos(t)*r,rand(60,110),Math.sin(t)*r);for(let k=0;k<4;k++){const p=mesh(new T.IcosahedronGeometry(rand(7,13),0),cm,(k-1.5)*rand(9,13),rand(-1.5,1.5),rand(-3,3),cg,false);p.scale.y=.42}cg.rotation.y=-t;world.add(cg);cl.push(cg)}
+    GFX.ticks.push(dt=>{for(const c of cl){const a=dt*.004,x=c.position.x,z=c.position.z;c.position.x=x*Math.cos(a)-z*Math.sin(a);c.position.z=x*Math.sin(a)+z*Math.cos(a)}})}
   if(E==='stone'){
-    const trunk=std(0x5a4632),leaf=std(0x4f7a3a),leaf2=std(0x6a8f3f);
-    for(let i=0;i<34;i++){const t=Math.random()*TAU,r=AR+rand(5,22),x=Math.cos(t)*r,z=Math.sin(t)*r,s=rand(.8,1.6);mesh(new T.CylinderGeometry(.3*s,.45*s,3*s,5),trunk,x,1.5*s,z,world);mesh(new T.ConeGeometry(2.2*s,4*s,6),i%2?leaf:leaf2,x,4.6*s,z,world);mesh(new T.ConeGeometry(1.6*s,3*s,6),i%2?leaf2:leaf,x,6.6*s,z,world)}
-    const tuft=new T.InstancedMesh(new T.ConeGeometry(.12,.55,4),std(0x8fb05a),320),d=new T.Object3D();
-    for(let i=0;i<320;i++){const r=Math.sqrt(Math.random())*(AR+8),t=Math.random()*TAU;d.position.set(Math.cos(t)*r,.25,Math.sin(t)*r);d.rotation.y=Math.random()*3;d.scale.setScalar(rand(.7,1.6));d.updateMatrix();tuft.setMatrixAt(i,d.matrix)}
-    world.add(tuft);
+    // 바람 초원: 버려진 풍력 단지
+    const trunk=std(0x5a4632),leaf=std(0x3f6a3a),leaf2=std(0x5b8a3c),leaf3=std(0x7ba646);
+    ring(46,AR+6,AR+48,(x,z,i)=>{const s=rand(.8,1.7),tg=at(new T.Group(),x,z,-.2);tg.rotation.set(rand(-.06,.06),rand(0,3),rand(-.06,.06));world.add(tg);
+      mesh(new T.CylinderGeometry(.22*s,.42*s,3*s,5),trunk,0,1.5*s,0,tg);
+      [[2.3,3.2,3.6,leaf],[1.8,2.8,5.4,i%2?leaf2:leaf],[1.2,2.4,7.0,leaf2],[.6,1.6,8.4,leaf3]].forEach(([r,hh,y,m],k)=>{mesh(new T.ConeGeometry(r*s,hh*s,6),m,0,y*s,0,tg).rotation.y=k*.5})});
+    const bush=std(0x4d7a3a),bush2=std(0x6b9440);
+    ring(34,AR+2,AR+20,(x,z,i)=>{const s=rand(.7,1.5),m=at(mesh(new T.IcosahedronGeometry(s,0),i%2?bush:bush2,0,0,0,world),x,z,s*.3);m.scale.y=.7;m.rotation.y=rand(0,3)});
+    const d=new T.Object3D(),inst=(geo,mat,n,r1,y,s0,s1)=>{const im=new T.InstancedMesh(geo,mat,n);for(let i=0;i<n;i++){const r=Math.sqrt(Math.random())*r1,t=Math.random()*TAU;d.position.set(Math.cos(t)*r,y,Math.sin(t)*r);d.rotation.set(rand(-.2,.2),Math.random()*3,rand(-.2,.2));d.scale.setScalar(rand(s0,s1));d.updateMatrix();im.setMatrixAt(i,d.matrix)}world.add(im);return im};
+    const soft=m=>{m.transparent=true;m.depthWrite=false;return m}; // 외곽선이 붙지 않는 잔풀과 꽃
+    inst(new T.ConeGeometry(.13,.6,4),soft(std(0x86a852)),420,AR+4,.26,.7,1.7);
+    inst(new T.ConeGeometry(.2,.5,3),soft(std(0x55803c)),160,AR+4,.2,.8,1.5);
+    inst(new T.OctahedronGeometry(.09,0),soft(basic(0xfff3c4)),70,AR,.32,.8,1.3);
+    inst(new T.OctahedronGeometry(.09,0),soft(basic(0xf2a0a0)),40,AR,.3,.8,1.3);
+    // 풍차: 멀쩡한 것은 천천히 돌고, 부서진 것은 날개가 떨어져 기울어 있음
+    const wt=std(0xe6e2d6),wt2=std(0xbdb8aa),stripe=std(0xc0432c),rotors=[];
+    const blade=(par,len,ang)=>{const b=new T.Group();b.rotation.z=ang;par.add(b);mesh(taper(1.5,.35,.45,.2,len),wt,0,len/2+.8,0,b);mesh(taper(.62,.36,.48,.22,len*.12),stripe,0,len*.86+.8,0,b,false);return b};
+    const turbine=(x,z,s,broken)=>{const tg=at(new T.Group(),x,z,-1);tg.scale.setScalar(s);tg.rotation.y=Math.atan2(-x,-z)+rand(-.5,.5);if(broken)tg.rotation.z=rand(.08,.16)*(Math.random()<.5?-1:1);world.add(tg);
+      mesh(new T.CylinderGeometry(.8,1.5,30,7),wt,0,15,0,tg);mesh(new T.CylinderGeometry(1.6,1.9,1.2,7),wt2,0,.6,0,tg);
+      mesh(taper(2,5,1.8,4.4,2),wt2,0,30.6,.6,tg);
+      const rot=new T.Group();rot.position.set(0,30.6,3.4);tg.add(rot);mesh(new T.ConeGeometry(1,1.8,6),wt2,0,0,.2,rot).rotation.x=Math.PI/2;
+      const n=broken?(Math.random()<.5?1:2):3;for(let i=0;i<n;i++)blade(rot,14,i*TAU/3+(broken?.9:0));
+      if(!broken)rotors.push([rot,rand(.25,.5)])};
+    [[62,-70,1.1,0],[-75,-48,1.25,1],[-30,-98,1.5,0],[92,10,1.3,0],[-96,40,1.2,1],[20,104,1.35,0],[78,74,1.1,1]].forEach(a=>turbine(...a));
+    GFX.ticks.push(dt=>{for(const[r,v]of rotors)r.rotation.z+=dt*v});
+    // 떨어진 날개와 콘크리트 잔해
+    {const fb=at(new T.Group(),-AR-9,-14,.5);fb.rotation.set(Math.PI/2-.12,0,.5);world.add(fb);mesh(taper(1.9,.5,.5,.25,17),wt,0,0,0,fb);mesh(taper(.75,.52,.52,.27,2.2),stripe,0,6.6,0,fb,false);mesh(taper(1.4,.52,1.2,.5,1.6),stripe,0,-3,0,fb,false)}
+    const conc=std(0xa9a79c),moss=std(0x5b7a3a),rebar=std(0x5a4636);
+    ring(9,AR+3,AR+12,(x,z)=>{const s=rand(1.4,3),cg=at(new T.Group(),x,z,0);cg.rotation.set(rand(-.25,.25),rand(0,3),rand(-.25,.25));world.add(cg);mesh(new T.BoxGeometry(s*1.6,s*.9,s*.5),conc,0,s*.35,0,cg);mesh(new T.BoxGeometry(s*1.64,.14,s*.54),moss,0,s*.82,0,cg,false);for(let k=0;k<2;k++)mesh(new T.CylinderGeometry(.04,.04,s*.7,4),rebar,rand(-.6,.6)*s,s*1.05,0,cg).rotation.z=rand(-.5,.5)});
   }else if(E==='frost'){
-    const ice=std(0xbfe6f7,{roughness:.35,emissive:0x1b3a52});
+    const ice=std(0xbfe6f7,{emissive:0x1b3a52});
     for(let i=0;i<40;i++){const t=Math.random()*TAU,r=AR+rand(3,20),s=rand(1,3.2),m=mesh(new T.ConeGeometry(s*.6,s*3.4,5),ice,Math.cos(t)*r,s*1.5,Math.sin(t)*r,world);m.rotation.z=rand(-.25,.25);m.rotation.x=rand(-.25,.25)}
     const snow=std(0xffffff);
     for(let i=0;i<40;i++){const r=Math.sqrt(Math.random())*(AR-1),t=Math.random()*TAU,m=mesh(new T.SphereGeometry(rand(.5,1.4),6,4),snow,Math.cos(t)*r,-.1,Math.sin(t)*r,world,false);m.scale.y=.35;m.receiveShadow=true}
   }else if(E==='ash'){
-    const lava=new T.MeshBasicMaterial({color:0xff6a2a});
-    for(let i=0;i<26;i++){const t=Math.random()*TAU,r=AR+rand(2,26),m=mesh(new T.CircleGeometry(rand(1.5,5),8),lava,Math.cos(t)*r,.06,Math.sin(t)*r,world,false);m.rotation.x=-Math.PI/2}
-    const spire=std(0x241d20);
-    for(let i=0;i<30;i++){const t=Math.random()*TAU,r=AR+rand(4,24),s=rand(1.5,4);const m=mesh(new T.ConeGeometry(s*.7,s*4,5),spire,Math.cos(t)*r,s*1.8,Math.sin(t)*r,world);m.rotation.z=rand(-.3,.3)}
-    const n=160,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=rand(-50,50);pos[i*3+1]=rand(0,26);pos[i*3+2]=rand(-50,50)}
+    // 잿불 화구: 식어 가는 지열 발전소
+    const lava=basic(0xff6a2a),lava2=basic(0xffb24a),glows=[];
+    ring(30,AR+4,AR+60,(x,z,i)=>{const s=rand(2,6.5),m=at(mesh(new T.CircleGeometry(s,7),lava,0,0,0,world,false),x,z,.5);m.rotation.x=-Math.PI/2;m.rotation.z=rand(0,3);m.scale.y=rand(.4,.8);
+      const m2=mesh(new T.CircleGeometry(s*.5,6),lava2,0,0,.02,m,false);if(i%2)glows.push(GFX.glow(world,x,m.position.y+1,z,s*5,0xff5a1a,.5))});
+    const spire=std(0x241d20),spire2=std(0x382a2c);
+    ring(46,AR+5,AR+50,(x,z,i)=>{const s=rand(1.5,4.5),m=at(mesh(new T.ConeGeometry(s*.7,s*4,5),i%3?spire:spire2,0,0,0,world),x,z,s*1.7);m.rotation.set(rand(-.3,.3),rand(0,3),rand(-.3,.3))});
+    // 냉각탑과 김
+    const tower=std(0x54474a),towerD=std(0x3a3033),rim=basic(0xff6a2a),steam=[];
+    [[-70,-66,1.15],[-98,-22,1],[40,-104,1.3],[96,-52,.95]].forEach(([x,z,s],i)=>{const tg=at(new T.Group(),x,z,-2);tg.scale.setScalar(s);world.add(tg);
+      mesh(new T.CylinderGeometry(6.2,10,12,9),tower,0,6,0,tg);mesh(new T.CylinderGeometry(7.6,6.2,10,9),tower,0,17,0,tg);mesh(new T.CylinderGeometry(7.9,7.9,.8,9),towerD,0,22.2,0,tg,false);
+      mesh(new T.CylinderGeometry(7.1,7.1,.3,9),rim,0,22.5,0,tg,false);glows.push(GFX.glow(tg,0,24,0,26,0xff5a1a,.45,false));
+      for(let k=0;k<5;k++){const p=mesh(new T.IcosahedronGeometry(rand(4,6),0),basic(0x6a5458,{transparent:true,opacity:.5,depthWrite:false,fog:false}),0,0,0,tg,false);p.userData={t:k/5,x:rand(-2,2),z:rand(-2,2)};steam.push(p)}});
+    // 지면을 따라 달리는 배관
+    const pipe=std(0x5a4a44),pipeD=std(0x3d3230),joint=std(0x8a5a3a);
+    for(let k=0;k<3;k++){const a0=k*2.1+.4,rr=AR+10+k*5;for(let i=0;i<7;i++){const t=a0+i*.21,x=Math.cos(t)*rr,z=Math.sin(t)*rr,len=rr*.215,p=at(mesh(new T.CylinderGeometry(1.1,1.1,len,7),pipe,0,0,0,world),x,z,2.2);p.rotation.set(Math.PI/2,0,0);p.rotation.order='YXZ';p.rotation.y=-t;
+        const j=at(mesh(new T.CylinderGeometry(1.4,1.4,.5,7),joint,0,0,0,world),Math.cos(t+.105)*rr,Math.sin(t+.105)*rr,2.2);j.rotation.order='YXZ';j.rotation.set(Math.PI/2,-t,0);
+        at(mesh(new T.BoxGeometry(.6,3.4,.6),pipeD,0,0,0,world),x,z,.6)}}
+    const n=220,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=rand(-55,55);pos[i*3+1]=rand(0,26);pos[i*3+2]=rand(-55,55)}
     const eg=new T.BufferGeometry();eg.setAttribute('position',new T.BufferAttribute(pos,3));
-    embers=new T.Points(eg,new T.PointsMaterial({color:0xff9a4a,size:.28,transparent:true,opacity:.9}));world.add(embers);
+    embers=new T.Points(eg,new T.PointsMaterial({color:0xffa04a,size:.3,transparent:true,opacity:.9}));world.add(embers);
     const pl=new T.PointLight(0xff6a2a,.9,90);pl.position.set(0,6,0);world.add(pl);
+    GFX.ticks.push((dt,t)=>{glows.forEach((g,i)=>g.material.opacity=.42+.14*Math.sin(t*1.7+i*1.3));for(const p of steam){const u=p.userData;u.t=(u.t+dt*.07)%1;p.position.set(u.x+u.t*9,24+u.t*34,u.z);p.scale.setScalar(.6+u.t*1.6);p.material.opacity=.5*(1-u.t)*Math.min(1,u.t*6)}});
   }else if(E==='thorn'){
     const mesa=std(0xb5744a),mesa2=std(0xc98a58),bush=std(0x7a8a4a),bone=std(0xe9e1cd);
     for(let i=0;i<26;i++){const t=Math.random()*TAU,r=AR+rand(8,34),rr=rand(3,8),hh=rand(5,17),x=Math.cos(t)*r,z=Math.sin(t)*r;mesh(new T.CylinderGeometry(rr*.8,rr,hh,7),i%2?mesa:mesa2,x,hh/2,z,world);mesh(new T.CylinderGeometry(rr*.86,rr*.82,.8,7),mesa2,x,hh*.62,z,world,false)}
     for(let i=0;i<40;i++){const r=Math.sqrt(Math.random())*(AR+10),t=Math.random()*TAU;mesh(new T.ConeGeometry(.35,rand(.5,1.1),5),bush,Math.cos(t)*r,.3,Math.sin(t)*r,world)}
     for(let i=0;i<7;i++){const t=Math.random()*TAU,r=AR+rand(2,5),m=mesh(new T.TorusGeometry(rand(1.5,2.6),.16,4,8,Math.PI),bone,Math.cos(t)*r,0,Math.sin(t)*r,world);m.rotation.y=Math.random()*3}
   }else{
+    // 달밤 폐선로: 싸움터를 가로지르는 녹슨 선로와 버려진 화차
+    const railM=std(0x6c707e),tie=std(0x3a3028),gravel=std(0x363c4e),rust=std(0x7a3a30),rust2=std(0x5a3a4a),ironM=std(0x2a2e3a),woodM=std(0x3c3430);
+    const track=(off,x0,x1)=>{const tg=new T.Group();world.add(tg);
+      const bed=mesh(new T.BoxGeometry(x1-x0,.05,3.6),gravel,(x0+x1)/2,.03,off,tg,false);bed.receiveShadow=true;
+      for(let x=x0;x<=x1;x+=1.5){const s=mesh(new T.BoxGeometry(.42,.1,3),tie,x+rand(-.08,.08),.07,off,tg,false);s.rotation.y=rand(-.06,.06);s.receiveShadow=true}
+      for(const dz of[-.95,.95])mesh(new T.BoxGeometry(x1-x0,.14,.12),railM,(x0+x1)/2,.16,off+dz,tg,false)};
+    track(-6,-AR-6,AR+6);track(9,-AR-6,AR+6);
+    const wagon=(x,z,ry,tilt,m)=>{const wg=at(new T.Group(),x,z,0);wg.rotation.set(0,ry,tilt);world.add(wg);
+      mesh(new T.BoxGeometry(7.5,.4,2.8),ironM,0,1.1,0,wg);mesh(new T.BoxGeometry(7.2,2.5,2.6),m,0,2.55,0,wg);mesh(taper(7.4,2.8,7.2,1.6,.5),ironM,0,4.05,0,wg);
+      for(let i=-3;i<=3;i++)mesh(new T.BoxGeometry(.14,2.5,2.7),ironM,i*1.1,2.55,0,wg,false);
+      mesh(new T.BoxGeometry(1.8,2,2.66),woodM,.4,2.4,0,wg,false);
+      for(const wx of[-2.5,2.5])for(const wz of[-1.1,1.1])mesh(new T.CylinderGeometry(.6,.6,.25,8),ironM,wx,.6,wz,wg).rotation.x=Math.PI/2};
+    [[-AR-12,-6,0,0,rust],[-AR-20.5,-6,.03,0,rust2],[AR+13,9,0,0,rust2],[AR+21,10.5,.2,.5,rust],[-AR-9,13,.5,-.12,rust],[AR+8,-22,-.9,1.35,rust2]].forEach(a=>wagon(...a));
+    // 전신주와 늘어진 전선, 신호기
+    const pole=std(0x3a3430),lampR=basic(0xff4a3a),lampG=basic(0x5affa0),poles=[];
+    for(let i=0;i<14;i++){const t=i/14*TAU+.2,r=AR+rand(7,10),x=Math.cos(t)*r,z=Math.sin(t)*r,pg=at(new T.Group(),x,z,-.3);pg.rotation.set(rand(-.08,.08),-t,rand(-.08,.08));world.add(pg);
+      mesh(new T.CylinderGeometry(.18,.26,11,5),pole,0,5.5,0,pg);mesh(new T.BoxGeometry(.2,.2,3),pole,0,10,0,pg);mesh(new T.BoxGeometry(.18,.18,2.2),pole,0,9,0,pg);poles.push([x,pg.position.y+10,z])}
+    const wire=basic(0x0c0f1a);
+    poles.forEach((a,i)=>{const b=poles[(i+1)%poles.length];if(i%5===4)return;for(let k=0;k<4;k++){const u0=k/4,u1=(k+1)/4,sag=u=>-3.2*4*u*(1-u),p0=[lerp(a[0],b[0],u0),lerp(a[1],b[1],u0)+sag(u0),lerp(a[2],b[2],u0)],p1=[lerp(a[0],b[0],u1),lerp(a[1],b[1],u1)+sag(u1),lerp(a[2],b[2],u1)],len=Math.hypot(p1[0]-p0[0],p1[1]-p0[1],p1[2]-p0[2]),w=mesh(new T.BoxGeometry(.06,.06,len),wire,(p0[0]+p1[0])/2,(p0[1]+p1[1])/2,(p0[2]+p1[2])/2,world,false);w.lookAt(p1[0],p1[1],p1[2])}});
+    const sigs=[];[[-AR-3,-9.2,1],[AR+3,-2.8,0],[-AR-3,5.8,0],[AR+3,12.2,1]].forEach(([x,z,red])=>{const sg=at(new T.Group(),x,z,0);world.add(sg);mesh(new T.CylinderGeometry(.14,.18,6,5),ironM,0,3,0,sg);mesh(new T.BoxGeometry(.7,1.7,.5),ironM,0,6.4,0,sg);
+      mesh(new T.OctahedronGeometry(.2,0),red?lampR:lampG,0,6.8,.28,sg,false);mesh(new T.OctahedronGeometry(.2,0),basic(0x20242e),0,6.0,.28,sg,false);sigs.push(GFX.glow(sg,0,6.8,.4,4.5,red?0xff3a2a:0x4affa0,.7))});
+    // 무너진 역사 벽
     const stone=std(0x4a5068),stone2=std(0x5a6078);
-    for(let i=0;i<30;i++){const t=i/30*TAU+rand(-.05,.05),r=AR+rand(3,9),hh=rand(3,12),x=Math.cos(t)*r,z=Math.sin(t)*r;mesh(new T.CylinderGeometry(.95,1.1,hh,8),i%2?stone:stone2,x,hh/2,z,world);mesh(new T.BoxGeometry(2.6,.6,2.6),stone2,x,.3,z,world);if(hh>9)mesh(new T.BoxGeometry(2.4,.5,2.4),stone,x,hh+.25,z,world)}
-    for(let i=0;i<12;i++){const t=Math.random()*TAU,r=AR+rand(10,26),m=mesh(new T.BoxGeometry(rand(4,9),rand(3,8),1.4),stone,Math.cos(t)*r,2,Math.sin(t)*r,world);m.rotation.y=t+rand(-.4,.4)}
-    const moon=mesh(new T.SphereGeometry(9,16,12),new T.MeshBasicMaterial({color:0xeef2ff,fog:false}),70,75,-110,world,false);
-    const n=220,pos=new Float32Array(n*3);for(let i=0;i<n;i++){const t=Math.random()*TAU,e=rand(.15,1.2);pos[i*3]=Math.cos(t)*Math.cos(e)*250;pos[i*3+1]=Math.sin(e)*250;pos[i*3+2]=Math.sin(t)*Math.cos(e)*250}
-    const sg=new T.BufferGeometry();sg.setAttribute('position',new T.BufferAttribute(pos,3));world.add(new T.Points(sg,new T.PointsMaterial({color:0xffffff,size:1.1,fog:false})));
+    ring(12,AR+12,AR+30,(x,z,i,t)=>{const w=rand(4,9),hh=rand(3,8),m=at(mesh(new T.BoxGeometry(w,hh,1.4),i%2?stone:stone2,0,0,0,world),x,z,hh/2-1);m.rotation.y=t+rand(-.4,.4);mesh(taper(w*.5,1.4,w*.2,1.4,hh*.4),stone,-w*.25,hh*.7,0,m)});
+    // 달과 별
+    const md=sunDir.clone().normalize().multiplyScalar(300);GFX.glow(world,md.x,md.y,md.z,150,0x9fb4ff,.35,false);
+    const n=260,pos=new Float32Array(n*3);for(let i=0;i<n;i++){const t=Math.random()*TAU,e=rand(.12,1.3);pos[i*3]=Math.cos(t)*Math.cos(e)*280;pos[i*3+1]=Math.sin(e)*280;pos[i*3+2]=Math.sin(t)*Math.cos(e)*280}
+    const sg=new T.BufferGeometry();sg.setAttribute('position',new T.BufferAttribute(pos,3));world.add(new T.Points(sg,new T.PointsMaterial({color:0xffffff,size:1.2,fog:false})));
     const pl=new T.PointLight(0x9a7cff,.5,80);pl.position.set(0,8,0);world.add(pl);
+    GFX.ticks.push((dt,t)=>sigs.forEach((g,i)=>g.material.opacity=.55+.2*Math.sin(t*2.2+i*2)));
   }
 }
 
 // ---------- 사냥꾼 모델 ----------
+// 관절(rig, 다리, 팔, 대검, 총)은 그대로 두고 겉모습만 각진 덩어리로 구성. 앞은 +z
 const hero=(()=>{
   const g=new T.Group(),rig=new T.Group();g.add(rig);
-  const cloth=std(0x3d5a6e),skin=std(0xe2b58c),leather=std(0x5c4630),steel=std(0xcfd6dc,{roughness:.4,metalness:.5}),red=std(0xb5412f);
-  mesh(new T.BoxGeometry(.7,.85,.42),cloth,0,1.3,0,rig);
-  mesh(new T.BoxGeometry(.76,.2,.46),leather,0,.92,0,rig);
-  mesh(new T.SphereGeometry(.27,8,6),skin,0,2.0,0,rig);
-  mesh(new T.ConeGeometry(.3,.3,6),leather,0,2.22,0,rig);
-  const cape=mesh(new T.BoxGeometry(.66,1.0,.06),red,0,1.25,-.26,rig);cape.rotation.x=.15;
+  const coat=std(0x2f5a63),coatD=std(0x24454d),skin=std(0xe2b58c),leather=std(0x6a4c30),dark=std(0x33291f),hat=std(0x4a3626),red=std(0xa93a2a),redD=std(0x7e2a20),
+    steel=std(0xd3dbe2),iron=std(0x41454c),wood=std(0x7a4f2c),bone=std(0xe9e1cd),cloth=std(0x9c8c66);
+  const rx=(m,a)=>{m.rotation.x=a;return m},rz=(m,a)=>{m.rotation.z=a;return m};
+  // 몸통
+  mesh(taper(.6,.38,.8,.48,.62),coat,0,1.4,0,rig);
+  mesh(taper(.66,.42,.6,.38,.2),dark,0,1.0,0,rig);
+  mesh(taper(.84,.56,.64,.42,.34),coatD,0,.86,0,rig);
+  mesh(new T.BoxGeometry(.68,.1,.46),leather,0,1.07,0,rig);
+  mesh(new T.BoxGeometry(.12,.12,.04),steel,0,1.07,.24,rig);
+  rz(mesh(new T.BoxGeometry(.1,.95,.5),leather,0,1.38,0,rig),.72);
+  mesh(new T.BoxGeometry(.2,.2,.14),leather,.3,.95,.2,rig);mesh(new T.BoxGeometry(.16,.18,.12),cloth,-.33,.95,.16,rig);
+  // 허리의 푸른 등불: 거수의 코어와 같은 빛
+  const lampM=basic(0x7fe9ff);mesh(new T.OctahedronGeometry(.085,0),lampM,.42,.9,.02,rig,false);mesh(new T.BoxGeometry(.03,.14,.03),iron,.42,1.0,.02,rig,false);
+  const lamp=GFX.glow(rig,.42,.9,.02,.7,0x56d8ff,.7);
+  // 목도리, 머리, 모자
+  mesh(new T.CylinderGeometry(.27,.37,.24,7),red,0,1.76,.01,rig);
+  rz(rx(mesh(taper(.2,.05,.14,.05,.62),redD,-.2,1.5,-.3,rig),.3),-.12);
+  mesh(taper(.33,.34,.4,.4,.38),skin,0,1.99,0,rig);
+  mesh(taper(.37,.2,.42,.2,.2),red,0,1.9,.13,rig);
+  mesh(taper(.37,.22,.43,.26,.36),dark,0,2.0,-.12,rig);
+  mesh(new T.BoxGeometry(.3,.05,.03),dark,0,2.07,.205,rig,false);
+  const hatG=new T.Group();hatG.position.set(0,2.2,0);hatG.rotation.x=-.08;rig.add(hatG);
+  mesh(new T.CylinderGeometry(.6,.66,.05,8),hat,0,0,0,hatG);
+  mesh(new T.CylinderGeometry(.25,.36,.3,7),hat,0,.16,0,hatG);
+  mesh(new T.CylinderGeometry(.365,.37,.08,7),red,0,.06,0,hatG,false);
+  rz(rx(mesh(taper(.08,.02,.02,.02,.5),bone,.3,.28,-.1,hatG),-.5),-.35);
+  // 어깨 망토와 등 망토
+  mesh(taper(1.02,.66,.72,.5,.3),redD,0,1.6,0,rig);
+  const cape=new T.Group();cape.position.set(0,1.66,-.27);cape.rotation.x=.2;rig.add(cape);
+  mesh(taper(.86,.05,.72,.05,.8),red,0,-.4,0,cape);
+  for(const[x,w,l]of[[-.3,.26,.26],[-.02,.3,.38],[.28,.28,.2]])mesh(taper(.03,.05,w,.05,l),red,x,-.8-l/2,0,cape);
+  rz(mesh(new T.CylinderGeometry(.13,.13,.62,6),cloth,0,1.02,-.36,rig),Math.PI/2);
+  mesh(new T.BoxGeometry(.06,.3,.3),leather,.18,1.02,-.36,rig,false);mesh(new T.BoxGeometry(.06,.3,.3),leather,-.18,1.02,-.36,rig,false);
+  // 다리
   const legL=new T.Group(),legR=new T.Group();legL.position.set(.2,.85,0);legR.position.set(-.2,.85,0);rig.add(legL,legR);
-  mesh(new T.BoxGeometry(.26,.85,.3),leather,0,-.42,0,legL);mesh(new T.BoxGeometry(.26,.85,.3),leather,0,-.42,0,legR);
-  const armL=new T.Group();armL.position.set(.46,1.62,0);rig.add(armL);mesh(new T.BoxGeometry(.2,.75,.22),cloth,0,-.35,0,armL);
-  const armR=new T.Group();armR.position.set(-.46,1.62,0);rig.add(armR);mesh(new T.BoxGeometry(.2,.75,.22),cloth,0,-.35,0,armR);
-  const sword=new T.Group();sword.position.set(0,-.7,.1);armR.add(sword);
-  mesh(new T.BoxGeometry(.08,.5,.08),leather,0,0,-.15,sword).rotation.x=Math.PI/2;
-  mesh(new T.BoxGeometry(.5,.1,.1),steel,0,0,.15,sword);
-  const blade=std(0xcfd6dc,{roughness:.4,metalness:.5});mesh(new T.BoxGeometry(.2,.06,2.1),blade,0,0,1.25,sword);
+  for(const L of[legL,legR]){mesh(taper(.25,.29,.29,.33,.46),dark,0,-.2,0,L);mesh(taper(.27,.31,.25,.29,.36),leather,0,-.6,0,L);mesh(new T.BoxGeometry(.31,.08,.35),hat,0,-.42,0,L);mesh(taper(.27,.44,.25,.34,.12),leather,0,-.79,.06,L)}
+  // 팔
+  const armL=new T.Group();armL.position.set(.46,1.62,0);rig.add(armL);
+  const armR=new T.Group();armR.position.set(-.46,1.62,0);rig.add(armR);
+  for(const A of[armL,armR]){mesh(taper(.2,.22,.25,.27,.42),coat,0,-.19,0,A);mesh(taper(.2,.22,.23,.25,.26),leather,0,-.5,0,A);mesh(new T.BoxGeometry(.18,.14,.2),dark,0,-.69,0,A)}
+  rz(mesh(taper(.34,.4,.2,.3,.16),leather,.03,.06,0,armL),-.25);
+  // 대검
+  const blade=std(0xaeb8c2);
+  const mkSword=(par,mat)=>{ // 날은 +z
+    rx(mesh(new T.CylinderGeometry(.045,.045,.5,6),leather,0,0,-.15,par),Math.PI/2);
+    mesh(new T.OctahedronGeometry(.08,0),iron,0,0,-.42,par,false);
+    mesh(taper(.36,.1,.56,.1,.1),iron,0,0,.14,par).rotation.x=Math.PI/2;
+    rx(mesh(taper(.24,.07,.2,.07,1.7),mat,0,0,1.05,par),-Math.PI/2);
+    rx(mesh(taper(.2,.07,.02,.03,.34),mat,0,0,2.07,par),Math.PI/2);
+    rx(mesh(new T.BoxGeometry(.06,.085,1.3),iron,0,0,.95,par,false),0);
+  };
+  const sword=new T.Group();sword.position.set(0,-.7,.1);armR.add(sword);mkSword(sword,blade);
+  const back=new T.Group();back.position.set(0,1.3,-.4);back.rotation.z=.35;rig.add(back);
+  {const s=new T.Group();s.position.set(0,-.72,0);s.rotation.x=-Math.PI/2;s.scale.setScalar(.82);back.add(s);mkSword(s,std(0xaeb8c2))}
+  // 총: 왼팔 끝에 달리고 총구는 -y(팔을 들면 앞)
   const bow=new T.Group();bow.position.set(-.18,-.62,.05);armL.add(bow);
-  const wood=std(0x6a4428),iron=std(0x3a3d42,{roughness:.5,metalness:.6});
-  mesh(new T.BoxGeometry(.11,.9,.13),wood,0,.1,0,bow);mesh(new T.BoxGeometry(.13,.45,.2),wood,0,.72,.04,bow);
-  const rifleM=new T.Group();bow.add(rifleM);mesh(new T.CylinderGeometry(.045,.05,1.05,6),iron,0,-.75,.04,rifleM);mesh(new T.BoxGeometry(.06,.14,.06),iron,.08,.15,.06,rifleM);
-  const sgM=new T.Group();bow.add(sgM);mesh(new T.CylinderGeometry(.075,.075,.7,8),iron,0,-.55,.04,sgM);mesh(new T.CylinderGeometry(.06,.06,.45,8),wood,0,-.45,-.1,sgM);sgM.visible=false;
-  const xbM=new T.Group();bow.add(xbM);mesh(new T.BoxGeometry(.09,.8,.1),wood,0,-.55,.04,xbM);mesh(new T.BoxGeometry(.95,.06,.07),iron,0,-.88,.04,xbM);mesh(new T.BoxGeometry(.13,.32,.16),wood,0,-.5,.17,xbM);xbM.visible=false;
-  const back=new T.Group();back.position.set(0,1.3,-.3);back.rotation.z=.35;rig.add(back);
-  mesh(new T.BoxGeometry(.16,1.5,.05),std(0xcfd6dc,{roughness:.4,metalness:.5}),0,.25,0,back);mesh(new T.BoxGeometry(.5,.1,.1),steel,0,-.7,0,back);mesh(new T.BoxGeometry(.08,.45,.08),leather,0,-.95,0,back);
+  mesh(taper(.1,.12,.11,.14,.9),wood,0,.1,0,bow);mesh(taper(.12,.2,.13,.26,.42),wood,0,.72,.05,bow);mesh(new T.BoxGeometry(.14,.05,.28),iron,0,.94,.05,bow,false);
+  const rifleM=new T.Group();bow.add(rifleM);
+  mesh(new T.CylinderGeometry(.04,.05,1.15,6),iron,0,-.8,.04,rifleM);mesh(new T.CylinderGeometry(.062,.062,.1,6),iron,0,-1.34,.04,rifleM,false);
+  mesh(new T.BoxGeometry(.1,.5,.11),wood,0,-.5,0,rifleM);mesh(new T.CylinderGeometry(.045,.045,.4,6),iron,0,.0,.16,rifleM,false);
+  mesh(new T.CylinderGeometry(.06,.045,.07,6),iron,0,-.22,.16,rifleM,false);mesh(new T.BoxGeometry(.07,.12,.05),iron,.08,.15,.06,rifleM,false);
+  const sgM=new T.Group();bow.add(sgM);
+  mesh(new T.CylinderGeometry(.07,.075,.72,8),iron,.04,-.56,.04,sgM);mesh(new T.CylinderGeometry(.07,.075,.72,8),iron,-.04,-.56,.04,sgM);
+  mesh(new T.BoxGeometry(.2,.3,.13),wood,0,-.42,-.06,sgM);mesh(new T.BoxGeometry(.2,.06,.14),steel,0,-.2,.03,sgM,false);sgM.visible=false;
+  const xbM=new T.Group();bow.add(xbM);
+  mesh(new T.BoxGeometry(.09,.85,.1),wood,0,-.56,.04,xbM);
+  rz(mesh(taper(.07,.06,.07,.06,.52),iron,.25,-.84,.04,xbM),Math.PI/2+.3);rz(mesh(taper(.07,.06,.07,.06,.52),iron,-.25,-.84,.04,xbM),Math.PI/2-.3);
+  mesh(new T.BoxGeometry(.92,.015,.015),bone,0,-.74,.04,xbM,false);mesh(new T.BoxGeometry(.14,.34,.18),wood,0,-.5,.18,xbM);mesh(new T.BoxGeometry(.03,.5,.03),steel,0,-.7,.1,xbM,false);xbM.visible=false;
   const arcM=new T.MeshBasicMaterial({color:0xfff2d0,transparent:true,opacity:0,side:T.DoubleSide,depthWrite:false});
   const arc=new T.Mesh(new T.RingGeometry(1.3,3.1,14,1,-Math.PI/2-1.1,2.2),arcM);arc.rotation.x=-Math.PI/2;arc.position.y=1.2;g.add(arc);
   scene.add(g);
-  return{g,rig,legL,legR,armL,armR,sword,arc,arcM,blade,bow,back,guns:[rifleM,sgM,xbM]};
+  return{g,rig,legL,legR,armL,armR,sword,arc,arcM,blade,bow,back,guns:[rifleM,sgM,xbM],cape,lamp};
 })();
 
 // ---------- 거수 뼈대와 덧붙임 ----------
@@ -2679,7 +2871,7 @@ $('#devOpen').addEventListener('change',e=>{S.devOpen=e.target.checked;save();re
 $('#bResume').addEventListener('click',()=>{togglePause();lockTry()});$('#bQuit').addEventListener('click',goTown);
 
 let last=performance.now();
-function frame(now){const raw=(now-last)/1000,dt=Math.min(.05,raw);last=now;readKeys();update(dt);logTick(dt,raw);renderer.render(scene,camera);requestAnimationFrame(frame)}
+function frame(now){const raw=(now-last)/1000,dt=Math.min(.05,raw);last=now;readKeys();update(dt);logTick(dt,raw);GFX.render(raw);requestAnimationFrame(frame)}
 loadSave();recalc();toTitle();requestAnimationFrame(frame);
 
 window.__game={LITE,scene,camera,renderer,AR,cue,FIN,PERKS,MODS,WEP,finOpen,spawnMob,useGadget,startTrain,tutSkip,GAD,logText,fire,aimPoint,lockSphere,LOCKS,TUNE,ATK,AT,MOTION,SKEL,G,P,get B(){return B},get S(){return S},update,startHunt,newGame,showIntro,goTown,inside,nearestPart,beastParts,HUNTS,
