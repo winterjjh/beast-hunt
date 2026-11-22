@@ -302,11 +302,11 @@ const damp=(dt,k)=>1-Math.exp(-dt*k);
 // 뼈대 판: 읽고, 피하고, 틈을 쏘는 것만 남긴 기본 판. 주소 뒤에 ?full을 붙이면 모든 시스템이 켜진 판
 const LITE=!/[?&]full\b/.test(location.search);if(LITE)document.body.classList.add('lite');
 // ---------- 조작감 수치 (한곳에서 조정) ----------
-const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:2.2,speed:6.6,accel:46,decel:40,swingSpeed:2.6,drinkSpeed:3,dodgeSpeed:15,dodgeTime:.45,dodgeInv:.38,buffer:.2,stopLight:.03,stopHeavy:.085,camSpring:4.5,blockSpeed:2.4,blockCd:.3,parry:.2,parryStep:.0667,parryReset:.5,blockCost:12,blockMin:.2,snap:.16,snapAmp:.3,stopStg:32,slowMul:1.9,quickMul:.75,
-  bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.075,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
+const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:1.8,speed:6.6,accel:46,decel:40,swingSpeed:2.6,drinkSpeed:3,dodgeSpeed:15,dodgeTime:.45,dodgeInv:.38,buffer:.2,stopLight:.03,stopHeavy:.085,camSpring:4.5,blockSpeed:2.4,blockCd:.3,parry:.2,parryStep:.0667,parryReset:.5,blockCost:12,blockMin:.2,snap:.16,snapAmp:.3,stopStg:32,slowMul:1.9,quickMul:.75,
+  bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v34';
+const VER='v35';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -383,7 +383,7 @@ const WEP=[
   desc:'한 발씩 장전하는 정밀 소총. 우클릭으로 조준점이 노랗게 고정되면 피해 25% 증가. 그 상태로 공격을 준비하며 들어 올린 부위를 맞히면 공격 취소(저지)'},
  {id:'shotgun',name:'산탄총',mag:4,cycle:.55,recov:.25,reloadOne:.75,dmg:20,pellets:8,cone:.075,near:6,far:20,reserve:26,crate:0,recoil:.03,kick:.065,cueStg:4,push:2,rollLoad:1,
   desc:'붙을수록 강한 근접 총. 코앞에서 맞히면 거수를 밀어내며 경직 게이지 누적. 구르기를 하면 한 발 자동 장전'},
- {id:'xbow',name:'연발 석궁',mag:6,cycle:.3,recov:0,reloadOne:1.5,magReload:1,auto:1,dmg:27,pellets:1,cone:0,near:16,far:34,reserve:59,crate:0,recoil:.012,kick:.014,cueStg:3,mark:1,sprBase:.018,sprMove:.022,reloadMove:.9,adsMove:.75,
+ {id:'xbow',name:'연발 석궁',mag:6,cycle:.3,recov:0,reloadOne:1.5,magReload:1,auto:1,dmg:27,pellets:1,cone:0,near:16,far:34,reserve:59,crate:0,recoil:.012,kick:.014,cueStg:3,mark:1,sprBase:.014,sprMove:.018,reloadMove:.9,adsMove:.75,
   desc:'누르고 있으면 연사, 움직이며 쏴도 정확한 석궁. 맞힐 때마다 표식이 쌓여 여섯 개째에 폭발. 4초 안에 다음 화살을 맞혀야 표식 유지'},
 ];
 // ---------- 필살기: 게이지가 가득 차고 거수가 지치거나 쓰러졌을 때만 발동. 무기마다 다른 형태 ----------
@@ -1588,7 +1588,9 @@ function fire(kind){
   // 단발 사냥총: 조준점이 완전히 고정된 상태의 사격은 정조준
   const foc=!LITE&&!fin&&W.focus&&curSpread()<.008?W.focus:1,mul=(fin?F.mul*P.finDmg:1)*foc;
   const spr=fin?Math.min(.006,curSpread()):curSpread();
-  dx+=rand(-1,1)*spr;dy+=rand(-1,1)*spr;dz+=rand(-1,1)*spr;L=Math.hypot(dx,dy,dz);dx/=L;dy/=L;dz/=L;
+  // 탄착은 화면의 조준 원과 같은 원 안에 고르게 분포: 겨눈 지점에서 화면 기준으로 원 안의 한 점을 골라 그쪽으로 발사
+  if(L>=1.5){const e=camera.matrixWorld.elements,cp=camera.position,Dc=Math.hypot(ap.x-cp.x,ap.y-cp.y,ap.z-cp.z),a=Math.random()*TAU,r=Math.sqrt(Math.random())*spr*Dc,cx=Math.cos(a)*r,cy=Math.sin(a)*r;
+    dx=ap.x+e[0]*cx+e[4]*cy-sx;dy=ap.y+e[1]*cx+e[5]*cy-sy;dz=ap.z+e[2]*cx+e[6]*cy-sz;const l=Math.hypot(dx,dy,dz);dx/=l;dy/=l;dz/=l}
   logEv('발사',kind+' 무기='+W.id+(foc>1?' 정조준':''));
   const n=W.pellets,hits={},mobDmg=new Map();let end=140,cueHit=false,close=0,lastHit=null;
   for(let k=0;k<n;k++){
@@ -1629,7 +1631,7 @@ function fire(kind){
   }
   const pa=tracerG.attributes.position;pa.setXYZ(0,sx,sy,sz);pa.setXYZ(1,sx+dx*end,sy+dy*end,sz+dz*end);pa.needsUpdate=true;tracerM.opacity=1;tracerM.color.set(fin?0x7ef0ff:foc>1?0xffa040:0xffe6a8);
   flash.position.set(sx,sy,sz);flash.intensity=W.id==='xbow'?1:3;burst(sx,sy,sz,W.id==='xbow'?2:5,0xffd27a,3,2,.6,.2);
-  P.bloom+=W.recoil;G.rkT=(G.rkT||0)+W.kick*(fin?1.4:1);G.rkYaw=rand(-.012,.012);G.shake=Math.max(G.shake,fin?.3:.05);if(!fin)P.aimT*=.5;
+  P.bloom+=W.recoil;G.rkT=(G.rkT||0)+W.kick*(fin?1.4:1);G.rkYaw=rand(-.012,.012);G.shake=Math.max(G.shake,fin?.3:.05);if(!fin){P.aimT*=.5;const sb=W.sprBase||.028;P.aimSpr=Math.min(sb,P.aimSpr+(sb-TUNE.sprAds)*.5)}
   if(W.id==='xbow')sfx.shoot(.9);else sfx.shot(fin||W.id==='shotgun');
   // 총소리에 거수가 즉시 반응
   if(B&&B.state==='chase'){B.think=Math.min(B.think,.25)}
@@ -2159,9 +2161,11 @@ function updHero(dt){
   // 조준을 오래 유지할수록 조준점(탄 퍼짐)이 줄어듦. 움직이면 느리게 줄어듦
   const mv=Math.hypot(P.vx,P.vz)>1;
   if(P.ads&&!P.block&&!P.dodge){P.aimT=(P.aimT||0)+dt*(mv?.45:1)*(W.id==='rifle'&&has('r2')?1.55:1)}else P.aimT=0;
-  const k=Math.min(1,(P.aimT||0)/TUNE.aimTime),sm=k*k*(3-2*k);
-  const sb=W.sprBase||.045,want=P.ads?lerp(sb,TUNE.sprAds,sm):mv?(W.sprMove||TUNE.sprMove):sb;
-  P.aimSpr+=(want-P.aimSpr)*damp(dt,P.ads?20:8);P.bloom*=Math.exp(-dt*4);
+  // 정밀 조준 중에는 조준 원이 일정한 속도로 좁아짐(직선형). 조준을 풀면 서서히 원래 크기로
+  const sb=W.sprBase||.028,aiming=P.ads&&!P.block&&!P.dodge;
+  if(aiming)P.aimSpr=Math.max(TUNE.sprAds,Math.min(P.aimSpr,sb)-(sb-TUNE.sprAds)/TUNE.aimTime*dt*(mv?.45:1)*(W.id==='rifle'&&has('r2')?1.55:1));
+  else{const want=mv?(W.sprMove||TUNE.sprMove):sb;P.aimSpr+=(want-P.aimSpr)*damp(dt,8)}
+  P.aimK=clamp((sb-P.aimSpr)/(sb-TUNE.sprAds),0,1);P.bloom*=Math.exp(-dt*4);
   let mx=I.x,mz=I.z;const ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml}
   const part=nearestPart();
   // 구르기
@@ -2562,7 +2566,7 @@ function updCamera(rdt){
     G.yaw-=ex*TUNE.edgeTurn*.8*rdt;G.pitch-=ey*TUNE.edgeTurn*.4*rdt;G.aimX=G.aimY=0;
   }else{G.aimX=G.aimY=0}
   G.pitch=clamp(G.pitch,-.6,.8);
-  const ads=P.ads&&!P.block&&!P.dodge&&!P.down;G.adsK=lerp(G.adsK,ads?1:0,damp(rdt,12));
+  const ads=P.ads&&!P.block&&!P.dodge&&!P.down;G.adsK=lerp(G.adsK,ads?(P.aimK||0):0,damp(rdt,ads?14:10));
   const dist=lerp(8.2,6.0,G.adsK),off=lerp(1.8,1.7,G.adsK);
   G.camPiv.x=lerp(G.camPiv.x,P.x,damp(rdt,14));G.camPiv.z=lerp(G.camPiv.z,P.z,damp(rdt,14));G.camPiv.y=lerp(G.camPiv.y,1.9+P.y*.5,damp(rdt,10));
   // FPS식 반동: 총구가 빠르게 올라갔다가 천천히 제자리로
@@ -2722,7 +2726,7 @@ function hud(){
   const xh=$('#xh');let sx=G.aimX,sy=G.aimY;
   if(G.lock){const sp=lockSphere();if(sp){pv.set(sp.x,sp.y,sp.z).project(camera);if(pv.z<1){sx=pv.x;sy=pv.y}}}
   xh.style.left=(sx*.5+.5)*innerWidth+'px';xh.style.top=(-sy*.5+.5)*innerHeight+'px';
-  const spr=curSpread(),full=spr<.008,ring=Math.round(10+spr*520);
+  const spr=curSpread(),full=spr<.008,ring=Math.max(8,Math.round(2*spr*innerHeight/2/Math.tan(camera.fov*Math.PI/360)));
   const rg=xh.firstElementChild;if(lastH.rg!==ring){lastH.rg=ring;rg.style.width=rg.style.height=ring+'px'}
   xh.classList.toggle('full',full);xh.classList.toggle('lock',G.lock&&!full);xh.classList.toggle('weak',G.hitWeak);
   {const pl=xh.querySelector('.pl');let t='',nm='';if(G.sph.length){_o.copy(camera.position);_d.set(sx,sy,.5).unproject(camera).sub(_o).normalize();const h=rayHit(_o,_d,150);if(h)t=h.sp.part;
@@ -2842,7 +2846,7 @@ $('#aBlock').addEventListener('pointerdown',e=>{e.preventDefault();audio();hold.
 tap('#aDodge',()=>G.in.dodge=true);tap('#aSwap',()=>G.in.swap=nextW(1));tap('#aFin',()=>G.in.fin=true);tap('#aG1',()=>G.in.g1=true);tap('#aG2',()=>G.in.g2=true);tap('#aPot',()=>G.in.pot=true);
 $('#aFire').addEventListener('pointerdown',e=>{e.preventDefault();audio();hold.fire=true;hold.fid=e.pointerId});$('#aFire').addEventListener('pointercancel',()=>hold.fire=false);
 // 조준 중에는 민감도를 낮춤(확대된 화면에서 같은 손 움직임이 같은 화면 이동이 되도록). 배율은 설정에서 조절
-function adsSens(){return hold.rmb&&G.state==='hunt'?lerp(1,G.adsMul,clamp(G.adsK*1.6,0,1)):1}
+function adsSens(){return hold.rmb&&G.state==='hunt'?lerp(1,G.adsMul,clamp(.5+G.adsK,0,1)):1}
 function setAds(v){G.adsMul=clamp(Math.round(v*20)/20,.2,1);$('#adsR').value=G.adsMul;$('#adsV').textContent=G.adsMul.toFixed(2);try{localStorage.setItem('gv-ads',G.adsMul)}catch(e){}}
 $('#adsR').addEventListener('input',e=>setAds(+e.target.value));
 function setCue(v){G.cueOn=!!v;$('#cueC').checked=G.cueOn;try{localStorage.setItem('gv-cue',G.cueOn?'1':'0')}catch(e){}}
