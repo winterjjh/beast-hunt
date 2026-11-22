@@ -7,7 +7,7 @@ const {chromium}=require('playwright');const fs=require('fs');const path=require
  await pg.route('**/fonts.googleapis.com/**',r=>r.abort());
  await pg.goto('file://'+path.join(__dirname,'index.html'));await pg.waitForTimeout(400);
  await pg.screenshot({path:'s_title.png'});
- await pg.click('#bNew');await pg.waitForTimeout(300);
+ await pg.click('#bStart');await pg.waitForTimeout(300);
  const run=async(label,maxT)=>pg.evaluate(([maxT])=>{
    const g=window.__game,{G,P,inside}=g;const log=[];let last=-1;
    G.botFn=(G,P,B,dt)=>{const I=G.in,T=G.tut;if(!T)return;const s=T.steps[T.i];
@@ -43,7 +43,7 @@ const {chromium}=require('playwright');const fs=require('fs');const path=require
  for(let st=0,n=await pg.evaluate(()=>window.__game.HUNTS.length);st<n;st++){
   await pg.evaluate(st=>{const g=window.__game;g.G.hunt=st;g.showIntro()},st);
   if(st===2)await pg.screenshot({path:'s_intro.png'});
-  await pg.click('#bGo');
+  await pg.click(await pg.evaluate(()=>window.__game.LITE)?'#bPrac':'#bGo');
   const r=await run('prac',120);
   const after=await pg.evaluate(()=>{const g=window.__game;return {state:g.G.state,tut:!!g.G.tut,beast:g.B.h.name,hp:g.B.hp,mobT:g.G.mobT}});
   console.log('prac',st,JSON.stringify(r),JSON.stringify(after));

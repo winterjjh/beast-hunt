@@ -142,6 +142,17 @@ body.aiming #c{cursor:none}
 .perk{border:1px solid rgba(255,255,255,.18);border-radius:.3em;padding:.25em .6em;font-size:.9em}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 body.lite #aBlock,body.lite #aG1,body.lite #aG2,body.lite #aFin,body.lite #bSt,body.lite #finHint,body.lite #marks,body.lite .liteHide{display:none!important}
+body:not(.lite) .liteOnly{display:none!important}
+body.lite #hInfo,body.lite .dev,body.lite #bTrain{display:none!important}
+body.lite:not(.touch) #hAct{display:none!important}
+body.lite .town{grid-template-columns:1fr}
+body.lite #sTown .panel{max-width:38em!important}
+body.lite #hSys{opacity:.55}
+body.lite #tut{top:calc(12px + env(safe-area-inset-top,0px));width:min(300px,42%);padding:.6em .8em}
+body.lite #tut>b{font-size:1.15em}
+body.lite #tutSkip{margin-top:.5em;padding:.2em .6em}
+body.lite #sTitle .panel{max-width:32em}
+#ammo .pot b{font-size:1.1em}
 </style>
 
 <div id="wrap">
@@ -161,7 +172,7 @@ body.lite #aBlock,body.lite #aG1,body.lite #aG2,body.lite #aFin,body.lite #bSt,b
     <div id="hMe" class="hud">
             <div class="bar" id="hpB"><i></i></div>
       <div class="bar" id="stB"><i></i></div>
-      <div id="ammo"><span id="wepN">단발 사냥총</span><span>탄 <b id="ammoN">1</b> / <span id="resN">14</span></span></div>
+      <div id="ammo"><span id="wepN">단발 사냥총</span><span>탄 <b id="ammoN">1</b> / <span id="resN">14</span></span><span class="pot liteOnly">물약 <b id="potN">0</b></span></div>
     </div>
     <div id="xh" class="hud"><div class="ring"></div><div class="dot"></div><div class="hm">✕</div><div class="pl"></div><div class="fh" id="finHint">E 필살기</div></div>
     <div id="edge" class="hud" hidden></div>
@@ -186,8 +197,10 @@ body.lite #aBlock,body.lite #aG1,body.lite #aG2,body.lite #aFin,body.lite #bSt,b
     <div class="panel">
       <div class="eyebrow">3D 거수 사냥</div>
       <h1><em>거수</em>의 골짜기</h1>
-      <p>골짜기를 차지한 다섯 마리의 거수. 초원, 설원, 협곡, 화구, 폐허를 차례로 넘는 보스 연전.</p>
-      <ul>
+      <p class="liteOnly">단발 사냥총으로 부위를 부수고, 쓰러진 거수에게 산탄총을 몰아 쏘는 사냥. 골짜기를 차지한 세 마리의 거수.</p>
+      <div class="keys sm liteOnly"><kbd>W A S D</kbd><span>이동</span><kbd>좌클릭 · 우클릭</kbd><span>사격 · 정밀 조준</span><kbd>1 · 2</kbd><span>단발 사냥총 · 산탄총</span><kbd>Space · Q</kbd><span>구르기 · 물약</span></div>
+      <p class="liteHide">골짜기를 차지한 다섯 마리의 거수. 초원, 설원, 협곡, 화구, 폐허를 차례로 넘는 보스 연전.</p>
+      <ul class="liteHide">
         <li><b>나 한 대, 너 한 대.</b> 거수의 공격을 읽고 받아낸 뒤 되돌려 주는 사냥</li>
         <li>싸우는 방식이 다른 <b>무기 세 종</b>. 공격을 끊는 단발 사냥총, 코앞에서 밀어붙이는 산탄총, 움직이며 표식을 쌓아 터뜨리는 연발 석궁</li>
         <li>평소에는 닫혀 있다가 <b>특정 동작에서만 열리는 약점</b>. 열린 순간을 노려야 큰 피해</li>
@@ -230,7 +243,7 @@ body.lite #aBlock,body.lite #aG1,body.lite #aG2,body.lite #aFin,body.lite #bSt,b
       <p id="tStat" class="best"></p>
       <div class="town">
         <div><h3>사냥 순서</h3><div id="tHunts" class="ups"></div>
-          <h3>강화</h3><div id="tPerks" class="mats"></div>
+          <h3 id="tUpH">강화</h3><div id="tPerks" class="mats"></div>
           <label class="dev"><input type="checkbox" id="devOpen"> 모든 사냥터와 무기, 장비 스킬 열기 (개발용)</label></div>
         <div class="liteHide"><h3>무기 <small class="best">사냥 중 1 · 2 · 3 또는 휠로 교체. 누르면 시작 무기 지정</small></h3><div id="tWeps" class="ups"></div>
           <h3>장비 스킬 <small class="best">둘을 골라 장착 (F, G)</small></h3><div id="tGad" class="ups"></div></div>
@@ -268,16 +281,17 @@ body.lite #aBlock,body.lite #aG1,body.lite #aG2,body.lite #aFin,body.lite #bSt,b
       <div class="keys sm">
         <kbd>W A S D</kbd><span>이동</span><kbd>마우스</kbd><span>시점과 조준. 화면 클릭으로 마우스 잠금</span>
         <kbd>좌클릭</kbd><span>사격</span><kbd>우클릭</kbd><span>정밀 조준(누르고 있을수록 탄 퍼짐 감소)</span>
-        <kbd>1 · 2 · 3 · 휠</kbd><span>무기 교체</span><kbd>R</kbd><span>재장전(탄 무제한)</span>
-        <kbd>Shift</kbd><span>막기. 거수가 한 번 더 움츠리는 순간 누르면 완벽한 막기</span><kbd>Space</kbd><span>구르기</span>
-        <kbd class="liteHide">E</kbd><span class="liteHide">결정타(체간이 무너진 거수), 필살기(게이지 가득, 거수가 지치거나 쓰러졌을 때)</span><kbd>F · G</kbd><span>장비 스킬</span><kbd>Q</kbd><span>물약</span><kbd>F8</kbd><span>이상한 순간 표식</span>
+        <kbd>1 · 2 · 3 · 휠</kbd><span>무기 교체</span><kbd>R</kbd><span>재장전</span>
+        <kbd class="liteHide">Shift</kbd><span class="liteHide">막기. 거수가 한 번 더 움츠리는 순간 누르면 완벽한 막기</span><kbd>Space</kbd><span>구르기</span>
+        <kbd class="liteHide">E</kbd><span class="liteHide">결정타(체간이 무너진 거수), 필살기(게이지 가득, 거수가 지치거나 쓰러졌을 때)</span><kbd class="liteHide">F · G</kbd><span class="liteHide">장비 스킬</span><kbd>Q</kbd><span>물약</span><kbd class="liteHide">F8</kbd><span class="liteHide">이상한 순간 표식</span>
       </div>
       <h3>설정</h3>
       <label class="sens">마우스 민감도 <input type="range" class="sensR" min="0.2" max="3" step="0.1" value="1" aria-label="마우스 민감도"><b class="sensV">1.0</b></label>
       <label class="sens">조준 중 민감도 배율 <input type="range" id="adsR" min="0.2" max="1" step="0.05" value="0.6" aria-label="조준 중 민감도 배율"><b id="adsV">0.60</b></label>
       <label class="sens"><input type="checkbox" id="cueC" style="flex:none;width:auto;margin:0" aria-label="공격 예고 빛 표시"> 공격 예고 빛 표시 (끄면 동작만으로 판단)</label>
-      <h3>문제 신고</h3>
-      <p class="best" style="margin:.2em 0">어떤 종류의 문제든 이상한 순간에 F8을 누르면 표식과 전체 상태 기록. 아래 버튼으로 최근 2분 기록을 복사해서 Claude에게 붙여넣기</p>
+      <h3 class="liteHide">문제 신고</h3>
+      <p class="best liteOnly" style="margin:1em 0 .2em">이상한 순간에 F8, 그 뒤 아래 버튼으로 기록 복사</p>
+      <p class="best liteHide" style="margin:.2em 0">어떤 종류의 문제든 이상한 순간에 F8을 누르면 표식과 전체 상태 기록. 아래 버튼으로 최근 2분 기록을 복사해서 Claude에게 붙여넣기</p>
       <div class="row" style="justify-content:center;margin-top:.5em"><button id="bLogCopy" class="btn ghost" type="button">문제 기록 복사</button><button id="bLogSave" class="btn ghost" type="button">파일로 저장</button></div>
       <p id="logMsg" class="best" style="min-height:1.2em;margin:.4em 0 0"></p>
     </div>
@@ -306,7 +320,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:1.8,speed:6.6,accel:46,d
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v40';
+const VER='v41';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -506,6 +520,7 @@ if(LITE){ // 뼈대 판: 돌등이와 잿불 날개 두 마리, 체력과 피해
   WEP[1].dmg=26; // 산탄총: 쓰러진 거수에게 몰아 쏘는 용도라 한 발의 무게를 올림
   const k=HUNTS.filter(h=>h.id==='stone'||h.id==='rail'||h.id==='ash');HUNTS.length=0;HUNTS.push(...k);
   for(const h of HUNTS){h.hp=Math.round(h.hp*.6);if(h.air){h.dmg=1.25;h.hp=20000;h.chimHp=1500}if(h.rail){h.dmg=1.12;h.hp=20000;h.coupHp=950;h.neckHp=2100}
+    h.lt={stone:'공격이 끝난 자리에 틈이 생기는 거수. 그때 다리나 가슴 아래 <b>하늘색 약점</b>을 사격. 쓰러지면 바짝 붙어 산탄총',rail:'화차 사이 연결부를 맨 뒤부터 끊고 마지막에 목 사격. 연결부는 몸이 휘거나 공격 뒤 멈춘 동안에만 노출',ash:'등의 굴뚝 넷을 끄면 추락. 굴뚝은 불을 뿜는 동안과 공격 뒤 몸이 묶인 동안에만 노출'}[h.id];h.text=h.text.split('. ')[0].replace(/\.$/,'')+'.';
     h.tips=h.tips.map(t=>t.replace(', 그때 E로 결정타','').replace('공격이 끊기고 체간이 크게 깎이는 저지 사격','공격이 끊기고 큰 틈이 생기는 저지 사격'))}
 }
 // 같은 네발 뼈대를 쓰는 거수. 본편 단계에는 아직 넣지 않음
@@ -1388,7 +1403,7 @@ const G={state:'title',hunt:0,time:0,huntT:0,slow:1,shake:0,in:{x:0,z:0,dodge:fa
   totalT:0,faints:0,breaks:0,records:[],hazards:[],burns:[],rolls:[],parts:[],mobs:[],covers:[],gps:[],rkts:[],fires:[],decoy:null,mobT:0,mobWave:0,tut:null,aimPart:'',msgT:0,camP:new T.Vector3(0,12,30),camL:new T.Vector3(),winT:0};
 let B=null,TG=P;
 const hunt=()=>G.hard?HARD[G.hunt]:HUNTS[G.hunt];
-const coarse=matchMedia('(pointer:coarse)').matches;
+const coarse=matchMedia('(pointer:coarse)').matches;if(coarse)document.body.classList.add('touch');addEventListener('pointerdown',e=>{if(e.pointerType==='touch')document.body.classList.add('touch')});
 resize();
 
 function resetHero(){Object.assign(P,{hp:100,maxHp:100,stRegen:24,dodgeCost:25,atk:1,potMax:4,gainMul:1,skillMul:1,guardCost:1,parryWin:TUNE.parry,gadCdMul:1,finMul:1,finDmg:1,ups:[]})}
@@ -2507,13 +2522,16 @@ const PRAC=[
   {t:'열풍과 엄폐',d:'몸을 세워 배를 내밀고 부풀어 오르면 정면으로 긴 열풍. 구르기 불가. 옆으로 크게 돌아가거나 바위 뒤에 숨기. 바위는 불에 오래 못 버팀',atk:'heat',retry:'열풍이 닿지 않는 옆이나 바위 뒤로 이동'},
   {t:'약점: 숨을 들이쉬는 송풍구',d:'열풍을 준비하며 숨을 들이쉬는 동안 배의 송풍구가 노출. 그때 배의 <b>하늘색 빛</b> 맞히기. 실전에서는 이 사격이 공격을 끊고 거수를 떨어뜨려 등의 굴뚝을 모두 여는 저지 사격',atk:'heat',need:'core',retry:'배 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
 ];
-if(LITE){PRAC.splice(1,2);{const sg=TRAIN_STEPS.find(x=>x.t==='산탄총: 밀어붙이기');sg.t='산탄총';sg.d='<kbd>2</kbd> 또는 휠로 산탄총, <kbd>1</kbd>로 단발 사냥총. 산탄총은 붙을수록 강한 근접 총. 단발 사냥총으로 부위를 부숴 거수가 쓰러지면 바짝 붙어 몰아 쏘는 용도. <b>구르기를 하면 한 발 자동 장전</b>. 바짝 붙어 <b>다리</b> 맞히기'}const keep=['이동과 시점','사격','약점은 열릴 때만','산탄총','구르기','레이저와 엄폐','물약'];for(let i=TRAIN_STEPS.length-1;i>=0;i--)if(!keep.includes(TRAIN_STEPS[i].t))TRAIN_STEPS.splice(i,1);
+if(LITE){PRAC.splice(1,2);{const sg=TRAIN_STEPS.find(x=>x.t==='산탄총: 밀어붙이기');sg.t='산탄총';sg.d='<kbd>2</kbd> 또는 휠로 산탄총, <kbd>1</kbd>로 단발 사냥총. 산탄총은 붙을수록 강한 근접 총. 단발 사냥총으로 부위를 부숴 거수가 쓰러지면 바짝 붙어 몰아 쏘는 용도. <b>구르기를 하면 한 발 자동 장전</b>. 바짝 붙어 <b>다리</b> 맞히기'}const keep=['사격','산탄총','구르기'];TRAIN_STEPS.find(x=>x.t==='산탄총').d='<kbd>1</kbd> 단발 사냥총으로 부위를 부숴 거수를 쓰러뜨린 뒤, <kbd>2</kbd> 산탄총으로 바짝 붙어 몰아 쏘는 사냥. 산탄총으로 붙어서 <b>다리</b> 맞히기';
+  TRAIN_STEPS.find(x=>x.t==='사격').d='<kbd>W A S D</kbd> 이동, 마우스로 조준. <kbd>좌클릭</kbd>으로 목각 거수의 <b>머리</b> 맞히기. <kbd>우클릭</kbd>을 누르고 있으면 정밀 조준';
+  TRAIN_STEPS.find(x=>x.t==='구르기').d='바닥의 붉은 범위가 다 차오르면 공격. <kbd>Space</kbd> 구르기로 할퀴기 피하기';
+  for(let i=TRAIN_STEPS.length-1;i>=0;i--)if(!keep.includes(TRAIN_STEPS[i].t))TRAIN_STEPS.splice(i,1);
   for(const st of PRAC.flat())st.d=st.d.replace('실전에서는 이 사격이 공격을 끊고 체간을 크게 깎는 저지 사격','실전에서는 이 사격이 공격을 끊고 큰 틈을 만드는 저지 사격')}
 function tutStart(kind){G.tut={kind,steps:kind==='train'?TRAIN_STEPS:PRAC[G.hunt],i:-1,fails:0};$('#tut').hidden=false;tutNext()}
 function tutNext(){const T=G.tut;T.i++;T.fails=0;if(T.i>=T.steps.length)return tutDone();tutBegin()}
 function tutBegin(){
   const T=G.tut,s=T.steps[T.i];Object.assign(T,{t:0,ph:0,wt:0,hits:0,blocks:0,parries:0,dodged:false,covered:false,kills:0,g0:0,g1:0,fin:0,exec:0,armBroke:0,cued:0,bursts:0,coreCyc:false,shots:{},want:null,atkOn:false,move:0,doneT:0});
-  $('#tutN').textContent=(T.kind==='train'?'훈련 ':'기믹 연습 ')+(T.i+1)+' / '+T.steps.length;$('#tutT').textContent=s.t;
+  $('#tutN').textContent=(T.kind==='train'?(LITE?'연습 ':'훈련 '):'기믹 연습 ')+(T.i+1)+' / '+T.steps.length;$('#tutT').textContent=s.t;
   $('#tutD').innerHTML=s.d+(T.fails?`<br><span class="re">다시 한 번. ${s.retry||'동작을 끝까지 보고 대응'}</span>`:'');
   logEv('연습 단계',s.t+(T.fails?' 재시도 '+T.fails:''));if(s.init)s.init(T);
 }
@@ -2535,7 +2553,7 @@ function tutUpd(dt){
 function tutSkip(){const T=G.tut;if(!T||G.state!=='hunt'||T.doneT>0)return;logEv('연습 단계 건너뜀');T.want=null;tutNext()}
 function tutDone(){
   const T=G.tut;G.tut=null;$('#tut').hidden=true;
-  if(T.kind==='train'){S.trained=true;save();goTown()}
+  if(T.kind==='train'){const f=LITE&&!S.trained&&!S.cleared;S.trained=true;save();goTown();if(f&&G.state==='town'){G.hunt=0;G.hard=false;showIntro()}}
   else{S.prac[G.hunt]=1;save();startHunt();say(hunt().name,'연습 끝. 실전 사냥 개시')}
 }
 function startTrain(){recalc();startHunt('train');lockTry()}
@@ -2696,21 +2714,22 @@ function renderTown(){
       b.addEventListener('click',()=>{const l=upLv(u.id),c=upCost(l);if(l>=4||S.mats[u.mat]<c)return;S.mats[u.mat]-=c;S.up[u.id]=l+1;save();sfx.buy();renderTown()});box.appendChild(b)}
   }else
   $('#tPerks').innerHTML=S.perks.length+S.mods.length?S.mods.map(id=>{const p=MODS.find(x=>x.id===id);return p?`<span class="perk"><b>${p.name}</b> ${p.desc}</span>`:''}).join('')+S.perks.map(id=>{const p=PERKS.find(x=>x.id===id);return p?`<span class="perk"><b>${p.name}</b> ${p.desc}</span>`:''}).join(''):'<span class="best">아직 없음. 거수를 처음 잡을 때마다 장비와 능력에서 하나씩 선택</span>';
-  {const g=growth();$('#tStat').textContent=`토벌 ${S.cleared} / ${HUNTS.length} · 무기 피해 ${Math.round(P.atk*100)}% · 최대 체력 ${P.maxHp} · 물약 ${P.potMax}개 (토벌 성장: 체력 +${g.hp}, 물약 +${g.pot})`}
+  {const g=growth();if(LITE){const um=Object.keys(MATS).some(m=>S.mats[m]>0)||UPS.some(u=>upLv(u.id)>0);$('#tUpH').hidden=$('#tPerks').hidden=!um;$('#tStat').textContent=`토벌 ${S.cleared} / ${HUNTS.length}`}else $('#tStat').textContent=`토벌 ${S.cleared} / ${HUNTS.length} · 무기 피해 ${Math.round(P.atk*100)}% · 최대 체력 ${P.maxHp} · 물약 ${P.potMax}개 (토벌 성장: 체력 +${g.hp}, 물약 +${g.pot})`}
 }
 function showIntro(){
   const h=hunt();G.state='intro';$('#hudAll').hidden=true;recalc();
   $('#iEye').textContent=`${G.hunt+1}단계 · ${h.place}`;$('#iTitle').textContent=h.name;$('#iText').textContent=h.text;
-  $('#iTips').innerHTML=(LITE?(h.coreTip?[h.coreTip]:[]):['머리, 다리, 꼬리를 덮은 갑각. 깨기 전에는 그 부위 피해가 35%만 적용','체력 바 아래 주황색 체간이 가득 차면 E로 결정타, 체력 한 칸 절단. 칸이 끊길 때마다 공격 묶음 교체',h.coreTip||CORE_TIP[h.core]]).concat(h.tips).map(t=>`<li>${t}</li>`).join('');
-  {const first=!S.prac[G.hunt];$('#bGo').textContent=first?'기믹 연습 후 사냥':'사냥터로';$('#bPrac').textContent=first?'연습 없이 바로 사냥':'기믹 연습 다시'}
+  $('#iTips').innerHTML=(LITE?[h.lt]:['머리, 다리, 꼬리를 덮은 갑각. 깨기 전에는 그 부위 피해가 35%만 적용','체력 바 아래 주황색 체간이 가득 차면 E로 결정타, 체력 한 칸 절단. 칸이 끊길 때마다 공격 묶음 교체',h.coreTip||CORE_TIP[h.core]]).concat(LITE?[]:h.tips).map(t=>`<li>${t}</li>`).join('');
+  {const first=!LITE&&!S.prac[G.hunt];$('#bGo').textContent=LITE?'사냥 시작':first?'기믹 연습 후 사냥':'사냥터로';$('#bPrac').textContent=LITE?'공격 미리 연습':first?'연습 없이 바로 사냥':'기믹 연습 다시'}
   show('#sIntro');
 }
 function failHunt(){clearField();G.state='fail';$('#hudAll').hidden=true;$('#fade').style.opacity=0;$('#fTitle').textContent=`${hunt().name}에게 패배`;show('#sFail')}
 function newGame(n=0){S=newSave();save();$('#cTitle').textContent='';Object.assign(G,{hunt:n,totalT:0,faints:0,breaks:0,parries:0,records:[]});goTown()}
 function ending(){
   G.state='end';
+  if(LITE){$('#sEnd h2').textContent='세 거수 사냥 완료';$('#sEnd .panel>p').textContent='잿불 날개가 떨어지자 화구의 불길이 잦아들고, 골짜기 아래 마을까지 닿는 아침 햇살. 사냥꾼의 개머리판에 새겨진 세 줄의 흠집.'}
   $('#eRank').textContent=`마지막 사냥 ${fmt(G.huntT)}`;
-  $('#eStats').innerHTML=`<div><b>${S.hunts}</b><span>총 사냥 횟수</span></div><div><b>${S.perks.length+S.mods.length+S.weps.length+S.gads.length-3}</b><span>고른 보상</span></div><div><b>${G.parries}</b><span>완벽한 막기</span></div>`;
+  $('#eStats').innerHTML=`<div><b>${S.hunts}</b><span>총 사냥 횟수</span></div>${LITE?`<div><b>${UPS.reduce((a,u)=>a+upLv(u.id),0)}</b><span>강화 횟수</span></div><div><b>${G.huntBreaks}</b><span>부위 파괴</span></div>`:`<div><b>${S.perks.length+S.mods.length+S.weps.length+S.gads.length-3}</b><span>고른 보상</span></div><div><b>${G.parries}</b><span>완벽한 막기</span></div>`}`;
   $('#eBest').textContent=S.best?`${HUNTS[HUNTS.length-1].name} 최단 기록: ${fmt(S.best)}`:'';sfx.win();show('#sEnd');
 }
 function backdrop(){
@@ -2721,7 +2740,8 @@ function backdrop(){
 }
 function toTitle(){
   backdrop();G.state='title';$('#hudAll').hidden=true;
-  const bt=$('#bestT');if(S.cleared||S.weps.length){bt.hidden=false;bt.textContent=`이어하기: ${S.cleared}단계까지 토벌`}else bt.hidden=true;
+  const bt=$('#bestT');if(LITE?S.cleared>0:S.cleared||S.weps.length){bt.hidden=false;bt.textContent=`이어하기: ${S.cleared}단계까지 토벌`}else bt.hidden=true;
+  if(LITE){$('#bNew').hidden=!S.trained&&!S.cleared;$('#bStart').textContent=S.trained||S.cleared?'이어하기':'시작'}
   show('#sTitle');
 }
 function show(id){for(const s of document.querySelectorAll('.overlay'))s.hidden=true;if(id){$(id).hidden=false;if(document.pointerLockElement)document.exitPointerLock();hold.lmb=hold.rmb=hold.fire=false}document.body.classList.toggle('aiming',!id&&G.state==='hunt')}
@@ -2734,10 +2754,10 @@ function hudForce(){lastH={};hud()}
 function setT(k,sel,v){if(lastH[k]!==v){lastH[k]=v;$(sel).textContent=v}}
 function hud(){
   $('#bHp i').style.transform=`scaleX(${B.hp/B.maxHp})`;
-  const cl=B.chim?chimLeft():-1,nm=B.h.name+'|'+B.enr+'|'+cl+'|'+(B.cutN||0);if(lastH.nm!==nm){lastH.nm=nm;$('#bName').innerHTML=B.h.name+`<span class="pip">${B.coup?'화차 '+'■'.repeat(4-B.cutN)+'□'.repeat(B.cutN):cl<0?'◆'.repeat(3-B.enr)+'◇'.repeat(B.enr):'굴뚝 '+'▲'.repeat(cl)+'△'.repeat(4-cl)}</span>`}
-  if(chipsDirty){chipsDirty=false;for(const id of['head','legs','tail']){const c=$('#chip-'+id);c.classList.toggle('broken',!!B.broken[id]);const ar=B.arm[id]>0;c.classList.toggle('arm',ar);c.querySelector('span').textContent=partKo(id)+(ar?' 갑각':B.broken[id]?(id==='legs'?' 붕괴':id==='tail'?' 절단':' 파괴'):'');c.querySelector('.pb i').style.transform=`scaleX(${ar?clamp(B.arm[id]/B.armMax[id],0,1):clamp(B.php[id]/B.pmax[id],0,1)})`;c.querySelector('.pb').hidden=B.broken[id]&&id!=='legs'}}
+  const cl=B.chim?chimLeft():-1,nm=B.h.name+'|'+B.enr+'|'+cl+'|'+(B.cutN||0);if(lastH.nm!==nm){lastH.nm=nm;$('#bName').innerHTML=B.h.name+`<span class="pip">${LITE&&!B.coup&&cl<0?'':B.coup?'화차 '+'■'.repeat(4-B.cutN)+'□'.repeat(B.cutN):cl<0?'◆'.repeat(3-B.enr)+'◇'.repeat(B.enr):'굴뚝 '+'▲'.repeat(cl)+'△'.repeat(4-cl)}</span>`}
+  if(chipsDirty){chipsDirty=false;for(const id of['head','legs','tail']){const c=$('#chip-'+id);c.classList.toggle('broken',!!B.broken[id]);const ar=B.arm[id]>0;c.classList.toggle('arm',ar);c.querySelector('span').textContent=partKo(id)+(ar?' 갑각':B.broken[id]?(id==='legs'?' 붕괴':id==='tail'?' 절단':' 파괴'):'');c.querySelector('.pb i').style.transform=`scaleX(${ar?clamp(B.arm[id]/B.armMax[id],0,1):clamp(B.php[id]/B.pmax[id],0,1)})`;c.querySelector('.pb').hidden=B.broken[id]&&id!=='legs';if(LITE)c.hidden=!(B.broken[id]||B.php[id]<B.pmax[id])}}
   $('#hpB i').style.transform=`scaleX(${P.hp/P.maxHp})`;$('#stB i').style.transform=`scaleX(${P.st/P.maxSt})`;
-  setT('tm','#timer',fmt(G.huntT));setT('pot','#potTxt','물약 '+P.potions);
+  setT('tm','#timer',fmt(G.huntT));setT('pot','#potTxt','물약 '+P.potions);setT('potN','#potN',P.potions);
   
   for(let s=0;s<2;s++){const D=GADM[S.gad[s]],mx=D.cd*P.gadCdMul;$('#aG'+(s+1)+' .cd').style.transform=`scaleY(${clamp(P.gcd[s]/mx,0,1)})`;setT('g'+s,'#g'+(s+1)+'Txt',D.name+(P.gcd[s]>0?' '+Math.ceil(P.gcd[s]):''))}$('#bSt i').style.transform=`scaleX(${B.stg/B.stgMax})`;if(lastH.bk!==B.broke){lastH.bk=B.broke;$('#bSt').classList.toggle('full',B.broke);$('#finHint').textContent=B.broke?'E 결정타':'E 필살기'}
   $('#aDodge .cd').style.transform=`scaleY(${P.st<P.dodgeCost?1:0})`;
@@ -2895,7 +2915,7 @@ $('#bPause').addEventListener('click',togglePause);$('#bMute').addEventListener(
 $('#bStart').addEventListener('click',()=>{audio();if(S.trained)goTown();else startTrain()});$('#bNew').addEventListener('click',()=>{audio();newGame();startTrain()});
 $('#bTrain').addEventListener('click',()=>{audio();startTrain()});$('#bTrain2').addEventListener('click',()=>{audio();startTrain()});
 $('#tutSkip').addEventListener('click',tutSkip);$('#bTutEnd').addEventListener('click',()=>{if(!G.tut)return;G.state='hunt';show(null);tutDone();if(G.state==='hunt')lockTry()});
-$('#bGo').addEventListener('click',()=>{audio();startHunt(S.prac[G.hunt]?undefined:'prac');lockTry()});$('#bPrac').addEventListener('click',()=>{audio();startHunt(S.prac[G.hunt]?'prac':undefined);lockTry()});$('#bBack').addEventListener('click',goTown);
+$('#bGo').addEventListener('click',()=>{audio();startHunt(LITE||S.prac[G.hunt]?undefined:'prac');lockTry()});$('#bPrac').addEventListener('click',()=>{audio();startHunt(LITE||S.prac[G.hunt]?'prac':undefined);lockTry()});$('#bBack').addEventListener('click',goTown);
 $('#bNext').addEventListener('click',goTown);$('#bRetry').addEventListener('click',showIntro);
 $('#bHome').addEventListener('click',goTown);$('#bAgain').addEventListener('click',goTown);$('#bTitle').addEventListener('click',toTitle);
 $('#devOpen').addEventListener('change',e=>{S.devOpen=e.target.checked;save();renderTown()});
