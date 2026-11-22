@@ -141,7 +141,7 @@ body.aiming #c{cursor:none}
 #marks{margin-top:.3em;font-size:.85em;color:var(--amber);letter-spacing:.12em;text-shadow:0 1px 4px rgba(0,0,0,.8)}
 .perk{border:1px solid rgba(255,255,255,.18);border-radius:.3em;padding:.25em .6em;font-size:.9em}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-body.lite #aBlock,body.lite #aG1,body.lite #aG2,body.lite #aFin,body.lite #aSwap,body.lite #bSt,body.lite #finHint,body.lite #marks,body.lite .liteHide{display:none!important}
+body.lite #aBlock,body.lite #aG1,body.lite #aG2,body.lite #aFin,body.lite #bSt,body.lite #finHint,body.lite #marks,body.lite .liteHide{display:none!important}
 </style>
 
 <div id="wrap">
@@ -230,7 +230,7 @@ body.lite #aBlock,body.lite #aG1,body.lite #aG2,body.lite #aFin,body.lite #aSwap
       <p id="tStat" class="best"></p>
       <div class="town">
         <div><h3>사냥 순서</h3><div id="tHunts" class="ups"></div>
-          <h3 class="liteHide">강화</h3><div id="tPerks" class="mats liteHide"></div>
+          <h3>강화</h3><div id="tPerks" class="mats"></div>
           <label class="dev"><input type="checkbox" id="devOpen"> 모든 사냥터와 무기, 장비 스킬 열기 (개발용)</label></div>
         <div class="liteHide"><h3>무기 <small class="best">사냥 중 1 · 2 · 3 또는 휠로 교체. 누르면 시작 무기 지정</small></h3><div id="tWeps" class="ups"></div>
           <h3>장비 스킬 <small class="best">둘을 골라 장착 (F, G)</small></h3><div id="tGad" class="ups"></div></div>
@@ -306,7 +306,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:1.8,speed:6.6,accel:46,d
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v35';
+const VER='v36';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -402,7 +402,7 @@ const MODS=[
  {id:'x3',w:'xbow',name:'관통 화살',desc:'연발 석궁: 쫄몹에게 주는 피해 두 배'},
 ];
 const has=id=>!(G.tut&&G.tut.kind==='train')&&S.mods.includes(id);
-const magOf=W=>W.mag+(W.id==='shotgun'&&has('s1')?2:0),markN=()=>has('x1')?5:MARK.n;
+const magOf=W=>W.mag+(W.id==='shotgun'&&has('s1')?2:0)+(LITE&&W.id!=='xbow'?(S.magUp||0):0),markN=()=>has('x1')?5:MARK.n;
 const CORE_ARM={chest:'legs',brow:'head',tailtip:'tail'},ARM_CUT=.35;
 
 // ---------- 장비 스킬 목록 (둘을 골라 장착) ----------
@@ -435,7 +435,7 @@ const HUNTS=[
   combos:{base:[['slam'],['charge'],['poundL','poundR','poundL'],['gale'],['poundR','poundL','poundR']],p2:[['slam','poundL','poundR','poundL'],['charge','charge'],['gale','slam'],['poundR','poundL','poundR','gale']],p3:[['slam','slam'],['charge','slam','slam'],['gale','poundL','poundR','poundL'],['slam','slam','charge']]},
   ranged:[['charge'],['slam'],['slam','charge']],
   text:'등에 풍차를 진 초원의 터줏대감. 정면에서는 밀리지만 공격마다 같은 자리에 틈이 생기는 상대. 이 사냥터에서만 공격 범위가 바닥에 붉게 표시.',
-  tips:['공격마다 끝난 자리에 틈이 생기는 거수. 덮치기 뒤에는 앞발이 박혀 옆구리가 비고, 앞발 내려찍기는 찍는 발의 반대편이 사각','박치기 돌진은 방향을 못 바꾸는 직선. 엄폐 바위 뒤에 서면 바위는 부서지지만 거수가 비틀거림','네 발을 딛고 등의 풍차를 돌리면 날개바람. 정면만 밀어내므로 옆과 뒤, 바위 뒤가 안전','덮치려고 상체를 일으킨 순간 가슴 약점을 맞히면 공격이 끊기고 체간이 크게 깎이는 저지 사격']},
+  tips:['공격마다 끝난 자리에 틈이 생기는 거수. 덮치기 뒤에는 앞발이 박혀 옆구리가 비고, 앞발 내려찍기는 찍는 발의 반대편이 사각','박치기 돌진은 방향을 못 바꾸는 직선. 엄폐 바위 뒤에 서면 바위는 부서지지만 거수가 비틀거림','네 발을 딛고 등의 풍차를 돌리면 날개바람. 정면만 밀어내므로 옆과 뒤, 바위 뒤가 안전','가슴 아래 약점은 덮치려고 상체를 일으킨 순간과 공격 뒤 앞발이 박힌 동안 노출. 일으킨 순간에 맞히면 공격이 끊기고 체간이 크게 깎이는 저지 사격']},
  {id:'lantern',skel:'biped',env:'frost',core:'brow',coreKo:'등불',name:'등불아귀',place:'서리 해안',hp:19500,size:1.05,dmg:1.12,speed:4.8,wind:1.1,rest:[1.6,2.0],
   sky:0xbfd6ea,ground:0x9db3c9,ground2:0x8aa1b9,sun:0xffffff,amb:0x9fb2c8,
   body:0x4a3f6e,belly:0xd9a98f,accent:0xd9a23a,eye:0xfff2a0,glow:0x4a3204,fx:0xffd27a,
@@ -503,6 +503,7 @@ const HUNTS=[
   tips:['체력 바는 굴뚝 넷의 합. 굴뚝은 불을 뿜는 동안에만 열리고, 하나 꺼질 때마다 고도 하강. 넷을 모두 끄면 추락, 그때 E로 결정타','활공 폭격은 직선. 지나가는 길에 불길이 남으니 옆으로 비켜서고, 머리 위를 지날 때 배의 송풍구, 지나간 직후 등의 굴뚝 사격','몸을 세우고 부풀어 오르면 열풍. 들이쉬는 동안 배의 송풍구를 맞히면 공격이 끊기고 추락. 못 끊었다면 옆이나 바위 뒤. 바위는 불에 오래 못 버팀','높이 솟구쳤다가 내리꽂은 뒤에는 2초 동안 땅에 박힘. 굴뚝이 둘 남으면 낮게 깔려 돌진하고, 바위에 박으면 비틀거림']},
 ];
 if(LITE){ // 뼈대 판: 돌등이와 잿불 날개 두 마리, 체력과 피해 축소
+  WEP[1].dmg=26; // 산탄총: 쓰러진 거수에게 몰아 쏘는 용도라 한 발의 무게를 올림
   const k=HUNTS.filter(h=>h.id==='stone'||h.id==='rail'||h.id==='ash');HUNTS.length=0;HUNTS.push(...k);
   for(const h of HUNTS){h.hp=Math.round(h.hp*.6);if(h.air){h.dmg=1.25;h.hp=20000;h.chimHp=1200}if(h.rail){h.dmg=1.12;h.hp=20000;h.coupHp=700;h.neckHp=1600}
     h.tips=h.tips.map(t=>t.replace(', 그때 E로 결정타','').replace('공격이 끊기고 체간이 크게 깎이는 저지 사격','공격이 끊기고 큰 틈이 생기는 저지 사격'))}
@@ -920,7 +921,7 @@ function buildQuad(h){
   const anchors={head:an(headP,0,0,2.7),pawL:an(legs[0].knee,0,-.8*L,.4),pawR:an(legs[1].knee,0,-.8*L,.4),tail:an(tail[6],0,0,-1.2),tailCut:an(tail[3],0,0,-1),body:an(chest,0,.65,.45)};
   // 사격 판정용 구: 머리, 몸통 앞뒤, 다리 넷, 꼬리 마디, 약점
   const corePos=h.core==='brow'?[headP,0,.62,1.75]:h.core==='tailtip'?[tail[6],0,0,-1.3]:[chest,0,-.8,.8];
-  const hb={head:an(headP,0,.1,1.5),bodyF:an(chest,0,-.05,.1),bodyB:an(hip,0,-.05,-.1),legs:legs.map(l=>an(l,0,-.8*L,0)),tail:tail.slice(1).map(t=>an(t,0,0,-.5)),core:an(corePos[0],corePos[1],corePos[2],corePos[3])};
+  const hb={head:an(headP,0,.1,1.5),bodyF:an(chest,0,-.05,.1),bodyB:an(hip,0,-.05,-.1),legs:legs.flatMap(l=>{const a=an(l,0,-.8*L,0),b=an(l.knee,0,-.45*L,.15);a.hr=.78;b.hr=.66;return[a,b]}),tail:tail.slice(1).map((t,i)=>{const o=an(t,0,0,-.5);o.hr=.78-.06*i;return o}),core:an(corePos[0],corePos[1],corePos[2],corePos[3])};
   const coreM=new T.MeshBasicMaterial({color:0x7ef0ff,fog:false});
   const core=mesh(new T.IcosahedronGeometry(.34,0),coreM,0,0,0,hb.core,false);
   const coreHalo=mesh(new T.IcosahedronGeometry(.5,1),new T.MeshBasicMaterial({color:0x7ef0ff,transparent:true,opacity:.28,depthWrite:false,fog:false}),0,0,0,hb.core,false);
@@ -1498,7 +1499,7 @@ const partKo=id=>(B&&B.h.parts&&B.h.parts[id])||PART_KO[id];
 function hitBeast(part,base,heavy,quiet){
   if(B.state==='dead')return;
   let m=part.mult;const open=(B.state==='topple'||B.state==='stun'||B.state==='flinch')&&!B.soft;
-  if(open)m*=1.35;else if(B.state==='rest')m*=1.3;
+  if(open)m*=LITE?1.6:1.35;else if(B.state==='rest')m*=1.3;
   if(P.buff>0)m*=1.5;
   const rail=B.h.rail,air=B.h.air||rail,cp=part.id==='coup',ch=part.id==='chim',weak=part.id==='core'||ch||cp,py=part.y!=null?part.y:1.8;
   if(B.state==='enrage'){num(part.x,py+.8,part.z,'무효',false);return} // 국면 전환 중에는 피해 없음
@@ -1678,6 +1679,7 @@ function coreOpenNow(){
   if(B.coreForce)return true;
   if(B.h.air)return((st==='topple'||st==='stun'||st==='flinch')&&!B.soft)||(st==='windup'&&B.mv==='heat')||(st==='strike'&&B.mv==='glide');
   if((st==='topple'||st==='stun'||st==='flinch')&&!B.soft)return true;
+  if(c==='chest'&&st==='stuck')return true;
   if(c==='brow'&&(B.parryOpen>0||(B.broken.head&&st==='rest')))return true;
   if(st==='enrage')return false;
   const p=B.dur?B.stateT/B.dur:0;
@@ -2499,7 +2501,7 @@ const PRAC=[
   {t:'열풍과 엄폐',d:'몸을 세워 배를 내밀고 부풀어 오르면 정면으로 긴 열풍. 구르기 불가. 옆으로 크게 돌아가거나 바위 뒤에 숨기. 바위는 불에 오래 못 버팀',atk:'heat',retry:'열풍이 닿지 않는 옆이나 바위 뒤로 이동'},
   {t:'약점: 숨을 들이쉬는 송풍구',d:'열풍을 준비하며 숨을 들이쉬는 동안 배의 송풍구가 노출. 그때 배의 <b>하늘색 빛</b> 맞히기. 실전에서는 이 사격이 공격을 끊고 거수를 떨어뜨려 등의 굴뚝을 모두 여는 저지 사격',atk:'heat',need:'core',retry:'배 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
 ];
-if(LITE){PRAC.splice(1,2);const keep=['이동과 시점','사격','약점은 열릴 때만','구르기','레이저와 엄폐','물약'];for(let i=TRAIN_STEPS.length-1;i>=0;i--)if(!keep.includes(TRAIN_STEPS[i].t))TRAIN_STEPS.splice(i,1);
+if(LITE){PRAC.splice(1,2);{const sg=TRAIN_STEPS.find(x=>x.t==='산탄총: 밀어붙이기');sg.t='산탄총';sg.d='<kbd>2</kbd> 또는 휠로 산탄총, <kbd>1</kbd>로 단발 사냥총. 산탄총은 붙을수록 강한 근접 총. 단발 사냥총으로 부위를 부숴 거수가 쓰러지면 바짝 붙어 몰아 쏘는 용도. <b>구르기를 하면 한 발 자동 장전</b>. 바짝 붙어 <b>다리</b> 맞히기'}const keep=['이동과 시점','사격','약점은 열릴 때만','산탄총','구르기','레이저와 엄폐','물약'];for(let i=TRAIN_STEPS.length-1;i>=0;i--)if(!keep.includes(TRAIN_STEPS[i].t))TRAIN_STEPS.splice(i,1);
   for(const st of PRAC.flat())st.d=st.d.replace('실전에서는 이 사격이 공격을 끊고 체간을 크게 깎는 저지 사격','실전에서는 이 사격이 공격을 끊고 큰 틈을 만드는 저지 사격')}
 function tutStart(kind){G.tut={kind,steps:kind==='train'?TRAIN_STEPS:PRAC[G.hunt],i:-1,fails:0};$('#tut').hidden=false;tutNext()}
 function tutNext(){const T=G.tut;T.i++;T.fails=0;if(T.i>=T.steps.length)return tutDone();tutBegin()}
@@ -2582,13 +2584,13 @@ function updCamera(rdt){
 }
 // ---------- 저장과 보상: 재료 모으기 없이, 거수를 처음 잡을 때마다 보상 하나 선택 ----------
 const SAVE_KEY=LITE?'gv-lite1':'gv-save2';
-const newSave=()=>({v:2,cleared:0,hunts:0,best:null,devOpen:true,weps:LITE?['rifle']:[],gads:['rocket','flash'],gad:['rocket','flash'],perks:[],mods:[],lastW:0,rq:[],trained:false,prac:{}});
+const newSave=()=>({v:2,cleared:0,hunts:0,best:null,devOpen:true,weps:LITE?['rifle','shotgun']:[],gads:['rocket','flash'],gad:['rocket','flash'],perks:[],mods:[],lastW:0,rq:[],trained:false,prac:{}});
 let S=newSave();
 function loadSave(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(d&&d.v===2)Object.assign(S,d)}catch(e){}
   for(const k of['weps','gads','perks','mods','rq'])if(!Array.isArray(S[k]))S[k]=newSave()[k];delete S.reward;
   if(!Array.isArray(S.gad)||S.gad.length!==2||!S.gad.every(g=>GADM[g]))S.gad=['rocket','flash'];S.prac=S.prac||{};if(LITE&&!S.r3){S.r3=1;S.prac=S.prac[0]?{0:1}:{}}}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
-const ownW=i=>!!WEP[i]&&(LITE?i===0:S.devOpen||!!(G.tut&&G.tut.kind==='train')||S.weps.includes(WEP[i].id));
+const ownW=i=>!!WEP[i]&&(LITE?i<2:S.devOpen||!!(G.tut&&G.tut.kind==='train')||S.weps.includes(WEP[i].id));
 const ownG=id=>S.devOpen||S.gads.includes(id);
 const nextW=d=>{for(let k=1;k<=WEP.length;k++){const i=(P.w+d*k+WEP.length*8)%WEP.length;if(ownW(i))return i}return P.w};
 function recalc(){
@@ -2596,6 +2598,7 @@ function recalc(){
   // 토벌한 거수 수만큼의 기본 성장
   const g=growth();P.maxHp+=g.hp;P.potMax+=g.pot;
 }
+const magCost=lv=>3+2*lv;
 const growth=()=>({hp:Math.min(S.cleared||0,5)*20,pot:Math.min(S.cleared||0,5)});
 const pickOf=a=>a.splice(Math.floor(Math.random()*a.length),1)[0];
 // 장비 쪽 보상: 새 무기, 새 장비 스킬, 가진 무기의 개조
@@ -2630,13 +2633,14 @@ function winHunt(){
   const last=G.hunt===HUNTS.length-1;
   if(last&&(!S.best||G.huntT<S.best))S.best=G.huntT;
   if(first&&!last&&!LITE){const a=gearOptions(),b=perkOptions();if(a.length)S.rq.push({t:'보상 선택 · 장비',o:a});if(b.length)S.rq.push({t:'보상 선택 · 능력',o:b})}
+  const matG=LITE?G.huntBreaks+2:0;if(matG)S.mat=(S.mat||0)+matG;
   save();
-  const g1=growth(),up=[];if(g1.hp>g0.hp)up.push(`최대 체력 +${g1.hp-g0.hp}`);if(g1.pot>g0.pot)up.push(`물약 +${g1.pot-g0.pot}`);
+  const g1=growth(),up=[];if(matG)up.push(`재료 +${matG}`);if(g1.hp>g0.hp)up.push(`최대 체력 +${g1.hp-g0.hp}`);if(g1.pot>g0.pot)up.push(`물약 +${g1.pot-g0.pot}`);
   G.state='camp';$('#hudAll').hidden=true;clearField();
   if(first&&last)return ending();
   $('#cTitle').textContent=`${h.name} 토벌`;
   $('#cText').textContent=`${h.place}의 거수가 쓰러진 자리.${up.length?' 사냥 경험으로 '+up.join(', ')+'.':''}${LITE?'':first?' 장비와 능력에서 하나씩 골라 다음 사냥터로.':' 이미 토벌한 거수라 추가 보상 없음.'}`;
-  $('#cStats').innerHTML=`<div><b>${fmt(G.huntT)}</b><span>사냥 시간</span></div><div><b>${G.execs}</b><span>결정타</span></div><div><b>${G.huntBreaks}</b><span>부위 파괴</span></div>`;
+  $('#cStats').innerHTML=`<div><b>${fmt(G.huntT)}</b><span>사냥 시간</span></div>${LITE?`<div><b>+${matG}</b><span>재료</span></div>`:`<div><b>${G.execs}</b><span>결정타</span></div>`}<div><b>${G.huntBreaks}</b><span>부위 파괴</span></div>`;
   renderPick();show('#sCamp');
 }
 function goTown(){
@@ -2668,6 +2672,12 @@ function renderTown(){
   GAD.forEach(g=>{const own=ownG(g.id),on=S.gad.includes(g.id),b=document.createElement('button');b.type='button';b.className='up'+(on?' on':'');b.disabled=!own;
     b.innerHTML=`<b>${g.name}</b><small>${g.desc}</small><small>대기시간 ${g.cd}초</small><span class="tag">${!own?'미획득':on?(S.gad[0]===g.id?'F 장착':'G 장착'):'교체'}</span>`;
     b.addEventListener('click',()=>{if(on)return;S.gad=[S.gad[1],g.id];save();sfx.buy();renderTown()});gb.appendChild(b)});
+  if(LITE){ // 재료로 장전 탄수 강화
+    const lv=S.magUp||0,cost=magCost(lv),have=S.mat||0,box=$('#tPerks');box.innerHTML='';
+    const b=document.createElement('button');b.type='button';b.className='up';b.disabled=lv>=4||have<cost;
+    b.innerHTML=`<b>장전 탄수 강화 ${lv} / 4</b><small>단발 사냥총 ${WEP[0].mag+lv}발, 산탄총 ${WEP[1].mag+lv}발${lv<4?' → 각 +1발':''}</small><small>재료는 부위 파괴 하나에 1개, 토벌에 2개</small><span class="tag">${lv>=4?'최대':`재료 ${have} / ${cost}`}</span>`;
+    b.addEventListener('click',()=>{if((S.magUp||0)>=4||(S.mat||0)<cost)return;S.mat-=cost;S.magUp=lv+1;save();sfx.buy();renderTown()});box.appendChild(b);
+  }else
   $('#tPerks').innerHTML=S.perks.length+S.mods.length?S.mods.map(id=>{const p=MODS.find(x=>x.id===id);return p?`<span class="perk"><b>${p.name}</b> ${p.desc}</span>`:''}).join('')+S.perks.map(id=>{const p=PERKS.find(x=>x.id===id);return p?`<span class="perk"><b>${p.name}</b> ${p.desc}</span>`:''}).join(''):'<span class="best">아직 없음. 거수를 처음 잡을 때마다 장비와 능력에서 하나씩 선택</span>';
   {const g=growth();$('#tStat').textContent=`토벌 ${S.cleared} / ${HUNTS.length} · 무기 피해 ${Math.round(P.atk*100)}% · 최대 체력 ${P.maxHp} · 물약 ${P.potMax}개 (토벌 성장: 체력 +${g.hp}, 물약 +${g.pot})`}
 }
