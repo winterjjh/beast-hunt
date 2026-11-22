@@ -193,7 +193,7 @@ body.lite #aBlock,body.lite #aG1,body.lite #aG2,body.lite #aFin,body.lite #bSt,b
         <li>평소에는 닫혀 있다가 <b>특정 동작에서만 열리는 약점</b>. 열린 순간을 노려야 큰 피해</li>
         <li>머리, 다리, 꼬리를 덮은 <b>갑각</b>. 깨야 피해가 온전히 들어가고 약점이 열리는 구조</li>
         <li>위험을 감수한 행동으로 쌓는 <b>체간</b>. 무너뜨리면 <b>결정타</b>로 체력 한 칸 절단. 칸이 끊길 때마다 거수의 공격이 바뀌는 세 국면</li>
-        <li>거수가 지치거나 쓰러졌을 때 피해를 몰아넣는 <b>필살기</b></li>
+        <li class="liteHide">거수가 지치거나 쓰러졌을 때 피해를 몰아넣는 <b>필살기</b></li>
         <li>재료 모으기 없음. 거수를 잡을 때마다 <b>보상 하나</b>를 골라 다음 사냥터로</li>
       </ul>
       <div class="row"><button id="bStart" class="btn" type="button">시작</button><button id="bTrain" class="btn ghost" type="button">훈련장</button><button id="bNew" class="btn ghost" type="button">처음부터 새로</button></div>
@@ -270,7 +270,7 @@ body.lite #aBlock,body.lite #aG1,body.lite #aG2,body.lite #aFin,body.lite #bSt,b
         <kbd>좌클릭</kbd><span>사격</span><kbd>우클릭</kbd><span>정밀 조준(누르고 있을수록 탄 퍼짐 감소)</span>
         <kbd>1 · 2 · 3 · 휠</kbd><span>무기 교체</span><kbd>R</kbd><span>재장전(탄 무제한)</span>
         <kbd>Shift</kbd><span>막기. 거수가 한 번 더 움츠리는 순간 누르면 완벽한 막기</span><kbd>Space</kbd><span>구르기</span>
-        <kbd>E</kbd><span>결정타(체간이 무너진 거수), 필살기(게이지 가득, 거수가 지치거나 쓰러졌을 때)</span><kbd>F · G</kbd><span>장비 스킬</span><kbd>Q</kbd><span>물약</span><kbd>F8</kbd><span>이상한 순간 표식</span>
+        <kbd class="liteHide">E</kbd><span class="liteHide">결정타(체간이 무너진 거수), 필살기(게이지 가득, 거수가 지치거나 쓰러졌을 때)</span><kbd>F · G</kbd><span>장비 스킬</span><kbd>Q</kbd><span>물약</span><kbd>F8</kbd><span>이상한 순간 표식</span>
       </div>
       <h3>설정</h3>
       <label class="sens">마우스 민감도 <input type="range" class="sensR" min="0.2" max="3" step="0.1" value="1" aria-label="마우스 민감도"><b class="sensV">1.0</b></label>
@@ -306,7 +306,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:1.8,speed:6.6,accel:46,d
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v38';
+const VER='v39';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -2156,7 +2156,7 @@ function updHero(dt){
   // 무기 바꿔 들기
   if(I.swap!=null&&I.swap!==P.w&&ownW(I.swap)&&!P.dodge&&!P.skill&&!P.finA){P.bag[P.w]={ammo:P.ammo,reserve:P.reserve};P.w=I.swap;P.ammo=P.bag[P.w].ammo;P.reserve=P.bag[P.w].reserve;P.swap=.5;P.reload=0;P.noAuto=false;P.fireCd=Math.max(P.fireCd,.5);sfx.bolt();say(WEP[P.w].name,'')}
   I.swap=null;P.swap=Math.max(0,P.swap-dt);
-  if(P.reload>0){P.reload-=dt;if(P.reload<=0){if(P.reserve>0&&P.ammo<magOf(W)){P.ammo=W.magReload?magOf(W):P.ammo+1;if(!TUNE.infAmmo)P.reserve--;P.noAuto=false;sfx.reload(1);burst(P.x+Math.sin(P.h)*.6,P.y+1.3,P.z+Math.cos(P.h)*.6,2,0xe8c060,2,3,.5)}P.reload=(P.ammo<magOf(W)&&P.reserve>0&&!I.fire)?W.reloadOne:0}}
+  if(P.reload>0){P.reload-=dt;if(P.reload<=0){if(P.reserve>0&&P.ammo<magOf(W)){P.ammo=W.magReload?magOf(W):P.ammo+1;if(!TUNE.infAmmo)P.reserve--;P.noAuto=false;sfx.reload(1);burst(P.x+Math.sin(P.h)*.6,P.y+1.3,P.z+Math.cos(P.h)*.6,2,0xe8c060,2,3,.5)}P.reload=(P.ammo<magOf(W)&&P.reserve>0&&!I.fire&&!(I.dodge>0))?W.reloadOne:0}}
   if(I.reload>0&&P.reload<=0&&P.ammo<magOf(W)&&P.reserve>0){I.reload=0;P.noAuto=false;P.reload=W.reloadOne;sfx.reload(0)}
   P.fireCd-=dt;
   // 탄창이 비고 가방에 탄이 있으면 상황과 관계없이 자동 장전 시작(피격, 무기 교체 후 포함)
@@ -2174,9 +2174,10 @@ function updHero(dt){
   const part=nearestPart();
   // 구르기
   if(I.dodge>0&&!P.dodge&&!P.skill&&P.stag<=0&&P.recov<=0&&P.st>=P.dodgeCost){I.dodge=0;
-    // 구르는 동안에도 장전은 끊기지 않고 이어짐
+    // 구르기로 장전을 끊으면 다음 장전은 수동(R 또는 빈 총 사격 입력)
     // 산탄총은 구르는 동작으로 한 발 장전
     if(W.rollLoad){if(P.ammo<magOf(W)){const n=Math.min(has('s2')?2:1,magOf(W)-P.ammo);P.ammo+=n;sfx.reload(1);num(P.x,2.5,P.z,n>1?'두 발 장전':'한 발 장전',false,true)}P.reload=0;P.noAuto=false}
+    else if(P.reload>0){P.reload=0;P.noAuto=true;logEv('장전 취소','구르기')}
     
     P.finA=null;
     let dx=mx,dz=mz;if(ml<.2){const d=Math.hypot(P.x-B.x,P.z-B.z)||1;dx=(P.x-B.x)/d;dz=(P.z-B.z)/d}else{dx/=Math.min(ml,1)||1;dz/=Math.min(ml,1)||1}
