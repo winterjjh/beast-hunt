@@ -589,9 +589,9 @@ const GFX=(()=>{
   let rt=null,ok=!off,time=0,slow=0;
   const ticks=[],size=new T.Vector2(),qs=new T.Scene(),qc=new T.OrthographicCamera(-1,1,1,-1,0,1);
   const pm=new T.ShaderMaterial({depthTest:false,depthWrite:false,
-    uniforms:{tC:{value:null},tD:{value:null},px:{value:new T.Vector2()},ink:{value:new T.Color(0x1c1620)},amt:{value:.85},zn:{value:.1},zf:{value:400},w:{value:1}},
+    uniforms:{tC:{value:null},tD:{value:null},tB:{value:null},bl:{value:.7},px:{value:new T.Vector2()},ink:{value:new T.Color(0x1c1620)},amt:{value:.85},zn:{value:.1},zf:{value:400},w:{value:1}},
     vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
-    fragmentShader:`precision highp float;varying vec2 vUv;uniform sampler2D tC,tD;uniform vec2 px;uniform vec3 ink;uniform float amt,zn,zf,w;
+    fragmentShader:`precision highp float;varying vec2 vUv;uniform sampler2D tC,tD,tB;uniform float bl;uniform vec2 px;uniform vec3 ink;uniform float amt,zn,zf,w;
 float iz(vec2 uv){return 1./zn-texture2D(tD,uv).x*(1./zn-1./zf);}
 float lum(vec3 c){return dot(c,vec3(.299,.587,.114));}
 void main(){
@@ -605,23 +605,37 @@ void main(){
   vec2 o=px*w;float c=iz(vUv),e=abs(iz(vUv+vec2(o.x,0.))+iz(vUv-vec2(o.x,0.))+iz(vUv+vec2(0.,o.y))+iz(vUv-vec2(0.,o.y))-4.*c)/c;
   float z=1./c,line=smoothstep(.006,.02,e)*(1.-smoothstep(55.,140.,z))*amt;
   col=mix(col,ink+col*.12,line);
+  col+=texture2D(tB,vUv).rgb*bl;
   float l=lum(col);col=mix(vec3(l),col,1.12);
   vec2 q=vUv-.5;col*=1.-.32*dot(q,q)*1.6;
   gl_FragColor=vec4(col,1.);}`});
-  qs.add(new T.Mesh(new T.PlaneGeometry(2,2),pm));
+  // 빛 번짐: 아주 밝은 곳만 골라 4분의 1 크기로 줄이고 가로세로로 흐린 뒤 마지막에 더함
+  const bm=new T.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{t:{value:null},d:{value:new T.Vector2()},thr:{value:-1}},
+    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+    fragmentShader:`precision highp float;varying vec2 vUv;uniform sampler2D t;uniform vec2 d;uniform float thr;
+void main(){if(thr>=0.){vec3 c=(texture2D(t,vUv+d*vec2(1.,1.)).rgb+texture2D(t,vUv+d*vec2(-1.,1.)).rgb+texture2D(t,vUv+d*vec2(1.,-1.)).rgb+texture2D(t,vUv+d*vec2(-1.,-1.)).rgb)*.25;
+  float m=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c*smoothstep(thr,1.,m),1.);}
+else{vec3 c=texture2D(t,vUv).rgb*.227;c+=(texture2D(t,vUv+d*1.385).rgb+texture2D(t,vUv-d*1.385).rgb)*.316;c+=(texture2D(t,vUv+d*3.231).rgb+texture2D(t,vUv-d*3.231).rgb)*.07;gl_FragColor=vec4(c,1.);}}`});
+  const quad=new T.Mesh(new T.PlaneGeometry(2,2),pm);qs.add(quad);
+  let b1=null,b2=null;
+  const pass=(mat,target)=>{quad.material=mat;renderer.setRenderTarget(target);renderer.render(qs,qc)};
   function ensure(){
     renderer.getDrawingBufferSize(size);
     if(rt&&rt.width===size.x&&rt.height===size.y)return;
-    if(rt){rt.depthTexture.dispose();rt.dispose()}
+    if(rt){rt.depthTexture.dispose();rt.dispose();b1.dispose();b2.dispose()}
     rt=new T.WebGLRenderTarget(size.x,size.y,{minFilter:T.LinearFilter,magFilter:T.LinearFilter,format:T.RGBAFormat,stencilBuffer:false});
     rt.depthTexture=new T.DepthTexture(size.x,size.y);rt.depthTexture.type=T.UnsignedIntType;
-    pm.uniforms.tC.value=rt.texture;pm.uniforms.tD.value=rt.depthTexture;pm.uniforms.px.value.set(1/size.x,1/size.y);pm.uniforms.w.value=Math.max(1,size.y/900);
+    const bw=Math.max(2,size.x>>2),bh=Math.max(2,size.y>>2),bo={minFilter:T.LinearFilter,magFilter:T.LinearFilter,format:T.RGBAFormat,depthBuffer:false,stencilBuffer:false};b1=new T.WebGLRenderTarget(bw,bh,bo);b2=new T.WebGLRenderTarget(bw,bh,bo);
+    pm.uniforms.tB.value=b1.texture;pm.uniforms.tC.value=rt.texture;pm.uniforms.tD.value=rt.depthTexture;pm.uniforms.px.value.set(1/size.x,1/size.y);pm.uniforms.w.value=Math.max(1,size.y/900);
   }
   function render(dt){
     time+=dt;for(const f of ticks)f(dt,time);
     // 느린 기기: 2초 넘게 초당 22장 아래면 후처리를 끄고 기본 그리기로 전환
     if(ok&&!force){slow=dt>.045?slow+dt:Math.max(0,slow-dt*2);if(slow>2)ok=false}
-    if(ok){try{ensure();pm.uniforms.zn.value=camera.near;pm.uniforms.zf.value=camera.far;renderer.setRenderTarget(rt);renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(qs,qc);return}catch(e){ok=false;renderer.setRenderTarget(null)}}
+    if(ok){try{ensure();pm.uniforms.zn.value=camera.near;pm.uniforms.zf.value=camera.far;renderer.setRenderTarget(rt);renderer.render(scene,camera);
+      const u=bm.uniforms;u.t.value=rt.texture;u.thr.value=.9;u.d.value.set(1/size.x,1/size.y);pass(bm,b1);
+      u.thr.value=-1;u.t.value=b1.texture;u.d.value.set(1/b1.width,0);pass(bm,b2);u.t.value=b2.texture;u.d.value.set(0,1/b1.height);pass(bm,b1);
+      pass(pm,null);return}catch(e){ok=false;renderer.setRenderTarget(null)}}
     renderer.render(scene,camera);
   }
   // 빛 번짐: 둥근 빛 그림을 겹쳐 그려 발광처럼 보이게 함
@@ -654,7 +668,7 @@ function buildWorld(h){
   scene.remove(world);world=new T.Group();scene.add(world);embers=null;GFX.ticks.length=0;
   scene.background=new T.Color(h.sky);scene.fog=new T.Fog(h.sky,60,230);
   hemi.color.set(h.sun);hemi.groundColor.set(h.amb);sun.color.set(h.sun);
-  const dark=E==='ash'||E==='night';hemi.intensity=dark?.62:E==='frost'?.55:.62;sun.intensity=dark?.85:E==='frost'?.6:.92;
+  const dark=E==='ash'||E==='night';hemi.intensity=dark?.5:E==='frost'?.45:.46;sun.intensity=dark?.7:E==='frost'?.55:.7;
   const sunDir=new T.Vector3(...S.sun);
   const dome=GFX.sky(world,S.top,h.sky,S.low,sunDir,S.sunC,S.sunS);GFX.ticks.push(()=>dome.position.copy(camera.position));
   const at=(m,x,z,dy=0)=>{m.position.set(x,groundY(x,z)+dy,z);return m};
@@ -1377,7 +1391,83 @@ const SKEL={
  flyer:{build:buildFlyer,pose:poseFlyer,motion:MOTION.flyer,stride:.5},
 };
 const skelOf=h=>SKEL[h.skel||'quad'];
-function buildBeast(h){return skelOf(h).build(h)}
+// ---------- 거수 겉모습 ----------
+// 뼈대가 만든 관절과 판정은 그대로 두고, 관절에 붙은 덩어리를 각진 판과 기계 부품으로 바꿔 입힘. 거수 id(또는 skin)별 함수
+const tint=(c,k)=>{const o=new T.Color(c);return new T.Color(Math.min(1,o.r*k),Math.min(1,o.g*k),Math.min(1,o.b*k)).getHex()};
+const hideMeshes=(par,keep=[])=>{for(const c of par.children)if(c.isMesh&&!keep.includes(c))c.visible=false};
+// 갑각 판 색을 거수에 맞춤(깨지면 사라지는 동작은 그대로)
+const armorTint=(m,c,e)=>{for(const k in m.armor)for(const o of m.armor[k]){o.material.color.setHex(c);o.material.emissive.setHex(e)}};
+const DRESS={
+ stone(m,h){
+  const[mB,mU,mA,mH]=m.mats,L=m.K.legLen||1,conc=std(tint(h.body,1.32)),concD=std(tint(h.body,.72)),iron=std(0x4b5058),haz=std(0xd9a53a),red=std(0xa93a2a),blueM=basic(0x7fe9ff);
+  hideMeshes(m.chest);hideMeshes(m.hip);hideMeshes(m.rig);armorTint(m,0x9aa4ac,0x15181b);
+  // 몸통: 큰 면으로 깎은 덩어리 셋과 배 판
+  const blob=(par,mat,y,sx,sy,sz,ry)=>{const o=mesh(GI(0),mat,0,y,0,par);o.scale.set(sx,sy,sz);o.rotation.y=ry;return o};
+  blob(m.chest,mB,0,1.55,1.28,1.6,.3);blob(m.hip,mB,0,1.5,1.22,1.65,1.2);blob(m.rig,mB,2.13,1.4,1.15,1.35,.7);
+  mesh(taper(1.7,2.3,2.2,2.6,.7),mU,0,-.85,.1,m.chest);mesh(taper(1.6,2.2,2.1,2.5,.7),mU,0,-.85,-.1,m.hip);mesh(taper(1.6,1.6,2.0,1.9,.6),mU,0,1.3,0,m.rig);
+  // 등껍질: 콘크리트 판 위에 이끼. 가까운 몸통 덩어리에 붙어 함께 움직임
+  const on=(o,x,y,z)=>{const par=z>.5?m.chest:z<-.5?m.hip:m.rig;par.add(o);o.position.set(x-par.position.x,y-par.position.y,z-par.position.z);return o};
+  const plate=(x,y,z,w,d,t,rx,rz)=>{const p=new T.Group();mesh(taper(w,d,w*.84,d*.84,t),conc,0,0,0,p);mesh(taper(w*1.04,d*1.04,w,d,t*.3),concD,0,-t*.62,0,p);mesh(taper(w*.8,d*.8,w*.55,d*.55,t*.38),mA,0,t*.66,0,p);p.rotation.set(rx,0,rz);return on(p,x,y,z)};
+  [[1.75,3.0,.22],[.55,3.32,.06],[-.7,3.3,-.06],[-1.9,2.98,-.24]].forEach(([z,y,rx],i)=>{plate(0,y,z,1.7,1.25,.5,rx,0);for(const s of[1,-1])plate(s*1.22,y-.5,z+(i%2?.1:-.1),1.25,1.2,.44,rx,-s*.78)});
+  // 등의 발전기와 날개 셋
+  mesh(taper(1.3,1.5,.8,1.0,.9),concD,0,3.85,-.55,m.rig);
+  mesh(new T.BoxGeometry(1.0,.9,1.9),iron,0,4.7,-.8,m.rig);mesh(new T.BoxGeometry(1.06,.96,.3),haz,0,4.7,-1.2,m.rig,false);mesh(new T.BoxGeometry(1.08,.98,.08),concD,0,4.7,-1.2,m.rig,false);
+  for(const s of[1,-1])mesh(new T.CylinderGeometry(.1,.13,.6,5),iron,s*.3,5.3,-1.3,m.rig).rotation.x=-.3;
+  mesh(new T.OctahedronGeometry(.13,0),blueM,0,5.26,-.5,m.rig,false);GFX.glow(m.rig,0,5.26,-.5,1.3,0x56d8ff,.8);
+  hideMeshes(m.rotor);for(const c of m.rotor.children)c.visible=false;
+  mesh(new T.CylinderGeometry(.36,.42,.5,7),iron,0,0,0,m.rotor).rotation.x=Math.PI/2;mesh(new T.ConeGeometry(.34,.6,7),concD,0,0,.5,m.rotor).rotation.x=Math.PI/2;
+  for(let i=0;i<3;i++){const b=new T.Group();b.rotation.z=i*TAU/3;m.rotor.add(b);const bl=mesh(taper(.66,.14,.3,.07,3.0),mH,0,1.75,.05,b);bl.rotation.y=.28;mesh(taper(.4,.16,.32,.09,.5),red,0,2.75,.05,b,false).rotation.y=.28}
+  // 다리: 어깨 판, 무릎 덮개, 발톱
+  m.legs.forEach((p,i)=>{const s=i%2?-1:1;const sp=mesh(taper(.5,1.05,.36,.8,.9*L),conc,s*.4,-.3*L,0,p);sp.rotation.z=s*.12;mesh(taper(.4,.9,.3,.7,.3),mA,s*.44,.18,0,p,false).rotation.z=s*.12;
+    mesh(taper(.62,.3,.5,.24,.5),conc,0,-.05,.36,p.knee);for(const x of[-.24,0,.24])mesh(new T.ConeGeometry(.1,.4,4),mH,x,-.85*L,.72,p.knee).rotation.x=Math.PI/2});
+  // 머리: 이마 판과 볼, 눈빛
+  mesh(taper(1.1,1.3,.8,.9,.24),conc,0,.52,1.3,m.headP);for(const s of[1,-1]){mesh(taper(.2,.8,.14,.5,.5),conc,s*.62,.1,1.2,m.headP);GFX.glow(m.headP,s*.56,.42,1.9,.8,h.eye,.6)}
+  mesh(taper(.9,.7,.6,.4,.3),concD,0,.42,2.35,m.headP);
+  // 꼬리 마디 판
+  m.tail.forEach((t,i)=>{if(i%2===0&&i<6){const r=.62-.07*i;mesh(taper(r*1.5,.8,r*1.1,.6,.2),conc,0,r+.02,-.5,t)}});
+ },
+ rail(m,h){
+  const iron=std(0x2f3038),ironL=std(0x6a6f7a),roofM=std(tint(h.accent,.8));
+  armorTint(m,0x8a94a2,0x14171c);
+  // 화차 마디: 지붕, 옆 골, 바퀴, 밑틀
+  const dressCar=(s,d)=>{const r=s.r,z=d*.6;
+    mesh(taper(r*1.98,1.0,r*1.3,1.0,r*.3),roofM,0,r*1.17,z,s);mesh(new T.BoxGeometry(r*2.02,.1,1.02),iron,0,-r*.12,z,s,false);
+    for(const sx of[1,-1]){for(const dz of[-.32,0,.32])mesh(new T.BoxGeometry(.07,r*1.1,.07),iron,sx*r*.97,r*.45,z+dz,s,false);
+      for(const dz of[-.26,.26]){const w=mesh(new T.CylinderGeometry(r*.36,r*.36,.14,7),iron,sx*r*1.0,-r*.56,z+dz,s);w.rotation.z=Math.PI/2;mesh(new T.CylinderGeometry(r*.14,r*.14,.17,5),ironL,0,0,0,w,false)}}};
+  m.neckS.forEach(s=>dressCar(s,1));m.rear.forEach(s=>dressCar(s,-1));
+  // 머리: 전조등 빛, 굴뚝, 앞 배장기
+  GFX.glow(m.headP,0,.85,1.4,2.6,h.fx||0xfff2a0,.75);
+  mesh(new T.CylinderGeometry(.2,.26,.7,6),iron,0,.95,-.15,m.headP);mesh(new T.CylinderGeometry(.27,.22,.14,6),ironL,0,1.3,-.15,m.headP,false);
+  for(let i=-2;i<=2;i++){const b=mesh(new T.BoxGeometry(.07,.62,.07),ironL,i*.19,-.22,1.62-Math.abs(i)*.12,m.jawP,false);b.rotation.x=.6}
+  mesh(new T.BoxGeometry(1.0,.08,.1),iron,0,-.02,1.62,m.jawP,false);
+  for(const s of[1,-1])GFX.glow(m.headP,s*.72,.45,1.25,.7,h.eye,.55);
+ },
+ ash(m,h){
+  const[mB,mU,mA]=m.mats,iron=std(0x2e282c),ironL=std(0x6a5e60),hot=basic(h.fx||0xff7a3c),ember=basic(0x8a3216);
+  hideMeshes(m.body,m.chims);armorTint(m,0x75696c,0x1a1210);
+  // 몸통: 납작하게 깎은 가오리 몸과 등판
+  const b=mesh(GI(0),mB,0,0,0,m.body);b.scale.set(1.95,.78,2.75);b.rotation.y=.3;
+  mesh(taper(2.5,4.0,3.2,4.7,.34),mU,0,-.42,.05,m.body);
+  [[1.5,.9],[.55,1.0],[-.6,.95],[-1.7,.7]].forEach(([z,w],i)=>mesh(taper(w,.95,w*.6,.6,.3),iron,0,.72-.05*i*i*.4,z,m.body).rotation.x=i<2?.12:-.14);
+  for(let i=0;i<5;i++)for(const s of[1,-1])mesh(new T.BoxGeometry(.9,.1,.07),ironL,s*.75,.6,1.9-i*.16,m.body,false).rotation.z=-s*.3;
+  // 가슴 송풍구: 둘레와 도는 날개
+  mesh(new T.CylinderGeometry(.98,.86,.32,10),iron,0,-.82,.7,m.body);mesh(new T.CylinderGeometry(.8,.8,.06,10),ember,0,-.96,.7,m.body,false);
+  const fan=new T.Group();fan.position.set(0,-1.0,.7);m.body.add(fan);for(let i=0;i<4;i++){const f=mesh(new T.BoxGeometry(.72,.04,.22),ironL,0,0,0,fan,false);f.rotation.y=i*Math.PI/4}
+  GFX.ticks.push(dt=>fan.rotation.y+=dt*6);
+  // 굴뚝: 밑동 고리와 입구 테
+  for(const c of m.chims){mesh(new T.CylinderGeometry(.46,.52,.22,6),iron,0,-.68,0,c);mesh(new T.CylinderGeometry(.34,.3,.14,6),iron,0,.72,0,c,false)}
+  // 날개: 툰 재질로 맞추고 뒷전을 따라 달아오른 띠
+  const toonSide=o=>{if(o.isMesh&&o.material.isMeshStandardMaterial){const p=o.material;o.material=std(p.color.getHex(),{side:T.DoubleSide,emissive:p.emissive.getHex()})}};
+  m.wings.forEach((w,i)=>{const s=i?-1:1;w.children.forEach(toonSide);w.tip.children.forEach(toonSide);
+    const e=mesh(new T.BoxGeometry(3.35,.1,.13),hot,s*1.6,-.03,-1.75,w,false);e.rotation.y=-s*.274;
+    const r=mesh(new T.BoxGeometry(3.1,.1,.1),iron,s*1.65,.04,0,w,false);r.rotation.y=s*.19;
+    const e2=mesh(new T.BoxGeometry(3.6,.08,.11),hot,s*1.8,-.03,-1.15,w.tip,false);e2.rotation.y=-s*.083;
+    GFX.glow(w,s*1.6,-.2,-1.6,3.2,h.fx||0xff7a3c,.35)});
+  // 머리: 이마 판과 눈빛
+  mesh(taper(1.5,.9,1.0,.6,.2),iron,0,.3,.25,m.headP);for(const s of[1,-1])GFX.glow(m.headP,s*1.0,.22,.5,.8,h.eye,.6);
+ }
+};
+function buildBeast(h){const m=skelOf(h).build(h),d=DRESS[h.skin||h.id];if(d)d(m,h);return m}
 
 // ---------- 상태 ----------
 const P={x:0,z:20,h:Math.PI,y:0,hp:100,maxHp:100,st:100,maxSt:100,stDelay:0,stRegen:24,dodgeCost:25,atk:1,potMax:4,potions:4,lives:1,
