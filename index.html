@@ -306,7 +306,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:1.8,speed:6.6,accel:46,d
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v36';
+const VER='v37';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -473,7 +473,7 @@ const HUNTS=[
   combos:{base:[['charge'],['coil'],['headslam'],['tsweep'],['roll'],['charge','headslam']],p2:[['charge','charge'],['coil','headslam'],['roll','charge'],['tsweep','headslam'],['headslam','coil']],p3:[['headslam','headslam'],['charge','headslam'],['headslam','tsweep','headslam'],['roll','headslam','headslam']]},
   ranged:[['charge'],['roll'],['charge','headslam'],['charge','coil'],['charge','tsweep']],
   text:'화차를 줄줄이 달고 폐선로를 누비는 다리 없는 거수. 체력 대신 화차 넷을 맨 뒤부터 떼어 내야 하는 상대. 짧아질수록 빨라짐.',
-  tips:['체력 바는 화차 넷과 목의 합. 맨 뒤 연결부를 끊으면 화차가 떨어져 엄폐물로 남고, 넷을 모두 떼면 목의 약점이 드러남','연결부는 몸이 곧을 때는 닫혀 있음. 기차 돌진으로 멈춘 직후, 머리를 내려찍어 땅에 박힌 동안, 몸을 둥글게 감는 동안이 기회','옆이나 뒤로 돌아가면 꼬리 쓸기. 꼬리를 한쪽으로 당기는 것이 보이면 머리 앞쪽이나 멀리 이탈','꼬리 끝을 들어 올리면 화차 굴리기. 직선으로 굴러오고, 멈춘 화차는 엄폐물로 사용 가능']},
+  tips:['체력 바는 화차 넷과 목의 합. 다른 부위를 쏘면 조금만 깎이고, 맨 뒤 연결부를 끊으면 화차가 떨어져 엄폐물로 남고, 넷을 모두 떼면 목의 약점이 드러남','연결부는 몸이 곧을 때는 닫혀 있음. 기차 돌진으로 멈춘 직후, 머리를 내려찍어 땅에 박힌 동안, 몸을 둥글게 감는 동안이 기회','옆이나 뒤로 돌아가면 꼬리 쓸기. 꼬리를 한쪽으로 당기는 것이 보이면 머리 앞쪽이나 멀리 이탈','꼬리 끝을 들어 올리면 화차 굴리기. 직선으로 굴러오고, 멈춘 화차는 엄폐물로 사용 가능']},
  {id:'ash',skel:'flyer',env:'ash',core:'chest',coreKo:'송풍구',name:'잿불 날개',place:'잿불 화구',hp:20000,size:1.25,dmg:1.42,speed:5.5,rest:[.5,.8],quiet:true,air:1,chimHp:2700,
   sky:0x3b2428,ground:0x4b3d3c,ground2:0x3a2f30,sun:0xffb080,amb:0x6a4a48,
   body:0x4a3f44,belly:0xc8643a,accent:0xff7a3c,eye:0xffe27a,glow:0x7a2a08,fx:0xff7a3c,parts:{legs:'날개'},
@@ -500,7 +500,7 @@ const HUNTS=[
   coreTip:'약점은 배의 송풍구와 등의 굴뚝. 송풍구는 열풍을 준비하며 숨을 들이쉬는 동안과 활공으로 머리 위를 지나는 동안 노출. 굴뚝은 불을 뿜는 동안, 공격 뒤 몸이 묶인 동안, 떨어진 동안에만 노출',
   combos:{base:[['glide'],['ash'],['dive'],['heat'],['glide','ash'],['glide','dive']],p2:[['rush','rush'],['glide','dive'],['heat','rush'],['ash','dive'],['rush','ash']],p3:[['rush','dive','rush'],['heat','heat'],['glide','ash','dive'],['rush','rush','dive']]},
   text:'화구 위를 떠다니며 땅에 내려오지 않는 거수. 체력 대신 등의 굴뚝 넷을 꺼서 떨어뜨려야 하는 상대. 굴뚝이 꺼질 때마다 고도 하강.',
-  tips:['체력 바는 굴뚝 넷의 합. 굴뚝은 불을 뿜는 동안에만 열리고, 하나 꺼질 때마다 고도 하강. 넷을 모두 끄면 추락, 그때 E로 결정타','활공 폭격은 직선. 지나가는 길에 불길이 남으니 옆으로 비켜서고, 머리 위를 지날 때 배의 송풍구, 지나간 직후 등의 굴뚝 사격','몸을 세우고 부풀어 오르면 열풍. 들이쉬는 동안 배의 송풍구를 맞히면 공격이 끊기고 추락. 못 끊었다면 옆이나 바위 뒤. 바위는 불에 오래 못 버팀','높이 솟구쳤다가 내리꽂은 뒤에는 2초 동안 땅에 박힘. 굴뚝이 둘 남으면 낮게 깔려 돌진하고, 바위에 박으면 비틀거림']},
+  tips:['체력 바는 굴뚝 넷의 합. 다른 부위를 쏘면 조금만 깎이는 구조. 굴뚝은 불을 뿜는 동안에만 열리고, 하나 꺼질 때마다 고도 하강. 넷을 모두 끄면 추락, 그때 E로 결정타','활공 폭격은 직선. 지나가는 길에 불길이 남으니 옆으로 비켜서고, 머리 위를 지날 때 배의 송풍구, 지나간 직후 등의 굴뚝 사격','몸을 세우고 부풀어 오르면 열풍. 들이쉬는 동안 배의 송풍구를 맞히면 공격이 끊기고 추락. 못 끊었다면 옆이나 바위 뒤. 바위는 불에 오래 못 버팀','높이 솟구쳤다가 내리꽂은 뒤에는 2초 동안 땅에 박힘. 굴뚝이 둘 남으면 낮게 깔려 돌진하고, 바위에 박으면 비틀거림']},
 ];
 if(LITE){ // 뼈대 판: 돌등이와 잿불 날개 두 마리, 체력과 피해 축소
   WEP[1].dmg=26; // 산탄총: 쓰러진 거수에게 몰아 쏘는 용도라 한 발의 무게를 올림
@@ -1509,16 +1509,18 @@ function hitBeast(part,base,heavy,quiet){
   if(armd){B.arm[part.id]-=dmg*(WEP[P.w].id==='rifle'&&has('r3')?1.6:1);dmg=Math.round(dmg*ARM_CUT);heavy=false;chipsDirty=true;if(B.arm[part.id]<=0)breakArmor(part.id,part)}
   if(weak&&!ch&&!cp&&!G.tut)addStagger(dmg*.02);
   if(!air)B.hp-=dmg;B.flash=1;logEv('명중',`${part.id} 피해=${dmg} 거수체력=${Math.round(B.hp)} 거수상태=${B.state}`);
-  num(part.x,part.y!=null?part.y+.8:2.6*B.h.size,part.z,armd?dmg+' 갑각':dmg,!armd&&(heavy||open||P.buff>0),weak);
+  num(part.x,part.y!=null?part.y+.8:2.6*B.h.size,part.z,armd?dmg+' 갑각':air&&!weak?Math.round(dmg*.2):dmg,!armd&&(heavy||open||P.buff>0),weak);
   burst(part.x,py,part.z,heavy?16:weak?10:6,weak?0x7ef0ff:heavy?0xffd27a:0xfff2d0,heavy?9:6,heavy?7:5);
   G.shake=Math.max(G.shake,heavy?.5:quiet?.05:.14);G.stop=heavy?TUNE.stopHeavy:quiet?0:TUNE.stopLight;sfx.hit(heavy||weak);
   if(!P.finA)addFin(dmg*.006*(weak?1.5:1));
   if(G.tut){B.hp=B.maxHp;G.tut.shots[part.id]=1;return} // 연습 상대는 쓰러지지 않음
-  if(air){ // 굴뚝만 체력을 깎음. 다른 부위는 부위 파괴와 체간에만 반영
+  if(air){ // 굴뚝과 연결부가 체력을 깎는 길. 다른 부위는 부위 파괴에 온전히 반영되고 체력은 20%만 깎임
     if(ch){let ci=part.ci;if(ci==null||!chimOpen(ci))ci=B.chim.findIndex((v,i)=>chimOpen(i));if(ci>=0){B.chim[ci]-=dmg;if(B.chim[ci]<=0)chimOut(ci);else B.hp=chimSum()}}
     else if(cp){if(B.cutN<4){B.coup[B.cutN]-=dmg;if(B.coup[B.cutN]<=0)coupCut();else B.hp=railSum()}}
     else if(rail&&part.id==='core'&&B.cutN>=4){B.neck-=dmg;B.hp=Math.max(0,B.neck);if(B.neck<=0){B.hp=0;return killBeast()}}
-    else addStagger(dmg*.004);
+    else{addStagger(dmg*.004);const c=Math.round(dmg*.2);
+      if(rail){if(B.cutN<4){B.coup[B.cutN]-=c;if(B.coup[B.cutN]<=0)coupCut();else B.hp=railSum()}else{B.neck-=c;B.hp=Math.max(0,B.neck);if(B.neck<=0){B.hp=0;return killBeast()}}}
+      else{const ci=B.chim.findIndex(v=>v>0);if(ci>=0){B.chim[ci]-=c;if(B.chim[ci]<=0)chimOut(ci);else B.hp=chimSum()}}}
     if(B.state==='dead')return}
   else if(B.hp<=0){B.hp=0;return killBeast()}
   const id=part.id;
