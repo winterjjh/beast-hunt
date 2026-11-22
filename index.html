@@ -306,7 +306,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:2.2,speed:6.6,accel:46,d
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.075,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v33';
+const VER='v34';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -452,14 +452,28 @@ const HUNTS=[
   combos:{base:[['clawL','clawR','bite'],['roar','charge','bite'],['tail','clawL','breath'],['clawR','bite','tail','charge']],p2:[['throw','throw','charge','bite'],['roar','breath','tail'],['slam','clawL','clawR','bite'],['clawL','tail','breath','charge']],p3:[['stomp','breath','tail','charge'],['clawL','clawR','bite','tail','bite'],['throw','slam','roar','charge'],['clawR','breath','bite','stomp']]},
   text:'등에 용광로를 지고 한 팔에 쇳물 국자를 단 거수. 두 발로 일어서는 동작이 많고, 구르기로는 피할 수 없는 길게 이어지는 공격을 처음 쓰는 상대.',
   tips:['두 발로 서서 양팔을 머리 위로 치켜들면 양팔 내려찍기. 정면 부채꼴이라 옆이나 뒤로 이동','서서 국자 팔만 높이 들면 쇳물 쏟기. 정면으로 긴 부채꼴','눈이 파랗게 빛나면 구르기 불가 공격. 막거나 멀리 이탈','일어설 때마다 가슴 약점이 드러나는 거수. 포효와 땅 두드리기는 위험하지만 가장 큰 기회']},
- {id:'rail',skel:'serpent',env:'night',core:'tailtip',name:'철길뱀',place:'달밤 폐선로',hp:30000,size:1.1,dmg:1.32,speed:5.4,rest:[1.3,1.7],
+ {id:'rail',skel:'serpent',env:'night',core:'neck',coreKo:'목',name:'철길뱀',place:'달밤 폐선로',hp:30000,size:1.1,dmg:1.32,speed:5.4,rest:[.7,1.0],quiet:true,rail:1,coupHp:1800,neckHp:3600,
   sky:0x141a2e,ground:0x2c3346,ground2:0x232a3b,sun:0xaec4ff,amb:0x2a3350,
-  body:0xa03a30,belly:0xd9c79a,accent:0x5a3a30,eye:0xfff2a0,fx:0xfff2a0,parts:{legs:'몸통'},
-  atk:{clawL:{n:'머리 후려치기'},clawR:{n:'머리 후려치기'},tail:{n:'똬리 휩쓸기'},charge:{n:'기차 돌진'},slam:{n:'솟구쳐 덮치기'},breath:{n:'증기 숨결'},stomp:{n:'머리 내리찍기'},roar:{n:'기적 소리'},throw:{n:'석탄 뱉기'}},
-  coreTip:'약점은 꼬리 끝. 꼬리 갑각을 깨야 열리기 시작. 꼬리를 치켜든 동안(똬리 휩쓸기, 꼬리 내리찍기)과 쓰러지거나 경직된 동안에만 노출. 꼬리를 자르면 잘린 자리에 상시 노출',
-  combos:{base:[['breath','tail~','slam','clawL!'],['clawL','clawR~','bite','lash','breath'],['slam','roar','lash','charge'],['charge','charge','bite!','tail~']],p2:[['stomp','breath','clawL!','slam','roar'],['lash','lash','charge'],['slam','slam','breath','tail~'],['throw','charge','bite!','lash']],p3:[['stomp','slam','bite~','breath','charge','tail!'],['roar','stomp','lash','slam'],['breath','clawL!','clawR','lash~','roar'],['throw','slam','charge','charge','bite!']]},
-  text:'화물칸을 등에 이고 폐선로를 누비는 다리 없는 거수. 엇박 공격을 섞어 네 번 넘게 이어 치는 상대.',
-  tips:['엇박 공격 등장. 자세를 풀었다가 다시 당기면 늦게 치는 공격, 멈춤 없이 곧장 당기면 빠르게 치는 공격','몸을 일직선으로 펴고 낮게 물러나면 기차 돌진. 옆으로 구르기','머리를 낮추고 꼬리를 등 위로 세우면 꼬리 내리찍기. 그때 꼬리 끝 약점 노출','몸을 둥글게 감으면 똬리 휩쓸기. 몸 둘레 전체가 범위']},
+  body:0xa03a30,belly:0xd9c79a,accent:0x5a3a30,eye:0xfff2a0,fx:0xfff2a0,parts:{legs:'몸통',tail:'화차'},
+  // 해체전. 체력 대신 화차 넷. 맨 뒤 연결부부터 끊어 나가고, 다 끊으면 목의 약점이 드러남. 연결부는 몸이 휘거나 공격 뒤 멈춘 동안에만 열림
+  atk:{charge:{n:'기차 돌진',stuck:1.7},
+       coil:{like:'tail',n:'똬리 가두기',wind:1.5,dmg:24},
+       headslam:{like:'lash',n:'머리 내려찍기',wind:1.15,dmg:27,stuck:2.1,ok:(d,ang)=>d<15&&ang<.8},
+       tsweep:{like:'sweep',n:'꼬리 쓸기',wind:1.0,dmg:22,off:Math.PI,lockP:.001,sh:{half:2.15,r:12},ok:(d,ang)=>d<11&&ang>.9},
+       roll:{like:'own',n:'화차 굴리기',wind:1.1,act:.5,dmg:24,turn:2.6,stuck:1.2,ok:d=>d>9,
+         hit(dm){B.m.anchors.tail.getWorldPosition(_v);const dx=TG.x-_v.x,dz=TG.z-_v.z,l=Math.hypot(dx,dz)||1;addRoll(_v.x,_v.z,dx/l,dz/l,dm);sfx.whoosh(.5)}}},
+  motion:{wind:{headslam:q=>({rise:.55+.8*q,headX:-.3*q,jaw:.4*q,pz:-1*q}), // 목을 끝까지 세워 뒤로 당김
+                tsweep:q=>({tailSide:.5*q,coil:.3*q,rise:.4,wave:.2,headX:.2*q}), // 꼬리를 한쪽으로 길게 당김
+                roll:q=>({tailUp:.8*q,tailSide:.3*q,rise:.55+.3*q,headX:-.2*q,wave:.3})}, // 꼬리 끝을 들어 올림
+          hit:{headslam:()=>({rise:.05,rigX:.45,headX:.5,jaw:.1,pz:1.5}),
+               tsweep:()=>({tailSide:-.6,coil:-.3,rise:.4,wave:.2}),
+               roll:()=>({tailUp:-.2,tailSide:-.3,rise:.5})},
+          state:{stuck:(q,p,t,B)=>B.mv==='headslam'?{rise:.05,rigX:.45,headX:.5,coil:.45,wave:.3,rigZ:sn(t*14)*.03}:{rise:.3,coil:.5,wave:.3,headX:.4,jaw:.5}}},
+  coreTip:'약점은 화차 사이 연결부와 목. 연결부는 맨 뒤부터 차례로, 몸이 휘는 동안(똬리 가두기, 꼬리 쓸기 직전)과 공격 뒤 멈춘 동안에만 노출. 화차를 모두 떼면 목의 약점이 상시 노출',
+  combos:{base:[['charge'],['coil'],['headslam'],['tsweep'],['roll'],['charge','headslam']],p2:[['charge','charge'],['coil','headslam'],['roll','charge'],['tsweep','headslam'],['headslam','coil']],p3:[['headslam','headslam'],['charge','headslam'],['headslam','tsweep','headslam'],['roll','headslam','headslam']]},
+  ranged:[['charge'],['roll'],['charge','headslam'],['charge','coil'],['charge','tsweep']],
+  text:'화차를 줄줄이 달고 폐선로를 누비는 다리 없는 거수. 체력 대신 화차 넷을 맨 뒤부터 떼어 내야 하는 상대. 짧아질수록 빨라짐.',
+  tips:['체력 바는 화차 넷과 목의 합. 맨 뒤 연결부를 끊으면 화차가 떨어져 엄폐물로 남고, 넷을 모두 떼면 목의 약점이 드러남','연결부는 몸이 곧을 때는 닫혀 있음. 기차 돌진으로 멈춘 직후, 머리를 내려찍어 땅에 박힌 동안, 몸을 둥글게 감는 동안이 기회','옆이나 뒤로 돌아가면 꼬리 쓸기. 꼬리를 한쪽으로 당기는 것이 보이면 머리 앞쪽이나 멀리 이탈','꼬리 끝을 들어 올리면 화차 굴리기. 직선으로 굴러오고, 멈춘 화차는 엄폐물로 사용 가능']},
  {id:'ash',skel:'flyer',env:'ash',core:'chest',coreKo:'송풍구',name:'잿불 날개',place:'잿불 화구',hp:20000,size:1.25,dmg:1.42,speed:5.5,rest:[.5,.8],quiet:true,air:1,chimHp:2700,
   sky:0x3b2428,ground:0x4b3d3c,ground2:0x3a2f30,sun:0xffb080,amb:0x6a4a48,
   body:0x4a3f44,belly:0xc8643a,accent:0xff7a3c,eye:0xffe27a,glow:0x7a2a08,fx:0xff7a3c,parts:{legs:'날개'},
@@ -489,8 +503,8 @@ const HUNTS=[
   tips:['체력 바는 굴뚝 넷의 합. 굴뚝은 불을 뿜는 동안에만 열리고, 하나 꺼질 때마다 고도 하강. 넷을 모두 끄면 추락, 그때 E로 결정타','활공 폭격은 직선. 지나가는 길에 불길이 남으니 옆으로 비켜서고, 머리 위를 지날 때 배의 송풍구, 지나간 직후 등의 굴뚝 사격','몸을 세우고 부풀어 오르면 열풍. 들이쉬는 동안 배의 송풍구를 맞히면 공격이 끊기고 추락. 못 끊었다면 옆이나 바위 뒤. 바위는 불에 오래 못 버팀','높이 솟구쳤다가 내리꽂은 뒤에는 2초 동안 땅에 박힘. 굴뚝이 둘 남으면 낮게 깔려 돌진하고, 바위에 박으면 비틀거림']},
 ];
 if(LITE){ // 뼈대 판: 돌등이와 잿불 날개 두 마리, 체력과 피해 축소
-  const k=HUNTS.filter(h=>h.id==='stone'||h.id==='ash');HUNTS.length=0;HUNTS.push(...k);
-  for(const h of HUNTS){h.hp=Math.round(h.hp*.6);if(h.air){h.dmg=1.15;h.hp=20000;h.chimHp=1200}
+  const k=HUNTS.filter(h=>h.id==='stone'||h.id==='rail'||h.id==='ash');HUNTS.length=0;HUNTS.push(...k);
+  for(const h of HUNTS){h.hp=Math.round(h.hp*.6);if(h.air){h.dmg=1.25;h.hp=20000;h.chimHp=1200}if(h.rail){h.dmg=1.12;h.hp=20000;h.coupHp=700;h.neckHp=1600}
     h.tips=h.tips.map(t=>t.replace(', 그때 E로 결정타','').replace('공격이 끊기고 체간이 크게 깎이는 저지 사격','공격이 끊기고 큰 틈이 생기는 저지 사격'))}
 }
 // 같은 네발 뼈대를 쓰는 거수. 본편 단계에는 아직 넣지 않음
@@ -989,6 +1003,7 @@ MOTION.fore.wind._=MOTION.fore.wind.volley;
 
 // ---------- 다리 없는 뼈대 ----------
 // rig > 바닥 지점(base) > 목 마디 5개(세워서 머리를 받침) > 머리 > 턱, 그리고 뒤로 끌리는 몸 마디 9개(끝 7개가 꼬리)
+const RAIL_J=[7,5,3,1]; // 연결부가 달린 몸 마디(맨 뒤부터). 끊으면 그 마디부터 뒤가 떨어짐
 function buildSerpent(h){
   const M=beastMats(h),{mB,mU,mA,mH,mE,mArm,mFx}=M,g=new T.Group(),rig=new T.Group();g.add(rig);
   const base=new T.Group();base.position.set(0,.9,0);rig.add(base);
@@ -1006,12 +1021,15 @@ function buildSerpent(h){
   const rear=[];par=base;
   for(let i=0;i<9;i++){const p=new T.Group();p.position.set(0,0,i?-1.25:0);par.add(p);car(p,-1,.85-.055*i);rear.push(p);par=p}
   mesh(cone(.3,1.2),mA,0,0,-1.7,rear[8]).rotation.x=-Math.PI/2;
+  // 화차 사이 연결부 넷(맨 뒤부터). 닫혀 있을 때는 철판 고리, 열리면 빛남
+  const coups=RAIL_J.map(j=>{const sg=rear[j],cm=std(0x8f989f,{roughness:.5,metalness:.2}),c=mesh(cyl(sg.r+.2,sg.r+.2,.34,8),cm,0,.1,.62,sg);c.rotation.x=Math.PI/2;
+    c.hbA=anc(sg,0,.25,.62,.8);c.halo=mesh(new T.IcosahedronGeometry(.62,1),new T.MeshBasicMaterial({color:0x7ef0ff,transparent:true,opacity:.3,depthWrite:false,fog:false}),0,.9,.62,sg,false);c.halo.visible=false;return c});
   const tail=rear.slice(2),ring=(s,d)=>{const a=mesh(cyl(s.r+.22,s.r+.22,.7,8),mArm,0,.12,d*.6,s);a.rotation.x=Math.PI/2;return a};
   const armor={head:[mesh(box(1.5,.2,1.2),mArm,0,.62,.3,headP),mesh(box(.2,.5,1.3),mArm,.85,.15,.8,headP),mesh(box(.2,.5,1.3),mArm,-.85,.15,.8,headP)],
     legs:[ring(neckS[0],1),ring(neckS[1],1),ring(rear[0],-1),ring(rear[1],-1)],tail:[1,2,3].map(i=>ring(tail[i],-1))};
-  return rigFinish(h,{g,rig,M,base,neckS,rear,headP,jawP,tail,horns:[hood[0],lampM,hood[1]],armor,
+  return rigFinish(h,{g,rig,M,base,neckS,rear,headP,jawP,tail,coups,horns:[hood[0],lampM,hood[1]],armor,
     anchors:{head:anc(headP,0,0,2.2),pawL:anc(headP,.7,0,1.2),pawR:anc(headP,-.7,0,1.2),tail:anc(tail[6],0,0,-1.3),tailCut:anc(tail[3],0,0,-1.1),body:anc(neckS[2],0,0,.6)},
-    hb:{head:anc(headP,0,.15,.8,1.0),body:[anc(neckS[3],0,.1,.6,.95),anc(neckS[4],0,.1,.6,.9)],legs:[neckS[0],neckS[1],neckS[2]].map(s=>anc(s,0,.1,.6,.98)).concat([rear[0],rear[1],rear[2]].map(s=>anc(s,0,.1,-.6,.98))),tail:tail.slice(1).map((s,i)=>anc(s,0,.1,-.6,.85-.06*i))},
+    hb:{head:anc(headP,0,.15,.8,1.0),body:[anc(neckS[3],0,.1,.6,.95),anc(neckS[4],0,.1,.6,.9)],legs:[neckS[0],neckS[1],neckS[2]].map(s=>anc(s,0,.1,.6,.98)).concat([rear[0],rear[1],rear[2]].map((s,i)=>{const o=anc(s,0,.1,-.6,.98);o.seg=i;return o})),tail:tail.slice(1).map((s,i)=>{const o=anc(s,0,.1,-.6,.85-.06*i);o.seg=i+3;return o})},
     coreAt:[tail[6],0,.1,-1.35],reach:{head:4.4,headR:1.4,legsR:2.3,tail:7.0,tailCut:4.8,tailR:1.8}});
 }
 const SERP_UP=[-.75,-.5,-.1,.45,.6]; // 목을 다 세웠을 때 마디별 각. 아래는 세우고 위는 앞으로 숙여 S자
@@ -1173,7 +1191,7 @@ function buildBeast(h){return skelOf(h).build(h)}
 const P={x:0,z:20,h:Math.PI,y:0,hp:100,maxHp:100,st:100,maxSt:100,stDelay:0,stRegen:24,dodgeCost:25,atk:1,potMax:4,potions:4,lives:1,
   skillMax:8,skillMul:1,skillCd:0,swing:null,combo:0,comboT:0,dodge:null,inv:0,stag:0,drink:0,skill:null,down:0,vx:0,vz:0,run:0,ups:[],block:false,blockT:0,blockCd:0,buff:0,guardCost:1,parryWin:.2,parryCur:.2,parryPen:0,relT:9,charge:1,gainMul:1,kx:0,kz:0,ammo:5,reserve:20,reload:0,fireCd:0,draw:-1,ads:false,aimSpr:.05,bloom:0,gcd:[0,0],gadCdMul:1,fin:0,finA:null,finMul:1,finDmg:1};
 const G={state:'title',hunt:0,time:0,huntT:0,slow:1,shake:0,in:{x:0,z:0,dodge:false,skill:false,g1:false,g2:false,fin:false,pot:false,block:false,fire:false,ads:false,reload:false},yaw:Math.PI,pitch:.2,lock:false,lockIdx:0,aimX:0,aimY:0,plock:false,adsK:0,shots:[],crate:null,crateT:25,sph:[],hitT:0,hitWeak:false,camPiv:new T.Vector3(),parries:0,stop:0,botFn:null,
-  totalT:0,faints:0,breaks:0,records:[],hazards:[],burns:[],parts:[],mobs:[],covers:[],gps:[],rkts:[],fires:[],decoy:null,mobT:0,mobWave:0,tut:null,aimPart:'',msgT:0,camP:new T.Vector3(0,12,30),camL:new T.Vector3(),winT:0};
+  totalT:0,faints:0,breaks:0,records:[],hazards:[],burns:[],rolls:[],parts:[],mobs:[],covers:[],gps:[],rkts:[],fires:[],decoy:null,mobT:0,mobWave:0,tut:null,aimPart:'',msgT:0,camP:new T.Vector3(0,12,30),camL:new T.Vector3(),winT:0};
 let B=null,TG=P;
 const hunt=()=>HUNTS[G.hunt];
 const coarse=matchMedia('(pointer:coarse)').matches;
@@ -1196,6 +1214,7 @@ function startHunt(mode){
   G.yaw=Math.PI;G.pitch=.2;G.adsK=0;G.camPiv.set(P.x,1.9,P.z);G.lockIdx=0;G.lock=false;
   if(!h.core)B.m.core.visible=false;
   if(h.air){B.chim=[0,1,2,3].map(()=>h.chimHp);B.maxHp=B.hp=h.chimHp*4;B.arm={head:0,legs:0,tail:0};B.fly=3.6;B.orb=1}
+  if(h.rail){B.coup=[0,1,2,3].map(()=>h.coupHp);B.cutN=0;B.neck=h.neckHp;B.maxHp=B.hp=railSum();B.php.tail=B.pmax.tail=1e9;B.m.neckS[3].add(B.m.hb.core);B.m.hb.core.position.set(0,1.0,.6)}
   G.huntT=0;G.slow=1;G.shake=0;G.winT=0;G.huntBreaks=0;G.execs=0;G.huntFaints=0;
   G.camP.set(0,10,34);
   G.state='hunt';show(null);$('#hudAll').hidden=false;
@@ -1281,7 +1300,7 @@ function beastParts(){
   return[{id:'head',x:B.x+fx*R.head*s,z:B.z+fz*R.head*s,r:R.headR*s,mult:1.25},{id:'legs',x:B.x,z:B.z,r:R.legsR*s,mult:.9},{id:'tail',x:B.x-fx*tl*s,z:B.z-fz*tl*s,r:R.tailR*s,mult:1.05}];
 }
 function nearestPart(){let best=null,bd=1e9;for(const p of beastParts()){const d=Math.hypot(P.x-p.x,P.z-p.z)-p.r;if(d<bd){bd=d;best=p}}best.gap=bd;return best}
-const PART_KO={head:'머리',legs:'다리',tail:'꼬리',chim:'굴뚝'};
+const PART_KO={head:'머리',legs:'다리',tail:'꼬리',chim:'굴뚝',coup:'연결부'};
 const partKo=id=>(B&&B.h.parts&&B.h.parts[id])||PART_KO[id];
 
 function hitBeast(part,base,heavy,quiet){
@@ -1289,13 +1308,13 @@ function hitBeast(part,base,heavy,quiet){
   let m=part.mult;const open=(B.state==='topple'||B.state==='stun'||B.state==='flinch')&&!B.soft;
   if(open)m*=1.35;else if(B.state==='rest')m*=1.3;
   if(P.buff>0)m*=1.5;
-  const air=B.h.air,ch=part.id==='chim',weak=part.id==='core'||ch,py=part.y!=null?part.y:1.8;
+  const rail=B.h.rail,air=B.h.air||rail,cp=part.id==='coup',ch=part.id==='chim',weak=part.id==='core'||ch||cp,py=part.y!=null?part.y:1.8;
   if(B.state==='enrage'){num(part.x,py+.8,part.z,'무효',false);return} // 국면 전환 중에는 피해 없음
   let dmg=Math.round(base*P.atk*m*rand(.93,1.07));
   // 갑각: 깨기 전에는 피해 일부만 적용. 갑각 자체는 온전한 피해로 깎임
   const armd=B.arm[part.id]>0;
   if(armd){B.arm[part.id]-=dmg*(WEP[P.w].id==='rifle'&&has('r3')?1.6:1);dmg=Math.round(dmg*ARM_CUT);heavy=false;chipsDirty=true;if(B.arm[part.id]<=0)breakArmor(part.id,part)}
-  if(weak&&!ch&&!G.tut)addStagger(dmg*.02);
+  if(weak&&!ch&&!cp&&!G.tut)addStagger(dmg*.02);
   if(!air)B.hp-=dmg;B.flash=1;logEv('명중',`${part.id} 피해=${dmg} 거수체력=${Math.round(B.hp)} 거수상태=${B.state}`);
   num(part.x,part.y!=null?part.y+.8:2.6*B.h.size,part.z,armd?dmg+' 갑각':dmg,!armd&&(heavy||open||P.buff>0),weak);
   burst(part.x,py,part.z,heavy?16:weak?10:6,weak?0x7ef0ff:heavy?0xffd27a:0xfff2d0,heavy?9:6,heavy?7:5);
@@ -1304,6 +1323,8 @@ function hitBeast(part,base,heavy,quiet){
   if(G.tut){B.hp=B.maxHp;G.tut.shots[part.id]=1;return} // 연습 상대는 쓰러지지 않음
   if(air){ // 굴뚝만 체력을 깎음. 다른 부위는 부위 파괴와 체간에만 반영
     if(ch){let ci=part.ci;if(ci==null||!chimOpen(ci))ci=B.chim.findIndex((v,i)=>chimOpen(i));if(ci>=0){B.chim[ci]-=dmg;if(B.chim[ci]<=0)chimOut(ci);else B.hp=chimSum()}}
+    else if(cp){if(B.cutN<4){B.coup[B.cutN]-=dmg;if(B.coup[B.cutN]<=0)coupCut();else B.hp=railSum()}}
+    else if(rail&&part.id==='core'&&B.cutN>=4){B.neck-=dmg;B.hp=Math.max(0,B.neck);if(B.neck<=0){B.hp=0;return killBeast()}}
     else addStagger(dmg*.004);
     if(B.state==='dead')return}
   else if(B.hp<=0){B.hp=0;return killBeast()}
@@ -1324,14 +1345,15 @@ function hitBeast(part,base,heavy,quiet){
 // ---------- 사격: 판정 구, 조준 ----------
 const _v=new T.Vector3(),_o=new T.Vector3(),_d=new T.Vector3(),_ap=new T.Vector3();
 const LOCKS=['head','core','body','legs','tail'],LOCK_KO={head:'머리',core:'약점',body:'몸통',legs:'다리',tail:'꼬리'};
-const PMULT={head:1.3,core:2.6,body:.5,legs:.95,tail:1.05,chim:1.5},PBONUS={core:1.6,head:0,legs:0,tail:0,body:0,chim:1.6};
+const PMULT={head:1.3,core:2.6,body:.5,legs:.95,tail:1.05,chim:1.5,coup:1.5},PBONUS={core:1.6,head:0,legs:0,tail:0,body:0,chim:1.6,coup:1.6};
 function updSpheres(){
   const m=B.m,s=B.h.size,out=[];
   const add=(o,r,part)=>{o.getWorldPosition(_v);out.push({x:_v.x,y:_v.y,z:_v.z,r:r*s,part})};
   add(m.hb.head,m.hb.head.hr||.95,'head');(m.hb.body||[m.hb.bodyF,m.hb.bodyB]).forEach(o=>add(o,o.hr||1.5,'body'));
-  m.hb.legs.forEach(o=>add(o,o.hr||.66,'legs'));
-  m.hb.tail.forEach((o,i)=>{if(!(B.broken.tail&&i>=3))add(o,o.hr||.62-.06*i,'tail')});
-  if(B.coreOpen)add(m.hb.core,B.h.air?.48:.38,'core');
+  m.hb.legs.forEach(o=>{if(!o.cut)add(o,o.hr||.66,'legs')});
+  m.hb.tail.forEach((o,i)=>{if(!o.cut&&!(B.broken.tail&&i>=3))add(o,o.hr||.62-.06*i,'tail')});
+  if(B.coreOpen)add(m.hb.core,B.h.air||B.h.rail?.5:.38,'core');
+  if(B.coup&&coupOpen())add(m.coups[B.cutN].hbA,.8,'coup');
   if(B.chim)m.chims.forEach((c,i)=>{if(chimOpen(i)){add(c.hbA,c.hbA.hr,'chim');out[out.length-1].ci=i}});
   G.sph=out;
 }
@@ -1398,8 +1420,8 @@ function fire(kind){
     if(foc>1&&B.state==='windup'&&!(B.cueCd>0)){setState('flinch');B.soft=true;B.dur=1.1;B.cueCd=has('r1')?4:7;if(G.tut)G.tut.atkOn=false;num(cueHit.x,cueHit.y+1.4,cueHit.z,'저지 성공',true,true);say('저지 성공','공격 취소');sfx.brk()}
     else num(cueHit.x,cueHit.y+1.4,cueHit.z,'저지',false,true)}
   // 저지 사격: 준비 동작 중에 열린 약점을 맞히면 무기와 상관없이 공격이 끊기고 체간이 크게 깎임
-  if((hits.core||hits.chim)&&B.state==='windup'&&!G.tut){const e=hits.core||hits.chim;addStagger(TUNE.stopStg);addFin(8);
-    if(B.state==='windup'){setState('flinch');if(B.h.air){B.dur=2.6;say('저지 성공','추락한 틈. 등의 굴뚝이 모두 열림')}else if(LITE){B.dur=2.2;say('저지 성공','공격이 끊긴 틈. 약점이 열려 있음')}else{B.soft=true;B.dur=1.3}}
+  if(((hits.core&&!B.h.rail)||hits.chim||hits.coup)&&B.state==='windup'&&!G.tut){const e=hits.coup||hits.chim||hits.core;addStagger(TUNE.stopStg);addFin(8);
+    if(B.state==='windup'){setState('flinch');if(B.h.air){B.dur=2.6;say('저지 성공','추락한 틈. 등의 굴뚝이 모두 열림')}else if(LITE||B.h.rail){B.dur=2.2;say('저지 성공','공격이 끊긴 틈. 약점이 열려 있음')}else{B.soft=true;B.dur=1.3}}
     num(e.x,e.y+1.4,e.z,'저지 성공',true,true);sfx.brk();G.stops=(G.stops||0)+1;logEv('저지 사격',B.atk)}
   let any=false;
   for(const[m,d]of mobDmg){hitMob(m,d);G.hitT=.22;G.hitWeak=false}
@@ -1457,6 +1479,7 @@ const finOpen=()=>!!B&&['rest','topple','stun','flinch','stuck'].includes(B.stat
 function coreOpenNow(){
   const c=B.h.core,st=B.state,a=B.atk;if(!c||st==='dead')return false;
   if(G.tut&&G.tut.coreCyc)return G.tut.t%5<2.8;
+  if(B.h.rail)return B.cutN>=4;
   if(B.arm[CORE_ARM[c]]>0)return false;
   if(B.coreForce)return true;
   if(B.h.air)return((st==='topple'||st==='stun'||st==='flinch')&&!B.soft)||(st==='windup'&&B.mv==='heat')||(st==='strike'&&B.mv==='glide');
@@ -1483,7 +1506,7 @@ function updCore(dt){
   for(const id in m.armor){const on=B.arm[id]>0;for(const o of m.armor[id])if(o.visible!==on)o.visible=on}
   const o=coreOpenNow();
   if(o&&!B.coreOpen){sfx.glint();m.hb.core.getWorldPosition(_v);burst(_v.x,_v.y,_v.z,10,0x7ef0ff,5,4,.9,.3)}
-  if(B.chim)updChims();
+  if(B.chim)updChims();if(B.coup)updCoups();
   B.coreOpen=o;m.coreHalo.visible=o;m.core.material.color.set(o?0x7ef0ff:0x2c3f46);
   m.core.scale.setScalar(o?1+.15*Math.sin(G.time*8):.5);if(o)m.coreHalo.scale.setScalar(1+.3*Math.sin(G.time*8));
 }
@@ -1512,13 +1535,61 @@ function updChims(){
     c.material.emissive.setHex(alive?(open?0xff5a1a:B.h.glow):0);c.material.color.setHex(alive?B.h.accent:0x2a2628);
     if(open&&Math.random()<.7){c.halo.getWorldPosition(_v);burst(_v.x,_v.y,_v.z,1,Math.random()<.5?0xffd27a:0xff6a1a,1.5,9,1.5,.25)}});
 }
+// ---------- 화차(다리 없는 거수): 체력 대신 화차 넷과 목 ----------
+const railSum=()=>B.coup.reduce((a,v)=>a+Math.max(0,v),0)+Math.max(0,B.neck);
+// 맨 뒤 연결부가 열리는 때: 쓰러지거나 경직된 동안, 공격 뒤 멈춘 동안, 몸을 감거나 꼬리를 당겨 몸이 휘는 동안
+function coupOpen(){
+  if(!B.coup||B.cutN>=4)return false;const st=B.state;
+  if((st==='topple'||st==='stun'||st==='flinch')&&!B.soft)return true;
+  if(st==='stuck')return true;
+  if(B.mv==='coil'&&(st==='windup'||st==='strike'))return true;
+  if(B.mv==='tsweep'&&st==='windup')return true;
+  return false;
+}
+function coupCut(quiet){
+  const k=B.cutN,j=RAIL_J[k],m=B.m,sg=m.rear[j];sg.getWorldPosition(_v);sg.visible=false;
+  for(const o of m.hb.tail.concat(m.hb.legs))if(o.seg>=j)o.cut=true;
+  B.coup[k]=0;B.cutN++;B.hp=railSum();const left=4-B.cutN;burst(_v.x,1.2,_v.z,30,B.h.body,10,8,1.6);sfx.brk();sfx.boom(.6);G.shake=Math.max(G.shake,.7);G.huntBreaks++;logEv('화차 분리','남은 화차='+left);
+  addWagon(_v.x,_v.z);
+  say('화차 분리',left?`남은 화차 ${left}량. 짧아진 만큼 빨라지는 거수`:'화차를 모두 뗀 거수. 목의 약점 노출');
+  if(B.cutN===2||B.cutN===4)B.pendingRoar=true;
+  if(!quiet&&(B.state==='windup'||B.state==='strike')){setState('flinch');B.soft=true;B.dur=1.1}
+}
+function updCoups(){
+  const open=coupOpen(),t=G.time;
+  B.m.coups.forEach((c,k)=>{const on=open&&k===B.cutN;c.halo.visible=on;if(on)c.halo.scale.setScalar(1+.25*Math.sin(t*8));c.material.emissive.setHex(on?0x2a8fa0:0);c.scale.set(1,on?.35:1,1)});
+}
+// 떨어지거나 굴러와 멈춘 화차: 엄폐물로 남음
+function addWagon(x,z){
+  const r=Math.hypot(x,z);if(r>AR-4){x*=(AR-4)/r;z*=(AR-4)/r}
+  if(G.covers.length>=14||Math.hypot(x-P.x,z-P.z)<2.2){burst(x,1,z,16,0x6a5a52,8,6,1.4);return}
+  const g=new T.Group();g.position.set(x,0,z);g.rotation.y=rand(0,3);
+  mesh(box(2.6,1.9,3.4),std(B.h.body),0,1.15,0,g).receiveShadow=true;mesh(box(2.8,.3,3.6),std(B.h.accent),0,2.2,0,g);
+  for(const sx of[1,-1])for(const sz of[1,-1]){const w=mesh(cyl(.45,.45,.3,8),std(0x3a3a40),sx*1.3,.45,sz*1.1,g);w.rotation.z=Math.PI/2}
+  world.add(g);G.covers.push({x,z,r:1.9,h:2.4,g});
+}
+// 굴러오는 화차: 직선으로 굴러와 부딪히면 피해, 멈춘 자리에 엄폐물로 남음
+function addRoll(x,z,dx,dz,dmg){
+  const g=new T.Group();g.position.set(x,0,z);g.rotation.y=Math.atan2(dx,dz);
+  mesh(box(2.4,1.8,3.2),std(B.h.body),0,1.15,0,g);for(const sx of[1,-1])for(const sz of[1,-1]){const w=mesh(cyl(.45,.45,.3,8),std(0x3a3a40),sx*1.25,.45,sz*1.0,g);w.rotation.z=Math.PI/2}
+  scene.add(g);G.rolls.push({x,z,dx,dz,dmg,d:0,hit:false,g});
+}
+const ROLL={n:'화차 굴리기'};
+function updRolls(dt){
+  for(let i=G.rolls.length-1;i>=0;i--){const o=G.rolls[i],v=14*dt;o.x+=o.dx*v;o.z+=o.dz*v;o.d+=v;o.g.position.set(o.x,0,o.z);
+    if(Math.random()<.5)burst(o.x-o.dx*1.5,.3,o.z-o.dz*1.5,1,0xd8cdb8,2,3,1,.3);
+    if(!o.hit&&Math.hypot(P.x-o.x,P.z-o.z)<2.1){o.hit=true;hurt(o.dmg,o.x,o.z,ROLL)}
+    let stop=o.d>34||Math.hypot(o.x,o.z)>AR-4;
+    for(const c of G.covers)if(Math.hypot(c.x-o.x,c.z-o.z)<c.r+1.5)stop=true;
+    if(stop){scene.remove(o.g);G.rolls.splice(i,1);sfx.boom(.5);G.shake=Math.max(G.shake,.3);addWagon(o.x-o.dx*1.5,o.z-o.dz*1.5)}}
+}
 // 거수가 남기는 불길: 밟으면 피해, 엄폐 바위는 오래 닿으면 타서 부서짐
 const BURN={n:'불길',mob:1};
 function addBurn(x,z,r,life,dmg){
   const g=new T.Group();g.position.set(x,.1,z);const dm=new T.Mesh(new T.CircleGeometry(r,16),new T.MeshBasicMaterial({color:0xff5a1a,transparent:true,opacity:.4,depthWrite:false}));dm.rotation.x=-Math.PI/2;g.add(dm);
   scene.add(g);G.burns.push({x,z,r,t:0,life,tick:0,dmg,g,dm});burst(x,.4,z,6,0xff9a3a,6,6,1.2);
 }
-function clearBurns(){for(const f of G.burns)scene.remove(f.g);G.burns=[]}
+function clearBurns(){for(const f of G.burns)scene.remove(f.g);G.burns=[];for(const o of G.rolls)scene.remove(o.g);G.rolls=[]}
 function heatCover(i,v){const c=G.covers[i];c.burn=(c.burn||0)+v;if(Math.random()<.3)burst(c.x+rand(-1,1)*c.r,rand(.5,c.h),c.z+rand(-1,1)*c.r,1,0xff8a3c,1,5,1.2,.1);if(c.burn>=3){breakCover(i);return true}return false}
 function updBurns(dt){
   for(let i=G.burns.length-1;i>=0;i--){const f=G.burns[i];f.t+=dt;f.tick-=dt;f.dm.material.opacity=(.3+.12*Math.sin(G.time*13+i))*Math.min(1,(f.life-f.t)*2);
@@ -1558,6 +1629,10 @@ function execBeast(){
     const al=B.chim.map((v,i)=>i).filter(i=>B.chim[i]>0).sort((a,b)=>B.chim[a]-B.chim[b]);
     if(!al.length||(al.length===1&&B.chim[al[0]]<=B.h.chimHp*.6)){B.chim.fill(0);B.hp=0;return killBeast()}
     B.broke=false;B.chim[al[0]]-=B.h.chimHp*.6;if(B.chim[al[0]]<=0)chimOut(al[0],true);else B.hp=chimSum();if(chimLeft()){setState('chase');B.think=.1}return}
+  if(B.h.rail){ // 다리 없는 거수의 결정타: 맨 뒤 화차 분리. 화차가 없으면 목에 큰 피해
+    B.stg=0;G.execs++;G.stop=.14;G.shake=.9;sfx.brk();sfx.boom(.8);burst(B.x,2*B.h.size,B.z,40,0xffb24a,13,9,1.6,.5);logEv('결정타','남은 화차='+(4-B.cutN));num(B.x,3.6*B.h.size,B.z,'결정타',true,true);
+    B.broke=false;if(B.cutN<4)coupCut(true);else{B.neck-=B.h.neckHp*.6;B.hp=Math.max(0,B.neck);if(B.neck<=0){B.hp=0;return killBeast()}}
+    setState('chase');B.think=.1;return}
   const thr=B.maxHp*[.6,.3,0][B.enr];B.stg=0;G.execs++;G.stop=.14;G.shake=.9;sfx.brk();sfx.boom(.8);burst(B.x,2*B.h.size,B.z,40,0xffb24a,13,9,1.6,.5);logEv('결정타',`국면=${B.enr+1}`);
   if(thr<=0){B.hp=0;return killBeast()}
   if(B.hp>thr)B.hp=thr-1;B.pendingRoar=true;setState('chase');B.think=.1;num(B.x,3.6*B.h.size,B.z,'결정타',true,true);
@@ -1663,7 +1738,7 @@ function endAttack(){
 }
 function updBeast(dt){
   const h=B.h,s=h.size;B.stateT+=dt;
-  const dx=TG.x-B.x,dz=TG.z-B.z,d=Math.hypot(dx,dz),dP=Math.hypot(P.x-B.x,P.z-B.z),want=Math.atan2(dx,dz),spd=[1,1.1,1.2][B.enr];
+  const dx=TG.x-B.x,dz=TG.z-B.z,d=Math.hypot(dx,dz),dP=Math.hypot(P.x-B.x,P.z-B.z),want=Math.atan2(dx,dz),spd=[1,1.1,1.2][B.enr]*(1+.08*(B.cutN||0));
   const turn=(rate)=>{const df=wrapA(want-B.hd);B.hd+=clamp(df,-rate*dt,rate*dt);return Math.abs(df)};
   switch(B.state){
    case'chase':{
@@ -2219,16 +2294,16 @@ const PRAC=[
  [{t:'파란 눈: 구르기 불가',d:'눈이 파랗게 빛나면 1초 가까이 이어지는 공격. 꼿꼿이 서서 양팔을 뒤로 벌리고 하늘을 보면 포효, 양 주먹을 번갈아 치켜들면 땅 두드리기. 구르기의 무적보다 길어서 구르기로는 회피 불가. <b>막기를 유지</b>하거나 범위 밖으로 멀리 이탈',atk:'roar',retry:'Shift를 누른 채 버티거나 멀리 이탈'},
   {t:'쇳물 쏟기',d:'서서 국자 팔만 높이 들면 쇳물 쏟기. 정면으로 긴 부채꼴이라 옆구리나 뒤로 이동',atk:'breath'},
   {t:'약점: 일어설 때',d:'쇳물곰의 약점은 가슴 아래 화구. 포효, 땅 두드리기, 쇳덩이 던지기처럼 두 발로 일어서는 동작에서만 노출. 포효를 준비하는 동안 가슴의 <b>하늘색 빛</b>을 맞히고 막기 유지',atk:'roar',need:'core',retry:'빛이 켜지면 바로 쏘고 Shift로 막기'}],
- [{t:'엇박: 늦게 치는 공격',d:'당겼던 자세를 한 번 풀었다가 다시 당기면 한 박자 늦게 치는 공격. 일찍 구르면 맞는 구조. 다시 당긴 뒤 확 움츠릴 때 대응',atk:'tail~'},
-  {t:'엇박: 빠르게 치는 공격',d:'자세를 잡고 멈추는 구간 없이 곧장 끝까지 당기면 평소보다 빠른 공격. 보자마자 대응',atk:'clawL!'},
-  {t:'기차 돌진',d:'몸을 일직선으로 펴고 낮게 뒤로 물러나면 돌진. 옆으로 구르기',atk:'charge'},
-  {t:'약점: 치켜든 꼬리',d:'철길뱀의 약점은 꼬리 끝. 몸을 감아 휩쓸거나 꼬리를 내리찍으려고 치켜든 동안에만 노출. 꼬리를 자르면 잘린 자리에 상시 노출. 꼬리 내리찍기를 준비하는 동안 꼬리 끝의 <b>하늘색 빛</b> 맞히기',atk:'lash',need:'core',retry:'옆으로 비켜서서 치켜든 꼬리 끝을 사격'}],
+ [{t:'기차 돌진',d:'몸을 일직선으로 펴고 낮게 뒤로 물러나면 돌진. 옆으로 비켜서기. 실전에서는 멈춘 직후 몸이 휘며 맨 뒤 화차의 연결부가 열림',atk:'charge'},
+  {t:'머리 내려찍기',d:'목을 끝까지 세웠다가 정면으로 길게 내려찍기. 옆으로 회피. 실전에서는 머리가 땅에 박힌 2초가 기회',atk:'headslam'},
+  {t:'화차 굴리기',d:'꼬리 끝을 들어 올리면 화차를 굴려 보냄. 직선으로 굴러오니 옆으로 비켜서기. 멈춘 화차는 엄폐물로 남음',atk:'roll'},
+  {t:'약점: 휘어진 연결부',d:'화차 사이 연결부는 몸이 휠 때만 열림. 몸을 둥글게 감는 똬리 가두기를 준비하는 동안 맨 뒤 연결부의 <b>하늘색 빛</b> 맞히기. 몸 둘레 전체가 범위라 멀리서 사격. 실전에서는 이 사격이 공격을 끊는 저지 사격',atk:'coil',need:'coup',retry:'멀리 떨어져 맨 뒤 화차 앞의 빛을 겨누고 사격'}],
  [{t:'활공 폭격',d:'땅에 내려오지 않는 마지막 거수. 날개를 곧게 펴고 낮게 깔리면 직선으로 지나가며 불길을 남기는 폭격. 지나가는 길 옆으로 비켜서기. 실전에서는 지나간 직후 등의 굴뚝이 열림',atk:'glide'},
   {t:'내리꽂기',d:'높이 솟구쳤다가 머리부터 내리꽂기. 바위도 부수는 공격이라 범위 밖으로 이탈. 실전에서는 땅에 박힌 2초가 굴뚝을 쏠 기회',atk:'dive'},
   {t:'열풍과 엄폐',d:'몸을 세워 배를 내밀고 부풀어 오르면 정면으로 긴 열풍. 구르기 불가. 옆으로 크게 돌아가거나 바위 뒤에 숨기. 바위는 불에 오래 못 버팀',atk:'heat',retry:'열풍이 닿지 않는 옆이나 바위 뒤로 이동'},
   {t:'약점: 숨을 들이쉬는 송풍구',d:'열풍을 준비하며 숨을 들이쉬는 동안 배의 송풍구가 노출. 그때 배의 <b>하늘색 빛</b> 맞히기. 실전에서는 이 사격이 공격을 끊고 거수를 떨어뜨려 등의 굴뚝을 모두 여는 저지 사격',atk:'heat',need:'core',retry:'배 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
 ];
-if(LITE){PRAC.splice(1,3);const keep=['이동과 시점','사격','약점은 열릴 때만','구르기','레이저와 엄폐','물약'];for(let i=TRAIN_STEPS.length-1;i>=0;i--)if(!keep.includes(TRAIN_STEPS[i].t))TRAIN_STEPS.splice(i,1);
+if(LITE){PRAC.splice(1,2);const keep=['이동과 시점','사격','약점은 열릴 때만','구르기','레이저와 엄폐','물약'];for(let i=TRAIN_STEPS.length-1;i>=0;i--)if(!keep.includes(TRAIN_STEPS[i].t))TRAIN_STEPS.splice(i,1);
   for(const st of PRAC.flat())st.d=st.d.replace('실전에서는 이 사격이 공격을 끊고 체간을 크게 깎는 저지 사격','실전에서는 이 사격이 공격을 끊고 큰 틈을 만드는 저지 사격')}
 function tutStart(kind){G.tut={kind,steps:kind==='train'?TRAIN_STEPS:PRAC[G.hunt],i:-1,fails:0};$('#tut').hidden=false;tutNext()}
 function tutNext(){const T=G.tut;T.i++;T.fails=0;if(T.i>=T.steps.length)return tutDone();tutBegin()}
@@ -2247,8 +2322,8 @@ function tutUpd(dt){
   else if(T.ph===1){T.wt+=dt;if(!T.want)T.ph=2}
   else if(['rest','chase','flinch'].includes(B.state)&&!G.shots.length&&!G.hazards.length){
     let ok=T.hits===0;const n=s.need;
-    if(n==='dodge')ok=ok&&T.dodged;else if(n==='block')ok=ok&&T.blocks+T.parries>0;else if(n==='parry')ok=T.parries>0;else if(n==='cover')ok=ok&&T.covered;else if(n==='cue')ok=!!T.cued;else if(n==='core')ok=!!T.shots.core;
-    if(ok)tutPass(n==='parry'?'완벽한 막기':n==='cover'?'엄폐 성공':n==='cue'?'저지':n==='core'?'약점 명중':'좋음');
+    if(n==='dodge')ok=ok&&T.dodged;else if(n==='block')ok=ok&&T.blocks+T.parries>0;else if(n==='parry')ok=T.parries>0;else if(n==='cover')ok=ok&&T.covered;else if(n==='cue')ok=!!T.cued;else if(n==='core')ok=!!T.shots.core;else if(n==='coup')ok=!!T.shots.coup;
+    if(ok)tutPass(n==='parry'?'완벽한 막기':n==='cover'?'엄폐 성공':n==='cue'?'저지':n==='core'||n==='coup'?'약점 명중':'좋음');
     else if(++T.fails>=3){T.doneT=1.4;say('다음으로','실전에서 다시 익히기')}
     else tutBegin();
   }
@@ -2271,7 +2346,7 @@ function update(dt){
   if(G.botFn)G.botFn(G,P,B,dt);
   if(B.state!=='dead'&&!P.down)G.huntT+=dt;
   const bdt=dt*TUNE.tempo;TG=G.decoy||P;
-  updBeast(bdt);updHazards(bdt);updBurns(bdt);updHero(dt);
+  updBeast(bdt);updHazards(bdt);updBurns(bdt);updRolls(bdt);updHero(dt);
   if(G.state!=='hunt')return;
   updMobs(bdt);updGadgets(dt);
   if(G.state!=='hunt')return;
@@ -2315,7 +2390,7 @@ const newSave=()=>({v:2,cleared:0,hunts:0,best:null,devOpen:true,weps:LITE?['rif
 let S=newSave();
 function loadSave(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(d&&d.v===2)Object.assign(S,d)}catch(e){}
   for(const k of['weps','gads','perks','mods','rq'])if(!Array.isArray(S[k]))S[k]=newSave()[k];delete S.reward;
-  if(!Array.isArray(S.gad)||S.gad.length!==2||!S.gad.every(g=>GADM[g]))S.gad=['rocket','flash'];S.prac=S.prac||{}}
+  if(!Array.isArray(S.gad)||S.gad.length!==2||!S.gad.every(g=>GADM[g]))S.gad=['rocket','flash'];S.prac=S.prac||{};if(LITE&&!S.r3){S.r3=1;S.prac=S.prac[0]?{0:1}:{}}}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
 const ownW=i=>!!WEP[i]&&(LITE?i===0:S.devOpen||!!(G.tut&&G.tut.kind==='train')||S.weps.includes(WEP[i].id));
 const ownG=id=>S.devOpen||S.gads.includes(id);
@@ -2436,7 +2511,7 @@ function hudForce(){lastH={};hud()}
 function setT(k,sel,v){if(lastH[k]!==v){lastH[k]=v;$(sel).textContent=v}}
 function hud(){
   $('#bHp i').style.transform=`scaleX(${B.hp/B.maxHp})`;
-  const cl=B.chim?chimLeft():-1,nm=B.h.name+'|'+B.enr+'|'+cl;if(lastH.nm!==nm){lastH.nm=nm;$('#bName').innerHTML=B.h.name+`<span class="pip">${cl<0?'◆'.repeat(3-B.enr)+'◇'.repeat(B.enr):'굴뚝 '+'▲'.repeat(cl)+'△'.repeat(4-cl)}</span>`}
+  const cl=B.chim?chimLeft():-1,nm=B.h.name+'|'+B.enr+'|'+cl+'|'+(B.cutN||0);if(lastH.nm!==nm){lastH.nm=nm;$('#bName').innerHTML=B.h.name+`<span class="pip">${B.coup?'화차 '+'■'.repeat(4-B.cutN)+'□'.repeat(B.cutN):cl<0?'◆'.repeat(3-B.enr)+'◇'.repeat(B.enr):'굴뚝 '+'▲'.repeat(cl)+'△'.repeat(4-cl)}</span>`}
   if(chipsDirty){chipsDirty=false;for(const id of['head','legs','tail']){const c=$('#chip-'+id);c.classList.toggle('broken',!!B.broken[id]);const ar=B.arm[id]>0;c.classList.toggle('arm',ar);c.querySelector('span').textContent=partKo(id)+(ar?' 갑각':B.broken[id]?(id==='legs'?' 붕괴':id==='tail'?' 절단':' 파괴'):'');c.querySelector('.pb i').style.transform=`scaleX(${ar?clamp(B.arm[id]/B.armMax[id],0,1):clamp(B.php[id]/B.pmax[id],0,1)})`;c.querySelector('.pb').hidden=B.broken[id]&&id!=='legs'}}
   $('#hpB i').style.transform=`scaleX(${P.hp/P.maxHp})`;$('#stB i').style.transform=`scaleX(${P.st/P.maxSt})`;
   setT('tm','#timer',fmt(G.huntT));setT('pot','#potTxt','물약 '+P.potions);
