@@ -1,4 +1,4 @@
-<title>자이언트밸리</title>
+<title>렉본 헌트</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;600&display=swap">
@@ -196,7 +196,7 @@ body.lite #sTitle .panel{max-width:32em}
   <section id="sTitle" class="overlay">
     <div class="panel">
       <div class="eyebrow">3D 거수 사냥</div>
-      <h1><em>자이언트</em>밸리</h1>
+      <h1><em>렉본</em> 헌트</h1>
       <p class="liteOnly">단발 사냥총으로 부위를 부수고, 쓰러진 거수에게 산탄총을 몰아 쏘는 사냥. 골짜기를 차지한 세 마리의 거수.</p>
       <div class="keys sm liteOnly"><kbd>W A S D</kbd><span>이동</span><kbd>좌클릭 · 우클릭</kbd><span>사격 · 정밀 조준</span><kbd>1 · 2</kbd><span>단발 사냥총 · 산탄총</span><kbd>Space · Q</kbd><span>구르기 · 물약</span></div>
       <p class="liteHide">골짜기를 차지한 다섯 마리의 거수. 초원, 설원, 협곡, 화구, 폐허를 차례로 넘는 보스 연전.</p>
@@ -388,7 +388,7 @@ function logTick(dt,raw){
 }
 function logText(){
   const t=lnow(),rows=LOG.filter(r=>r[0]>t-120).map(r=>r[0].toFixed(2)+' '+r[1]);
-  return [`자이언트밸리 문제 기록 ${VER}`,`브라우저: ${navigator.userAgent}`,`화면: ${innerWidth}x${innerHeight} 배율 ${devicePixelRatio} | 민감도 ${G.sensMul} | 마우스잠금 ${G.plock?'켜짐':'꺼짐'}${G.noLock?' (잠금 실패 환경)':''} | 터치기기 ${coarse?1:0}`,`사냥: ${G.hunt+1}단계, 저장: 토벌 ${S.cleared}, 사냥 성공 ${S.hunts}, 강화 ${S.perks.length}`,`기록 구간: 최근 ${Math.min(120,Math.round(t))}초 (시간 단위 초)`,'---'].concat(rows,['--- 복사 시점 전체 상태',snap()]).join('\n');
+  return [`렉본 헌트 문제 기록 ${VER}`,`브라우저: ${navigator.userAgent}`,`화면: ${innerWidth}x${innerHeight} 배율 ${devicePixelRatio} | 민감도 ${G.sensMul} | 마우스잠금 ${G.plock?'켜짐':'꺼짐'}${G.noLock?' (잠금 실패 환경)':''} | 터치기기 ${coarse?1:0}`,`사냥: ${G.hunt+1}단계, 저장: 토벌 ${S.cleared}, 사냥 성공 ${S.hunts}, 강화 ${S.perks.length}`,`기록 구간: 최근 ${Math.min(120,Math.round(t))}초 (시간 단위 초)`,'---'].concat(rows,['--- 복사 시점 전체 상태',snap()]).join('\n');
 }
 
 // ---------- 무기 목록 (항목을 추가하면 새 무기) ----------
