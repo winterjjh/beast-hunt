@@ -320,7 +320,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:.6,speed:6.6,accel:46,de
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v46';
+const VER='v47';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -520,7 +520,7 @@ const HUNTS=[
 if(LITE){ // 뼈대 판: 돌등이와 잿불 날개 두 마리, 체력과 피해 축소
   WEP[1].dmg=26; // 산탄총: 쓰러진 거수에게 몰아 쏘는 용도라 한 발의 무게를 올림
   const k=HUNTS.filter(h=>h.id==='stone'||h.id==='rail'||h.id==='ash');HUNTS.length=0;HUNTS.push(...k);
-  for(const h of HUNTS){h.hp=Math.round(h.hp*.78);if(h.air){h.dmg=1.25;h.hp=20000;h.chimHp=1850}if(h.rail){h.dmg=1.12;h.hp=20000;h.coupHp=1150;h.neckHp=2600}
+  for(const h of HUNTS){h.hp=Math.round(h.hp*.93);if(h.air){h.dmg=1.25;h.hp=20000;h.chimHp=1850}if(h.rail){h.dmg=1.12;h.hp=20000;h.coupHp=1150;h.neckHp=2600}
     h.lt={stone:'공격이 끝난 자리에 틈이 생기는 거수. 지치거나 앞발이 박혀 고개를 숙이면 목덜미의 <b>하늘색 약점</b>이 드러남. 쓰러지면 바짝 붙어 산탄총',rail:'화차 사이 연결부를 맨 뒤부터 끊고 마지막에 목 사격. 연결부는 몸이 휘거나 공격 뒤 멈춘 동안에만 노출',ash:'등의 굴뚝 넷을 끄면 추락. 굴뚝은 불을 뿜는 동안과 공격 뒤 몸이 묶인 동안에만 노출'}[h.id];h.text=h.text.split('. ')[0].replace(/\.$/,'')+'.';
     h.tips=h.tips.map(t=>t.replace(', 그때 E로 결정타','').replace('공격이 끊기고 체간이 크게 깎이는 저지 사격','공격이 끊기고 큰 틈이 생기는 저지 사격'))}
 }
@@ -1505,7 +1505,7 @@ function startHunt(mode){
   clearTele();if(B)scene.remove(B.m.g);
   for(const z of G.hazards){scene.remove(z.grp);if(z.proj)scene.remove(z.proj)}G.hazards=[];clearBurns();
   B={m:buildBeast(h),h,x:0,z:-8,y:0,hd:0,hp:h.hp,maxHp:h.hp,state:'chase',stateT:0,think:1.6,atk:null,enr:0,pendingRoar:false,
-     combos:h.combos.base.slice(),combo:null,ci:0,lastC:-1,shape:null,linger:null,fxT:0,tele:null,stg:0,stgT:0,broke:false,stgMax:[110,125,140,155,170][G.hunt]||170,arm:mode||LITE?{head:0,legs:0,tail:0}:{head:h.hp*.05,legs:h.hp*.05,tail:h.hp*.05},armMax:{head:h.hp*.05,legs:h.hp*.05,tail:h.hp*.05},php:{head:h.hp*.2,legs:h.hp*.22,tail:h.hp*.17},pmax:{head:h.hp*.2,legs:h.hp*.22,tail:h.hp*.17},broken:{head:false,legs:false,tail:false},
+     combos:h.combos.base.slice(),combo:null,ci:0,lastC:-1,shape:null,linger:null,fxT:0,tele:null,stg:0,stgT:0,broke:false,stgMax:[110,125,140,155,170][G.hunt]||170,arm:mode||LITE?{head:0,legs:0,tail:0}:{head:h.hp*.05,legs:h.hp*.05,tail:h.hp*.05},armMax:{head:h.hp*.05,legs:h.hp*.05,tail:h.hp*.05},php:{head:h.hp*PF.head,legs:h.hp*PF.legs,tail:h.hp*PF.tail},pmax:{head:h.hp*PF.head,legs:h.hp*PF.legs,tail:h.hp*PF.tail},broken:{head:false,legs:false,tail:false},
      walk:0,flash:0,pose:{headX:0,jaw:0,rigZ:0,rigY:0,rigX:0,spin:0},hitOnce:false,sx:0,sz:0,tx:0,tz:0,chargeH:0,dur:0,marks:0,markT:0,coreOpen:false,coreForce:false,parryOpen:0,soft:false,cueCd:0};
   const w0=mode==='train'?0:ownW(S.lastW)?S.lastW:Math.max(0,WEP.findIndex((w,i)=>ownW(i)));
   Object.assign(P,{x:0,z:20,h:Math.PI,y:0,hp:P.maxHp,st:P.maxSt,potions:P.potMax,lives:1,noAuto:false,skillCd:0,swing:null,dodge:null,inv:0,stag:0,drink:0,skill:null,down:0,vx:0,vz:0,combo:0,block:false,blockCd:0,buff:0,parryPen:0,relT:9,charge:1,ammo:magOf(WEP[w0]),reserve:WEP[w0].reserve,aimT:0,w:w0,fin:0,finA:null,swap:0,bag:WEP.map(w=>({ammo:magOf(w),reserve:w.reserve})),reload:0,recov:0,fireCd:0,draw:-1,ads:false,aimSpr:.05,bloom:0,gcd:[0,0]});
@@ -1616,7 +1616,8 @@ function hitBeast(part,base,heavy,quiet){
   if(armd){B.arm[part.id]-=dmg*(WEP[P.w].id==='rifle'&&has('r3')?1.6:1);dmg=Math.round(dmg*ARM_CUT);heavy=false;chipsDirty=true;if(B.arm[part.id]<=0)breakArmor(part.id,part)}
   if(weak&&!ch&&!cp&&!G.tut)addStagger(dmg*.02);
   const pm=LITE&&WEP[P.w].id==='rifle'?1+.12*upLv('brk'):1;if(ch||cp)dmg=Math.round(dmg*pm);
-  if(!air)B.hp-=dmg;B.flash=1;logEv('명중',`${part.id} 피해=${dmg} 거수체력=${Math.round(B.hp)} 거수상태=${B.state}`);
+  // 기본 판: 아직 안 부서진 부위에 준 피해는 부위 내구도에 온전히, 전체 체력에는 절반만 반영(부수기 전에 죽는 일 방지)
+  if(!air)B.hp-=LITE&&B.php[part.id]!==undefined&&!B.broken[part.id]?dmg*.5:dmg;B.flash=1;logEv('명중',`${part.id} 피해=${dmg} 거수체력=${Math.round(B.hp)} 거수상태=${B.state}`);
   num(part.x,part.y!=null?part.y+.8:2.6*B.h.size,part.z,armd?dmg+' 갑각':air&&!weak?Math.round(dmg*.2):dmg,!armd&&(heavy||open||P.buff>0),weak);
   burst(part.x,py,part.z,heavy?16:weak?10:6,weak?0x7ef0ff:heavy?0xffd27a:0xfff2d0,heavy?9:6,heavy?7:5);
   G.shake=Math.max(G.shake,heavy?.5:quiet?.05:.14);G.stop=heavy?TUNE.stopHeavy:quiet?0:TUNE.stopLight;sfx.hit(heavy||weak);
@@ -1647,8 +1648,12 @@ function hitBeast(part,base,heavy,quiet){
 }
 // ---------- 사격: 판정 구, 조준 ----------
 const _v=new T.Vector3(),_o=new T.Vector3(),_d=new T.Vector3(),_ap=new T.Vector3();
+// 부위 파괴에 필요한 피해(전체 체력 대비). 기본 판은 세 부위를 다 부수고도 체력이 절반 넘게 남는 비율
+const PF=LITE?{head:.13,legs:.14,tail:.11}:{head:.2,legs:.22,tail:.17};
 const LOCKS=['head','core','body','legs','tail'],LOCK_KO={head:'머리',core:'약점',body:'몸통',legs:'다리',tail:'꼬리'};
 const PMULT={head:1.3,core:2.6,body:.5,legs:.95,tail:1.05,chim:1.5,coup:1.5},PBONUS={core:1.6,head:0,legs:0,tail:0,body:0,chim:1.6,coup:1.6};
+if(LITE)PMULT.core=1.7; // 약점이 자주, 길게 열리는 만큼 배율은 낮춤
+
 function updSpheres(){
   const m=B.m,s=B.h.size,out=[];
   const add=(o,r,part)=>{o.getWorldPosition(_v);out.push({x:_v.x,y:_v.y,z:_v.z,r:r*s,part})};
