@@ -320,7 +320,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:.6,speed:6.6,accel:46,de
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v42';
+const VER='v43';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -449,7 +449,7 @@ const HUNTS=[
   combos:{base:[['slam'],['charge'],['poundL','poundR','poundL'],['gale'],['poundR','poundL','poundR']],p2:[['slam','poundL','poundR','poundL'],['charge','charge'],['gale','slam'],['poundR','poundL','poundR','gale']],p3:[['slam','slam'],['charge','slam','slam'],['gale','poundL','poundR','poundL'],['slam','slam','charge']]},
   ranged:[['charge'],['slam'],['slam','charge']],
   text:'등에 풍차를 진 초원의 터줏대감. 정면에서는 밀리지만 공격마다 같은 자리에 틈이 생기는 상대. 이 사냥터에서만 공격 범위가 바닥에 붉게 표시.',
-  tips:['공격마다 끝난 자리에 틈이 생기는 거수. 덮치기 뒤에는 앞발이 박혀 옆구리가 비고, 앞발 내려찍기는 찍는 발의 반대편이 사각','박치기 돌진은 방향을 못 바꾸는 직선. 엄폐 바위 뒤에 서면 바위는 부서지지만 거수가 비틀거림','네 발을 딛고 등의 풍차를 돌리면 날개바람. 정면만 밀어내므로 옆과 뒤, 바위 뒤가 안전','가슴 아래 약점은 덮치려고 상체를 일으킨 순간과 공격 뒤 앞발이 박힌 동안 노출. 일으킨 순간에 맞히면 공격이 끊기고 체간이 크게 깎이는 저지 사격']},
+  tips:['공격마다 끝난 자리에 틈이 생기는 거수. 덮치기 뒤에는 앞발이 박혀 옆구리가 비고, 앞발 내려찍기는 찍는 발의 반대편이 사각','박치기 돌진은 방향을 못 바꾸는 직선. 엄폐 바위 뒤에 서면 바위는 부서지지만 거수가 비틀거림','네 발을 딛고 등의 풍차를 돌리면 날개바람. 정면만 밀어내므로 옆과 뒤, 바위 뒤가 안전','양 옆구리의 약점은 덮치려고 상체를 일으킨 순간과 공격 뒤 앞발이 박힌 동안 노출. 일으킨 순간에 맞히면 공격이 끊기고 체간이 크게 깎이는 저지 사격']},
  {id:'lantern',skel:'biped',env:'frost',core:'brow',coreKo:'등불',name:'등불아귀',place:'서리 해안',hp:19500,size:1.05,dmg:1.12,speed:4.8,wind:1.1,rest:[1.6,2.0],
   sky:0xbfd6ea,ground:0x9db3c9,ground2:0x8aa1b9,sun:0xffffff,amb:0x9fb2c8,
   body:0x4a3f6e,belly:0xd9a98f,accent:0xd9a23a,eye:0xfff2a0,glow:0x4a3204,fx:0xffd27a,
@@ -520,7 +520,7 @@ if(LITE){ // 뼈대 판: 돌등이와 잿불 날개 두 마리, 체력과 피해
   WEP[1].dmg=26; // 산탄총: 쓰러진 거수에게 몰아 쏘는 용도라 한 발의 무게를 올림
   const k=HUNTS.filter(h=>h.id==='stone'||h.id==='rail'||h.id==='ash');HUNTS.length=0;HUNTS.push(...k);
   for(const h of HUNTS){h.hp=Math.round(h.hp*.6);if(h.air){h.dmg=1.25;h.hp=20000;h.chimHp=1500}if(h.rail){h.dmg=1.12;h.hp=20000;h.coupHp=950;h.neckHp=2100}
-    h.lt={stone:'공격이 끝난 자리에 틈이 생기는 거수. 그때 다리나 가슴 아래 <b>하늘색 약점</b>을 사격. 쓰러지면 바짝 붙어 산탄총',rail:'화차 사이 연결부를 맨 뒤부터 끊고 마지막에 목 사격. 연결부는 몸이 휘거나 공격 뒤 멈춘 동안에만 노출',ash:'등의 굴뚝 넷을 끄면 추락. 굴뚝은 불을 뿜는 동안과 공격 뒤 몸이 묶인 동안에만 노출'}[h.id];h.text=h.text.split('. ')[0].replace(/\.$/,'')+'.';
+    h.lt={stone:'공격이 끝난 자리에 틈이 생기는 거수. 그때 다리나 양 옆구리의 <b>하늘색 약점</b>을 사격. 쓰러지면 바짝 붙어 산탄총',rail:'화차 사이 연결부를 맨 뒤부터 끊고 마지막에 목 사격. 연결부는 몸이 휘거나 공격 뒤 멈춘 동안에만 노출',ash:'등의 굴뚝 넷을 끄면 추락. 굴뚝은 불을 뿜는 동안과 공격 뒤 몸이 묶인 동안에만 노출'}[h.id];h.text=h.text.split('. ')[0].replace(/\.$/,'')+'.';
     h.tips=h.tips.map(t=>t.replace(', 그때 E로 결정타','').replace('공격이 끊기고 체간이 크게 깎이는 저지 사격','공격이 끊기고 큰 틈이 생기는 저지 사격'))}
 }
 // 같은 네발 뼈대를 쓰는 거수. 본편 단계에는 아직 넣지 않음
@@ -935,12 +935,13 @@ function buildQuad(h){
   const an=(par,x,y,z)=>{const o=new T.Object3D();o.position.set(x,y,z);par.add(o);return o};
   const anchors={head:an(headP,0,0,2.7),pawL:an(legs[0].knee,0,-.8*L,.4),pawR:an(legs[1].knee,0,-.8*L,.4),tail:an(tail[6],0,0,-1.2),tailCut:an(tail[3],0,0,-1),body:an(chest,0,.65,.45)};
   // 사격 판정용 구: 머리, 몸통 앞뒤, 다리 넷, 꼬리 마디, 약점
-  const corePos=h.core==='brow'?[headP,0,.62,1.75]:h.core==='tailtip'?[tail[6],0,0,-1.3]:[chest,0,-.8,.8];
+  const corePos=h.core==='brow'?[headP,0,.62,1.75]:h.core==='tailtip'?[tail[6],0,0,-1.3]:[chest,1.02,-.12,.45]; // 가슴 약점은 양 옆구리에 하나씩: 몸을 숙이거나 엎드려도 옆에서 보이는 자리
   const hb={head:an(headP,0,.1,1.5),bodyF:an(chest,0,-.05,.1),bodyB:an(hip,0,-.05,-.1),legs:legs.flatMap(l=>{const a=an(l,0,-.8*L,0),b=an(l.knee,0,-.45*L,.15);a.hr=.78;b.hr=.66;return[a,b]}),tail:tail.slice(1).map((t,i)=>{const o=an(t,0,0,-.5);o.hr=.78-.06*i;return o}),core:an(corePos[0],corePos[1],corePos[2],corePos[3])};
   if(rotor)hb.rotor=an(rig,0,4.5,.05); // 등의 풍차도 몸통 판정
   const coreM=new T.MeshBasicMaterial({color:0x7ef0ff,fog:false});
   const core=mesh(new T.IcosahedronGeometry(.34,0),coreM,0,0,0,hb.core,false);
   const coreHalo=mesh(new T.IcosahedronGeometry(.5,1),new T.MeshBasicMaterial({color:0x7ef0ff,transparent:true,opacity:.28,depthWrite:false,fog:false}),0,0,0,hb.core,false);
+  if(corePos[0]===chest){hb.core2=an(chest,-corePos[1],corePos[2],corePos[3]);hb.core2.add(core.clone(),coreHalo.clone())}
   // 갑각: 머리, 다리, 꼬리를 덮는 금속 판. 깨지면 사라짐
   const mArm=std(0xc9d2da,{roughness:.5,metalness:.15,emissive:0x2a3036}),armor={head:[],legs:[],tail:[]};
   armor.head.push(mesh(new T.BoxGeometry(1.15,.28,1.5),mArm,0,.66,1.45,headP),mesh(new T.BoxGeometry(.2,.6,1.2),mArm,.72,.2,1.5,headP),mesh(new T.BoxGeometry(.2,.6,1.2),mArm,-.72,.2,1.5,headP));
@@ -1565,7 +1566,7 @@ function updSpheres(){
   if(m.hb.rotor)add(m.hb.rotor,1.1,'body');
   m.hb.legs.forEach(o=>{if(!o.cut)add(o,o.hr||.66,'legs')});
   m.hb.tail.forEach((o,i)=>{if(!o.cut&&!(B.broken.tail&&i>=3))add(o,o.hr||.62-.06*i,'tail')});
-  if(B.coreOpen)add(m.hb.core,B.h.air||B.h.rail?.5:.38,'core');
+  if(B.coreOpen){add(m.hb.core,B.h.air||B.h.rail?.5:.38,'core');if(m.hb.core2)add(m.hb.core2,.38,'core')}
   if(B.coup&&coupOpen())add(m.coups[B.cutN].hbA,.8,'coup');
   if(B.chim)m.chims.forEach((c,i)=>{if(chimOpen(i)){add(c.hbA,c.hbA.hr,'chim');out[out.length-1].ci=i}});
   G.sph=out;
@@ -1725,6 +1726,7 @@ function updCore(dt){
   if(B.chim)updChims();if(B.coup)updCoups();
   B.coreOpen=o;m.coreHalo.visible=o;m.core.material.color.set(o?0x7ef0ff:0x2c3f46);
   m.core.scale.setScalar(o?1+.15*Math.sin(G.time*8):.5);if(o)m.coreHalo.scale.setScalar(1+.3*Math.sin(G.time*8));
+  if(m.hb.core2){const[c2,h2]=m.hb.core2.children;c2.scale.copy(m.core.scale);h2.scale.copy(m.coreHalo.scale);h2.visible=o}
 }
 // ---------- 굴뚝(비행 거수): 체력 대신 굴뚝 넷 ----------
 const chimLeft=()=>B.chim.filter(v=>v>0).length,chimSum=()=>B.chim.reduce((a,v)=>a+Math.max(0,v),0);
@@ -2506,7 +2508,7 @@ const PRAC=[
  [{t:'바닥의 붉은 범위',d:'이 사냥터에서만 공격 범위가 바닥에 붉게 표시. 범위가 다 차오르는 순간이 공격. 덮치기의 붉은 원 밖으로 벗어나기. 내리꽂은 뒤에는 앞발이 박혀 한동안 못 움직이는 거수',atk:'slam'},
   {t:'앞발 내려찍기',d:'한쪽 앞발을 높이 들면 그쪽으로 내려찍기. 찍는 발의 반대편은 닿지 않는 자리. 실전에서는 좌우를 번갈아 세 번까지 이어짐',atk:'poundL'},
   {t:'날개바람',d:'네 발을 넓게 딛고 등의 풍차가 빨라지면 정면으로 긴 바람. 구르기로는 못 피하고, 도는 동안 거수는 방향을 못 바꿈. 옆이나 뒤로 돌아가거나 바위 뒤에 숨기',atk:'gale',retry:'바람이 닿지 않는 옆이나 바위 뒤로 이동'},
-  {t:'약점: 상체를 일으킬 때',d:'돌등이의 약점은 가슴 아래. 덮치기 직전에 상체를 일으키는 동안에만 노출. 그때 가슴의 <b>하늘색 빛</b> 맞히기. 실전에서는 이 사격이 공격을 끊고 체간을 크게 깎는 저지 사격',atk:'slam',need:'core',retry:'가슴 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
+  {t:'약점: 상체를 일으킬 때',d:'돌등이의 약점은 양 옆구리. 덮치기 직전에 상체를 일으키는 동안과 공격 뒤 앞발이 박힌 동안 노출. 그때 옆구리의 <b>하늘색 빛</b> 맞히기. 실전에서는 이 사격이 공격을 끊고 체간을 크게 깎는 저지 사격',atk:'slam',need:'core',retry:'가슴 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
  [{t:'동작 읽기: 등불 휘두르기',d:'여기서부터 붉은 범위 표시 없음. 등불 줄기를 옆 뒤로 길게 젖히면 등불 휘두르기. 앞쪽 넓은 범위라 뒤로 빠지거나 막기',atk:'sweep'},
   {t:'동작 읽기: 등불 내려치기',d:'등불 줄기를 수직으로 곧게 세우면 앞으로 길게 내려치기. 직선 공격이라 옆으로 회피',atk:'lash'},
   {t:'약점: 치켜든 등불',d:'등불아귀의 약점은 머리 위 등불. 완벽한 막기 직후 3초, 그리고 불씨 비와 불씨 뱉기, 섬광을 준비하며 등불을 치켜든 동안에만 노출. 머리를 부수면 숨 고를 때마다 노출. 불씨 비를 준비하는 동안 등불의 <b>하늘색 빛</b> 맞히기',atk:'volley',need:'core',retry:'등불 높이를 미리 겨누고 있다가 빛이 켜지는 순간 사격'}],
