@@ -320,7 +320,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:.6,speed:6.6,accel:46,de
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v43';
+const VER='v44';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -437,7 +437,8 @@ const HUNTS=[
   sky:0xe8b480,ground:0x73914f,ground2:0x62803f,sun:0xffe9c4,amb:0x9a8a78,
   body:0x7d7667,belly:0xbcab8b,accent:0x56613f,eye:0xffd24a,
   // 정면 결투형. 공격마다 끝난 자리에 틈: 덮치기 뒤 앞발이 박힘, 내려찍기는 반대편이 사각, 돌진은 바위에 박으면 비틀거림, 날개바람은 옆과 뒤가 안전
-  atk:{slam:{n:'덮치기',stuck:3.2},charge:{n:'박치기 돌진',crash:1},
+  atk:{slam:{n:'덮치기',stuck:3.2},charge:{n:'박치기 돌진',crash:1},tail:{n:'꼬리 후려치기',stuck:1.6},throw:{n:'돌 던지기'}, // 꼬리 후려치기: 한 바퀴 돈 뒤 어지러워 비틀거림
+       
        poundL:{like:'clawL',n:'앞발 내려찍기',wind:.7,act:.25,dmg:17,off:.8,sh:{half:.75},chain:1,stuck:1.6},
        poundR:{like:'clawR',n:'앞발 내려찍기',wind:.7,act:.25,dmg:17,off:-.8,sh:{half:.75},chain:1,stuck:1.6},
        gale:{like:'roar',n:'날개바람',wind:1.2,act:2.2,dmg:9,push:9,sh:{k:'cone',half:.6,r:19}}},
@@ -445,9 +446,9 @@ const HUNTS=[
                 gale:q=>({splay:.5*q,rigY:-.35*q,rigX:.12*q,headX:.6*q,hind:.25*q,tailUp:.25*q})},
           hit:{poundL:()=>({pawL:.7,rigZ:-.4,rigX:.2,rigY:-.25,px:.5,headY:.3}),poundR:()=>({pawR:.7,rigZ:.4,rigX:.2,rigY:-.25,px:-.5,headY:-.3}),
                gale:(q,p,t)=>({splay:.55,rigY:-.4,rigX:.15,headX:.65,hind:.25,rigZ:sn(t*30)*.02})},
-          state:{stuck:(q,p,t,B)=>B.atk==='slam'?{rigX:.32,rigY:-.55,front:.55,splay:.35,headX:.5,jaw:.3,rigZ:p>.6?sn(t*14)*.04:0}:B.mv==='poundL'?{pawL:.7,rigZ:-.35,rigY:-.2,headX:.3}:{pawR:.7,rigZ:.35,rigY:-.2,headX:.3}}},
-  combos:{base:[['slam'],['charge'],['poundL','poundR','poundL'],['gale'],['poundR','poundL','poundR']],p2:[['slam','poundL','poundR','poundL'],['charge','charge'],['gale','slam'],['poundR','poundL','poundR','gale']],p3:[['slam','slam'],['charge','slam','slam'],['gale','poundL','poundR','poundL'],['slam','slam','charge']]},
-  ranged:[['charge'],['slam'],['slam','charge']],
+          state:{stuck:(q,p,t,B)=>B.atk==='slam'?{rigX:.32,rigY:-.55,front:.55,splay:.35,headX:.5,jaw:.3,rigZ:p>.6?sn(t*14)*.04:0}:B.mv==='tail'?{rigZ:sn(t*5)*.16,headX:.45,headY:sn(t*5+1)*.3,rigY:-.12,jaw:.4,splay:.25}:B.mv==='poundL'?{pawL:.7,rigZ:-.35,rigY:-.2,headX:.3}:{pawR:.7,rigZ:.35,rigY:-.2,headX:.3}}},
+  combos:{base:[['slam'],['charge'],['poundL','poundR','poundL'],['gale'],['poundR','poundL','poundR'],['tail']],p2:[['slam','poundL','poundR','poundL'],['charge','charge'],['gale','slam'],['poundR','poundL','poundR','gale'],['poundL','tail'],['throw','charge']],p3:[['slam','slam'],['charge','slam','slam'],['gale','poundL','poundR','poundL'],['slam','slam','charge'],['tail','slam'],['throw','throw','charge']]},
+  ranged:[['charge'],['slam'],['slam','charge'],['throw'],['throw','charge']],
   text:'등에 풍차를 진 초원의 터줏대감. 정면에서는 밀리지만 공격마다 같은 자리에 틈이 생기는 상대. 이 사냥터에서만 공격 범위가 바닥에 붉게 표시.',
   tips:['공격마다 끝난 자리에 틈이 생기는 거수. 덮치기 뒤에는 앞발이 박혀 옆구리가 비고, 앞발 내려찍기는 찍는 발의 반대편이 사각','박치기 돌진은 방향을 못 바꾸는 직선. 엄폐 바위 뒤에 서면 바위는 부서지지만 거수가 비틀거림','네 발을 딛고 등의 풍차를 돌리면 날개바람. 정면만 밀어내므로 옆과 뒤, 바위 뒤가 안전','양 옆구리의 약점은 덮치려고 상체를 일으킨 순간과 공격 뒤 앞발이 박힌 동안 노출. 일으킨 순간에 맞히면 공격이 끊기고 체간이 크게 깎이는 저지 사격']},
  {id:'lantern',skel:'biped',env:'frost',core:'brow',coreKo:'등불',name:'등불아귀',place:'서리 해안',hp:19500,size:1.05,dmg:1.12,speed:4.8,wind:1.1,rest:[1.6,2.0],
