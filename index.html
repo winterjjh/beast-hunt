@@ -316,11 +316,11 @@ const damp=(dt,k)=>1-Math.exp(-dt*k);
 // 뼈대 판: 읽고, 피하고, 틈을 쏘는 것만 남긴 기본 판. 주소 뒤에 ?full을 붙이면 모든 시스템이 켜진 판
 const LITE=!/[?&]full\b/.test(location.search);if(LITE)document.body.classList.add('lite');
 // ---------- 조작감 수치 (한곳에서 조정) ----------
-const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:1.8,speed:6.6,accel:46,decel:40,swingSpeed:2.6,drinkSpeed:3,dodgeSpeed:15,dodgeTime:.45,dodgeInv:.38,buffer:.2,stopLight:.03,stopHeavy:.085,camSpring:4.5,blockSpeed:2.4,blockCd:.3,parry:.2,parryStep:.0667,parryReset:.5,blockCost:12,blockMin:.2,snap:.16,snapAmp:.3,stopStg:32,slowMul:1.9,quickMul:.75,
+const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:.6,speed:6.6,accel:46,decel:40,swingSpeed:2.6,drinkSpeed:3,dodgeSpeed:15,dodgeTime:.45,dodgeInv:.38,buffer:.2,stopLight:.03,stopHeavy:.085,camSpring:4.5,blockSpeed:2.4,blockCd:.3,parry:.2,parryStep:.0667,parryReset:.5,blockCost:12,blockMin:.2,snap:.16,snapAmp:.3,stopStg:32,slowMul:1.9,quickMul:.75,
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v41';
+const VER='v42';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -2182,10 +2182,10 @@ function updHero(dt){
   // 조준 안정: 움직이면 흔들리고, 멈추거나 정밀 조준하면 점점 안정
   // 조준을 오래 유지할수록 조준점(탄 퍼짐)이 줄어듦. 움직이면 느리게 줄어듦
   const mv=Math.hypot(P.vx,P.vz)>1;
-  if(P.ads&&!P.block&&!P.dodge){P.aimT=(P.aimT||0)+dt*(mv?.45:1)*(W.id==='rifle'&&has('r2')?1.55:1)}else P.aimT=0;
+  if(P.ads&&!P.block&&!P.dodge){P.aimT=(P.aimT||0)+dt*(mv?.7:1)*(W.id==='rifle'&&has('r2')?1.55:1)}else P.aimT=0;
   // 정밀 조준 중에는 조준 원이 일정한 속도로 좁아짐(직선형). 조준을 풀면 서서히 원래 크기로
   const sb=W.sprBase||.028,aiming=P.ads&&!P.block&&!P.dodge;
-  if(aiming)P.aimSpr=Math.max(TUNE.sprAds,Math.min(P.aimSpr,sb)-(sb-TUNE.sprAds)/TUNE.aimTime*dt*(mv?.45:1)*(W.id==='rifle'&&has('r2')?1.55:1));
+  if(aiming)P.aimSpr=Math.max(TUNE.sprAds,Math.min(P.aimSpr,sb)-(sb-TUNE.sprAds)/TUNE.aimTime*dt*(mv?.7:1)*(W.id==='rifle'&&has('r2')?1.55:1));
   else{const want=mv?(W.sprMove||TUNE.sprMove):sb;P.aimSpr+=(want-P.aimSpr)*damp(dt,8)}
   P.aimK=clamp((sb-P.aimSpr)/(sb-TUNE.sprAds),0,1);P.bloom*=Math.exp(-dt*4);
   let mx=I.x,mz=I.z;const ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml}
