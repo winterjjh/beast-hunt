@@ -320,7 +320,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:.6,speed:6.6,accel:46,de
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v54';
+const VER='v55';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -1584,7 +1584,7 @@ function updCue(){
   const c=cue;
   if(G.state!=='hunt'||!B||B.state!=='windup'||!B.atk){c.m.visible=false;c.on=false;return}
   const p=clamp(B.stateT/B.dur,0,1),left=B.dur-B.stateT,A=AT(B.mv||B.atk);
-  let key=(B.m.cueAt&&B.m.cueAt[B.atk])||CUE_AT[B.atk];if(key==='tail'&&B.broken.tail)key='tailCut';
+  let key=(B.m.cueAt&&B.m.cueAt[B.atk])||CUE_AT[B.atk];if(key==='tail'&&tailCut())key='tailCut';
   B.m.anchors[key].getWorldPosition(c.m.position);c.on=true; // 저지 판정용 위치는 빛을 꺼도 유지
   if(!G.cueOn){c.m.visible=false;return}
   let sc=B.mod==='!'?1.3:B.mod==='~'?(p<.5?lerp(.4,1.0,p/.5):p<.62?lerp(1.0,.45,(p-.5)/.12):lerp(.45,1.5,(p-.62)/.38)):lerp(.4,1.5,p);
@@ -1598,7 +1598,7 @@ function updCue(){
 // ---------- 거수 부위 ----------
 function beastParts(){
   const s=B.h.size,fx=Math.sin(B.hd),fz=Math.cos(B.hd);
-  const R=B.m.reach||REACH,tl=B.broken.tail?R.tailCut:R.tail;
+  const R=B.m.reach||REACH,tl=tailCut()?R.tailCut:R.tail;
   return[{id:'head',x:B.x+fx*R.head*s,z:B.z+fz*R.head*s,r:R.headR*s,mult:1.25},{id:'legs',x:B.x,z:B.z,r:R.legsR*s,mult:.9},{id:'tail',x:B.x-fx*tl*s,z:B.z-fz*tl*s,r:R.tailR*s,mult:1.05}];
 }
 function nearestPart(){let best=null,bd=1e9;for(const p of beastParts()){const d=Math.hypot(P.x-p.x,P.z-p.z)-p.r;if(d<bd){bd=d;best=p}}best.gap=bd;return best}
@@ -1646,7 +1646,7 @@ function hitBeast(part,base,heavy,quiet){
     else if(!B.broken[id]){
       B.broken[id]=true;G.huntBreaks++;G.hm[id==='tail'?'b':'a']++;B.php[id]=0;
       if(id==='head'){B.m.horns.forEach((hn,i)=>{if(i!==1)hn.visible=false;else hn.scale.y=.5});breakLook('head');setState('stun');B.dur=LITE?6.5:4.5;say('머리 파괴',B.h.core==='brow'?'거수 기절. 이제 숨 고를 때마다 '+(B.h.coreKo||'이마')+' 약점 노출':'거수 기절')}
-      else{if(B.m.cutTail)B.m.cutTail();else for(let i=4;i<7;i++)B.m.tail[i].visible=false;if(B.h.core==='tailtip'){B.m.tail[3].add(B.m.hb.core);B.m.hb.core.position.set(0,0,-1.15);B.coreForce=true}breakLook('tail');topple(3.5);say(B.h.parts&&B.h.parts.tail?partKo('tail')+' 파괴':'꼬리 절단',B.h.core==='tailtip'?'잘린 자리에 약점 상시 노출':'회전 공격 범위 감소');const t=beastParts()[2];burst(t.x,1.5,t.z,20,B.h.body,8,8,1.6)}
+      else{if(LITE){}else if(B.m.cutTail)B.m.cutTail();else for(let i=4;i<7;i++)B.m.tail[i].visible=false;if(B.h.core==='tailtip'){B.m.tail[3].add(B.m.hb.core);B.m.hb.core.position.set(0,0,-1.15);B.coreForce=true}breakLook('tail');topple(3.5);say(B.h.parts&&B.h.parts.tail?partKo('tail')+' 파괴':LITE?'꼬리 파괴':'꼬리 절단',B.h.core==='tailtip'?'잘린 자리에 약점 상시 노출':LITE?'거수가 쓰러진 틈':'회전 공격 범위 감소');const t=beastParts()[2];burst(t.x,1.5,t.z,20,B.h.body,8,8,1.6)}
       sfx.brk();
     }
   }
@@ -1667,7 +1667,7 @@ function updSpheres(){
   add(m.hb.head,m.hb.head.hr||.95,'head');(m.hb.body||[m.hb.bodyF,m.hb.bodyB]).forEach(o=>add(o,o.hr||1.5,'body'));
   if(m.hb.rotor)add(m.hb.rotor,1.1,'body');
   m.hb.legs.forEach(o=>{if(!o.cut)add(o,o.hr||.66,'legs')});
-  m.hb.tail.forEach((o,i)=>{if(!o.cut&&!(B.broken.tail&&i>=3))add(o,o.hr||.62-.06*i,'tail')});
+  m.hb.tail.forEach((o,i)=>{if(!o.cut&&!(tailCut()&&i>=3))add(o,o.hr||.62-.06*i,'tail')});
   if(B.coreOpen)add(m.hb.core,B.h.air||B.h.rail?.5:B.h.skel==='quad'?.46:.38,'core');
   if(B.coup&&coupOpen())add(m.coups[B.cutN].hbA,.8,'coup');
   if(B.chim)m.chims.forEach((c,i)=>{if(chimOpen(i)){add(c.hbA,c.hbA.hr,'chim');out[out.length-1].ci=i}});
@@ -2026,6 +2026,8 @@ function chooseCombo(){
   B.lastC=i;B.combo=B.combos[i];B.ci=0;startAttack(B.combo[0]);
 }
 const bDmg=()=>B.h.dmg;
+// 기본 판: 부위가 부서져도 거수의 공격은 약해지지 않음. 꼬리는 잘리지 않고 부서진 외형만 유지
+const tailCut=()=>!LITE&&B.broken.tail;
 const windScale=()=>(LITE?[1,.82,.66]:[1,.9,.8])[B.enr]; // 국면이 오를수록 준비 동작 단축
 function startAttack(raw){
   const mod0=/[~!]$/.test(raw)?raw.slice(-1):'',mv=mod0?raw.slice(0,-1):raw,a=kindOf(mv),mod=LITE?'':mod0;
@@ -2034,9 +2036,9 @@ function startAttack(raw){
   const h=B.hd;let sh=null;
   if(a==='bite')sh={k:'cone',x:B.x,z:B.z,h,half:.55,r:8*s};
   else if(a==='clawL'||a==='clawR')sh={k:'cone',x:B.x,z:B.z,h:h+A.off,half:.85,r:7.2*s};
-  else if(a==='tail')sh={k:'circle',x:B.x,z:B.z,r:(B.broken.tail?6.2:8.6)*s};
+  else if(a==='tail')sh={k:'circle',x:B.x,z:B.z,r:(tailCut()?6.2:8.6)*s};
   else if(a==='sweep')sh={k:'cone',x:B.x,z:B.z,h,half:1.45,r:10*s};
-  else if(a==='lash')sh={k:'rect',x:B.x,z:B.z,h,len:(B.broken.tail?11:15.5),wid:3.4*s};
+  else if(a==='lash')sh={k:'rect',x:B.x,z:B.z,h,len:(tailCut()?11:15.5),wid:3.4*s};
   else if(a==='breath')sh={k:'cone',x:B.x,z:B.z,h,half:.5,r:17};
   else if(a==='nova')sh={k:'donut',x:B.x,z:B.z,r0:6.2*s,r1:24};
   else if(a==='roar')sh={k:'circle',x:B.x,z:B.z,r:15};
@@ -2049,7 +2051,7 @@ function startAttack(raw){
   if(A.noRoll){B.m.eyeM.color.set(0x3aa0ff);sfx.warn2()}else sfx.warn();
 }
 function strike(){
-  const a=B.atk,A=AT(B.mv||a),dm=A.dmg*bDmg()*(a==='bite'&&B.broken.head?.7:1);
+  const a=B.atk,A=AT(B.mv||a),dm=A.dmg*bDmg()*(!LITE&&a==='bite'&&B.broken.head?.7:1);
   const sh=B.shape;bLz.visible=false;
   if(G.decoy&&sh&&inside(sh,G.decoy.x,G.decoy.z,1))popDecoy();
   if(a==='volley'){
