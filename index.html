@@ -320,7 +320,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:.6,speed:6.6,accel:46,de
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v49';
+const VER='v50';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -417,6 +417,7 @@ const MODS=[
 ];
 const has=id=>!(G.tut&&G.tut.kind==='train')&&S.mods.includes(id);
 const magOf=W=>W.mag+(W.id==='shotgun'&&has('s1')?2:0)+(LITE&&W.id!=='xbow'?upLv('mag'):0),markN=()=>has('x1')?5:MARK.n;
+const relOne=W=>LITE?W.reloadOne*W.mag/Math.max(W.mag,magOf(W)):W.reloadOne; // 기본 판: 탄수가 늘어도 가득 채우는 시간은 그대로
 const CORE_ARM={chest:'legs',brow:'head',tailtip:'tail'},ARM_CUT=.35;
 
 // ---------- 장비 스킬 목록 (둘을 골라 장착) ----------
@@ -2307,11 +2308,11 @@ function updHero(dt){
   // 무기 바꿔 들기
   if(I.swap!=null&&I.swap!==P.w&&ownW(I.swap)&&!P.dodge&&!P.skill&&!P.finA){P.bag[P.w]={ammo:P.ammo,reserve:P.reserve};P.w=I.swap;P.ammo=P.bag[P.w].ammo;P.reserve=P.bag[P.w].reserve;P.swap=.5;P.reload=0;P.noAuto=false;P.fireCd=Math.max(P.fireCd,.5);sfx.bolt();say(WEP[P.w].name,'')}
   I.swap=null;P.swap=Math.max(0,P.swap-dt);
-  if(P.reload>0){P.reload-=dt;if(P.reload<=0){if(P.reserve>0&&P.ammo<magOf(W)){P.ammo=W.magReload?magOf(W):P.ammo+1;if(!TUNE.infAmmo)P.reserve--;P.noAuto=false;sfx.reload(1);burst(P.x+Math.sin(P.h)*.6,P.y+1.3,P.z+Math.cos(P.h)*.6,2,0xe8c060,2,3,.5)}P.reload=(P.ammo<magOf(W)&&P.reserve>0&&!I.fire&&!(I.dodge>0))?W.reloadOne:0}}
-  if(I.reload>0&&P.reload<=0&&P.ammo<magOf(W)&&P.reserve>0){I.reload=0;P.noAuto=false;P.reload=W.reloadOne;sfx.reload(0)}
+  if(P.reload>0){P.reload-=dt;if(P.reload<=0){if(P.reserve>0&&P.ammo<magOf(W)){P.ammo=W.magReload?magOf(W):P.ammo+1;if(!TUNE.infAmmo)P.reserve--;P.noAuto=false;sfx.reload(1);burst(P.x+Math.sin(P.h)*.6,P.y+1.3,P.z+Math.cos(P.h)*.6,2,0xe8c060,2,3,.5)}P.reload=(P.ammo<magOf(W)&&P.reserve>0&&!I.fire&&!(I.dodge>0))?relOne(W):0}}
+  if(I.reload>0&&P.reload<=0&&P.ammo<magOf(W)&&P.reserve>0){I.reload=0;P.noAuto=false;P.reload=relOne(W);sfx.reload(0)}
   P.fireCd-=dt;
   // 탄창이 비고 가방에 탄이 있으면 상황과 관계없이 자동 장전 시작(피격, 무기 교체 후 포함)
-  if(P.ammo<=0&&P.reserve>0&&P.reload<=0&&P.fireCd<=0&&P.swap<=0&&!P.dodge&&P.stag<=0&&!P.skill&&!P.noAuto)P.reload=W.reloadOne;
+  if(P.ammo<=0&&P.reserve>0&&P.reload<=0&&P.fireCd<=0&&P.swap<=0&&!P.dodge&&P.stag<=0&&!P.skill&&!P.noAuto)P.reload=relOne(W);
   // 조준 안정: 움직이면 흔들리고, 멈추거나 정밀 조준하면 점점 안정
   // 조준을 오래 유지할수록 조준점(탄 퍼짐)이 줄어듦. 움직이면 느리게 줄어듦
   const mv=Math.hypot(P.vx,P.vz)>1;
@@ -2367,8 +2368,8 @@ function updHero(dt){
     if(P.drink>0){P.drink-=dt;P.hp=Math.min(P.maxHp,P.hp+45/1.2*dt);sp=TUNE.drinkSpeed}
     // 단발 사격: 누를 때마다 한 발, 노리쇠 당기는 동안 다음 발 불가
     if(I.fire&&(!P.trig||W.auto)){P.trig=true;
-      if(P.drink<=0&&P.fireCd<=0&&P.ammo>0){P.reload=0;P.h=aimYaw();fire('shot');P.ammo--;P.fireCd=W.cycle;P.recov=W.recov;if(!W.auto)setTimeout(()=>sfx.bolt(),280);if(P.ammo<=0&&P.reserve>0)P.reload=W.cycle+W.reloadOne}
-      else if(P.ammo<=0&&P.reserve>0&&P.reload<=0&&P.fireCd<=0&&P.drink<=0){P.noAuto=false;P.reload=W.reloadOne;sfx.reload(0)}
+      if(P.drink<=0&&P.fireCd<=0&&P.ammo>0){P.reload=0;P.h=aimYaw();fire('shot');P.ammo--;P.fireCd=W.cycle;P.recov=W.recov;if(!W.auto)setTimeout(()=>sfx.bolt(),280);if(P.ammo<=0&&P.reserve>0)P.reload=W.cycle+relOne(W)}
+      else if(P.ammo<=0&&P.reserve>0&&P.reload<=0&&P.fireCd<=0&&P.drink<=0){P.noAuto=false;P.reload=relOne(W);sfx.reload(0)}
       else if(P.ammo<=0&&P.reserve<=0&&!P.swing){P.swing={t:0,dur:.55,hit:false,idx:P.combo};P.combo=(P.combo+1)%2;sfx.whoosh(.3)}}
     // 탄이 바닥나면 대검 베기
     if(P.swing){const S=P.swing;S.t+=dt;sp*=.4;
@@ -2413,7 +2414,7 @@ function animHero(dt){
       const k=P.blockHit/.4,e=k*k;armX=-1.25+.55*e;armZ=-1.0+.25*e;swordX=-1.5+.45*e;armLX=-1.3;rx=.12-.5*e;rigZ=-.35*e}
     else if(P.reload>0&&!kick&&!P.skill){
       // 장전: 총을 아래로 기울이고 오른손으로 한 발씩 밀어 넣음
-      const k=clamp(1-P.reload/W.reloadOne,0,1),up=k>.82?(k-.82)/.18:0,hand=Math.sin(Math.min(1,k/.8)*Math.PI);
+      const k=clamp(1-P.reload/relOne(W),0,1),up=k>.82?(k-.82)/.18:0,hand=Math.sin(Math.min(1,k/.8)*Math.PI);
       armLX=lerp(-.95,-1.5,up);gunX=lerp(.75,0,up);gunZ=lerp(.35,0,up);armX=-1.0-.55*hand;armZ=.75-.25*hand;rx=.22*(1-up);ry=-.75*(1-up);swordX=-.9;m.rig.position.y-=.1*(1-up)}
     else if(P.skill||P.finA||P.fireCd>0||P.ads||I_fireHeld()){const k=kick?1:0;armLX=-1.5-.25*k;armX=-1.35;armZ=.3;rx=-.12*k;ry=-.15;swordX=-.9}
     else if(P.swing){const k=P.swing.t/P.swing.dur,i=P.swing.idx;
