@@ -7,7 +7,7 @@ const {chromium}=require('playwright');const fs=require('fs');const path=require
  await pg.route('**/fonts.googleapis.com/**',r=>r.abort());
  await pg.goto('file://'+path.join(__dirname,'index.html'));await pg.waitForTimeout(400);
  await pg.screenshot({path:'s_title.png'});
- await pg.click('#bNew');await pg.waitForTimeout(300);
+ await pg.click('#bStart');await pg.waitForTimeout(300);
  const run=async(label,maxT)=>pg.evaluate(([maxT])=>{
    const g=window.__game,{G,P,inside}=g;const log=[];let last=-1;
    G.botFn=(G,P,B,dt)=>{const I=G.in,T=G.tut;if(!T)return;const s=T.steps[T.i];
@@ -18,7 +18,7 @@ const {chromium}=require('playwright');const fs=require('fs');const path=require
      I.fin=false;if(s.t==='이동과 시점'){I.x=dx/d;I.z=dz/d}
      else if(s.t==='사격'){if(d>14){I.x=dx/d;I.z=dz/d}else{aim('head');I.ads=true;I.fire=!pf&&P.ammo>0&&P.fireCd<=0&&P.aimT>1}}
      else if(s.t==='약점은 열릴 때만'){const c=aim('core');if(!c)aim('body');I.ads=true;I.fire=!!c&&!pf&&P.ammo>0&&P.fireCd<=0&&P.aimT>1.2}
-     else if(s.t==='산탄총: 밀어붙이기'){I.swap=1;if(d>7){I.x=dx/d;I.z=dz/d}aim('legs');I.fire=!pf&&P.ammo>0&&P.fireCd<=0&&d<8&&P.w===1}
+     else if((s.t==='산탄총: 밀어붙이기'||s.t==='산탄총')){I.swap=1;if(d>7){I.x=dx/d;I.z=dz/d}aim('legs');I.fire=!pf&&P.ammo>0&&P.fireCd<=0&&d<8&&P.w===1}
      else if(s.t==='연발 석궁: 표식 폭발'){I.swap=2;aim('head');I.fire=P.w===2;if(d>16){I.x=dx/d;I.z=dz/d}}
      else if(s.t==='갑각'){aim('head');I.ads=true;I.fire=!pf&&P.ammo>0&&P.fireCd<=0&&P.aimT>.6}
      else if(s.t==='체간과 결정타'){aim('head');I.fin=!!B.broke}
@@ -43,7 +43,7 @@ const {chromium}=require('playwright');const fs=require('fs');const path=require
  for(let st=0,n=await pg.evaluate(()=>window.__game.HUNTS.length);st<n;st++){
   await pg.evaluate(st=>{const g=window.__game;g.G.hunt=st;g.showIntro()},st);
   if(st===2)await pg.screenshot({path:'s_intro.png'});
-  await pg.click('#bGo');
+  await pg.click(await pg.evaluate(()=>window.__game.LITE)?'#bPrac':'#bGo');
   const r=await run('prac',120);
   const after=await pg.evaluate(()=>{const g=window.__game;return {state:g.G.state,tut:!!g.G.tut,beast:g.B.h.name,hp:g.B.hp,mobT:g.G.mobT}});
   console.log('prac',st,JSON.stringify(r),JSON.stringify(after));
