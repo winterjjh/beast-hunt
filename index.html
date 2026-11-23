@@ -320,7 +320,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:.6,speed:6.6,accel:46,de
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v53';
+const VER='v54';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -522,7 +522,7 @@ if(LITE){ // 뼈대 판: 돌등이와 잿불 날개 두 마리, 체력과 피해
   Object.assign(WEP[1],{dmg:120,pellets:3,cone:.045,near:5,far:11}); // 산탄총: 세 발. 부서진 부위를 코앞에서 쏠 때만 큰 피해
   const k=HUNTS.filter(h=>h.id==='stone'||h.id==='rail'||h.id==='ash');HUNTS.length=0;HUNTS.push(...k);
   for(const h of HUNTS){h.hp=Math.round(h.hp*.93);if(h.air){h.dmg=1.25;h.hp=20000;h.chimHp=1850;h.core=null} /* 굴뚝이 체력이자 약점이라 배의 약점은 없음 */ if(h.rail){h.dmg=1.12;h.hp=20000;h.coupHp=1350;h.neckHp=2600}
-    h.lt={stone:'공격이 끝난 자리에 틈이 생기는 거수. 지치거나 앞발이 박혀 고개를 숙이면 목덜미의 <b>하늘색 약점</b>이 드러남. 약점은 단발 사냥총으로, 부서진 부위는 바짝 붙어 산탄총으로',rail:'화차를 쏴서 맨 뒤부터 떼어 내고 마지막에 목 사격. 몸이 휘거나 공격 뒤 멈춘 동안 열리는 연결부의 <b>하늘색 약점</b>을 맞히면 훨씬 빠름. 머리를 부수면 공격이 약해지고 더 오래 박힘',ash:'등의 굴뚝 넷을 끄면 추락. 굴뚝은 불을 뿜는 동안과 공격 뒤 몸이 묶인 동안에만 노출. 날개를 부수면 낮고 느리게 날고, 머리를 부수면 불 피해 감소'}[h.id];h.text=h.text.split('. ')[0].replace(/\.$/,'')+'.';
+    h.lt={stone:'공격이 끝난 자리에 틈이 생기는 거수. 지치거나 앞발이 박혀 고개를 숙이면 목덜미의 <b>하늘색 약점</b>이 드러남. 약점은 단발 사냥총으로, 부서진 부위는 바짝 붙어 산탄총으로',rail:'화차를 쏴서 맨 뒤부터 떼어 내고 마지막에 목 사격. 몸이 휘거나 공격 뒤 멈춘 동안 열리는 연결부의 <b>하늘색 약점</b>을 맞히면 훨씬 빠름',ash:'등의 굴뚝 넷을 끄면 추락. 굴뚝은 불을 뿜는 동안과 공격 뒤 몸이 묶인 동안에만 노출'}[h.id];h.text=h.text.split('. ')[0].replace(/\.$/,'')+'.';
     h.tips=h.tips.map(t=>t.replace(', 그때 E로 결정타','').replace('공격이 끊기고 체간이 크게 깎이는 저지 사격','공격이 끊기고 큰 틈이 생기는 저지 사격'))}
 }
 // 같은 네발 뼈대를 쓰는 거수. 본편 단계에는 아직 넣지 않음
@@ -1642,10 +1642,10 @@ function hitBeast(part,base,heavy,quiet){
   const id=part.id;
   if(B.php[id]!==undefined)B.php[id]-=dmg*pm;
   if(B.php[id]<=0){
-    if(id==='legs'){B.pmax.legs*=1.45;B.php.legs=B.pmax.legs;if(!B.broken.legs){B.broken.legs=true;G.huntBreaks++;G.hm.a++;breakLook('legs')}topple(5.5);say(partKo('legs')+' 붕괴',LITE&&B.h.air?'추락한 틈. 이제 낮고 느린 비행':'거수가 쓰러진 틈')}
+    if(id==='legs'){B.pmax.legs*=1.45;B.php.legs=B.pmax.legs;if(!B.broken.legs){B.broken.legs=true;G.huntBreaks++;G.hm.a++;breakLook('legs')}topple(5.5);say(partKo('legs')+' 붕괴','거수가 쓰러진 틈')}
     else if(!B.broken[id]){
       B.broken[id]=true;G.huntBreaks++;G.hm[id==='tail'?'b':'a']++;B.php[id]=0;
-      if(id==='head'){B.m.horns.forEach((hn,i)=>{if(i!==1)hn.visible=false;else hn.scale.y=.5});breakLook('head');setState('stun');B.dur=LITE?6.5:4.5;say('머리 파괴',B.h.core==='brow'?'거수 기절. 이제 숨 고를 때마다 '+(B.h.coreKo||'이마')+' 약점 노출':LITE&&(B.h.air||B.h.rail)?'거수 기절. 이제 공격 피해 감소'+(B.h.rail?', 박히는 시간 증가':''):'거수 기절')}
+      if(id==='head'){B.m.horns.forEach((hn,i)=>{if(i!==1)hn.visible=false;else hn.scale.y=.5});breakLook('head');setState('stun');B.dur=LITE?6.5:4.5;say('머리 파괴',B.h.core==='brow'?'거수 기절. 이제 숨 고를 때마다 '+(B.h.coreKo||'이마')+' 약점 노출':'거수 기절')}
       else{if(B.m.cutTail)B.m.cutTail();else for(let i=4;i<7;i++)B.m.tail[i].visible=false;if(B.h.core==='tailtip'){B.m.tail[3].add(B.m.hb.core);B.m.hb.core.position.set(0,0,-1.15);B.coreForce=true}breakLook('tail');topple(3.5);say(B.h.parts&&B.h.parts.tail?partKo('tail')+' 파괴':'꼬리 절단',B.h.core==='tailtip'?'잘린 자리에 약점 상시 노출':'회전 공격 범위 감소');const t=beastParts()[2];burst(t.x,1.5,t.z,20,B.h.body,8,8,1.6)}
       sfx.brk();
     }
@@ -2025,8 +2025,7 @@ function chooseCombo(){
   const i=idx[Math.floor(Math.random()*idx.length)];
   B.lastC=i;B.combo=B.combos[i];B.ci=0;startAttack(B.combo[0]);
 }
-// 기본 판: 철길뱀과 잿불 날개는 머리가 부서지면 공격 피해 감소
-const bDmg=()=>B.h.dmg*(LITE&&(B.h.air||B.h.rail)&&B.broken.head?.75:1);
+const bDmg=()=>B.h.dmg;
 const windScale=()=>(LITE?[1,.82,.66]:[1,.9,.8])[B.enr]; // 국면이 오를수록 준비 동작 단축
 function startAttack(raw){
   const mod0=/[~!]$/.test(raw)?raw.slice(-1):'',mv=mod0?raw.slice(0,-1):raw,a=kindOf(mv),mod=LITE?'':mod0;
@@ -2090,7 +2089,7 @@ function endAttack(){
 }
 function updBeast(dt){
   const h=B.h,s=h.size;B.stateT+=dt;
-  const dx=TG.x-B.x,dz=TG.z-B.z,d=Math.hypot(dx,dz),dP=Math.hypot(P.x-B.x,P.z-B.z),want=Math.atan2(dx,dz),spd=(LITE?[1,1.2,1.4]:[1,1.1,1.2])[B.enr]*(1+.08*(B.cutN||0))*(LITE&&B.h.air&&B.broken.legs?.8:1);
+  const dx=TG.x-B.x,dz=TG.z-B.z,d=Math.hypot(dx,dz),dP=Math.hypot(P.x-B.x,P.z-B.z),want=Math.atan2(dx,dz),spd=(LITE?[1,1.2,1.4]:[1,1.1,1.2])[B.enr]*(1+.08*(B.cutN||0));
   const turn=(rate)=>{const df=wrapA(want-B.hd);B.hd+=clamp(df,-rate*dt,rate*dt);return Math.abs(df)};
   switch(B.state){
    case'chase':{
@@ -2153,7 +2152,7 @@ function updBeast(dt){
     if(B.stateT>=B.dur){
       B.linger=null;B.m.eyeM.color.set(h.eye);
       // 공격의 결과로 몸이 박히는 틈. 연속 공격 중간에는 짧게
-      const last=B.ci>=B.combo.length-1,stk=(AT(B.mv||a).stuck||0)*(last?1:.35)*(LITE&&B.h.rail&&B.broken.head?1.4:1);
+      const last=B.ci>=B.combo.length-1,stk=(AT(B.mv||a).stuck||0)*(last?1:.35);
       if(stk>0){B.state='stuck';B.stateT=0;B.dur=stk}
       else endAttack();
     }
@@ -2178,7 +2177,7 @@ function updBeast(dt){
   const r=Math.hypot(B.x,B.z);if(r>AR-3){B.x*=(AR-3)/r;B.z*=(AR-3)/r}
   if(h.air){ // 고도: 남은 굴뚝 수만큼 높이 뜨고, 쓰러지거나 내리꽂거나 낮게 돌진할 때는 땅으로
     const st=B.state,a=B.atk,p=B.dur?B.stateT/B.dur:0,low=st==='dead'||st==='topple'||st==='stun'||(st==='flinch'&&!B.soft)||(a==='slam'&&(st==='stuck'||st==='strike'||(st==='windup'&&p>.45)))||(a==='charge'&&(st==='strike'||(st==='windup'&&p>.3)));
-    const g=low?0:(.6+.75*chimLeft())*(LITE&&B.broken.legs?.5:1);B.fly=lerp(B.fly,g,damp(dt,g<B.fly?5:1.4))}
+    const g=low?0:.6+.75*chimLeft();B.fly=lerp(B.fly,g,damp(dt,g<B.fly?5:1.4))}
 }
 // 준비 자세의 진행도: 자세를 빠르게 잡고(실루엣으로 공격 종류 구분) 서서히 더 당기다가, 공격 직전 TUNE.snap 초 동안 한 번 더 확 움츠림(타이밍 신호)
 // 늦은 엇박(~)은 중간에 힘을 풀었다가 다시 당기고, 빠른 엇박(!)은 멈춤 없이 곧장 당김
