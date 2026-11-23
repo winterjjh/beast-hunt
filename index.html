@@ -320,7 +320,7 @@ const TUNE={infAmmo:true,noCrate:true,tempo:.85,aimTime:.6,speed:6.6,accel:46,de
   bolt:.95,mag:5,reloadOne:.5,shotDmg:190,skillDmg:450,swordDmg:45,reserve:20,reserveMax:30,crateAmmo:8,crateEvery:30,recoil:.07,cueStg:10,sprMove:.045,sprStand:.03,sprAds:.004,spreadLock:.03,settle:2.2,adsMove:.4,sens:.0024,edgeTurn:2.4};
 
 // ---------- 문제 기록: 최근 2분의 입력과 상태를 남겨 두고, 일시정지 화면에서 복사 ----------
-const VER='v50';
+const VER='v51';
 const LOG=[],L0=performance.now(),lnow=()=>(performance.now()-L0)/1000;
 function logEv(type,d){LOG.push([lnow(),type+(d?' '+d:'')]);if(LOG.length>6000)LOG.splice(0,1000)}
 const acc={dx:0,dy:0,n:0,max:0,drop:0,t:0,t1:0,fr:0,yaw:null,pitch:0,state:''};
@@ -1612,10 +1612,10 @@ function hitBeast(part,base,heavy,quiet){
   if(P.buff>0)m*=1.5;
   const rail=B.h.rail,air=B.h.air||rail,cp=part.id==='coup',ch=part.id==='chim',weak=part.id==='core'||ch||cp,py=part.y!=null?part.y:1.8;
   if(B.state==='enrage'){num(part.x,py+.8,part.z,'무효',false);return} // 국면 전환 중에는 피해 없음
-  let dmg=Math.round(base*P.atk*m*rand(.93,1.07));
+  let dmg=Math.round(base*P.atk*m*rand(.93,1.07)),sgBig=false;
   // 기본 판 산탄총: 부서진 부위에만 큰 피해(약점과 쓰러짐 보너스 없음). 그 밖에는 한 자릿수
   if(LITE&&!quiet&&WEP[P.w].id==='shotgun'){
-    if(B.broken[part.id])dmg=Math.round(base*P.atk*Math.max(1,part.mult||1)*(1+.15*upLv('burst'))*(P.buff>0?1.5:1)*rand(.93,1.07));
+    if(B.broken[part.id]){sgBig=true;dmg=Math.round(base*P.atk*Math.max(1,part.mult||1)*(1+.15*upLv('burst'))*(P.buff>0?1.5:1)*rand(.93,1.07))}
     else{dmg=clamp(Math.round(base*.02),1,9);heavy=false}}
   // 갑각: 깨기 전에는 피해 일부만 적용. 갑각 자체는 온전한 피해로 깎임
   const armd=B.arm[part.id]>0;
@@ -1624,7 +1624,7 @@ function hitBeast(part,base,heavy,quiet){
   const pm=LITE&&WEP[P.w].id==='rifle'?1+.12*upLv('brk'):1;if(ch||cp)dmg=Math.round(dmg*pm);
   // 기본 판: 아직 안 부서진 부위에 준 피해는 부위 내구도에 온전히, 전체 체력에는 절반만 반영(부수기 전에 죽는 일 방지)
   if(!air)B.hp-=LITE&&B.php[part.id]!==undefined&&!B.broken[part.id]?dmg*.5:dmg;B.flash=1;logEv('명중',`${part.id} 피해=${dmg} 거수체력=${Math.round(B.hp)} 거수상태=${B.state}`);
-  const chipK=rail&&(part.id==='legs'||part.id==='tail')?.5:.2; // 화차를 직접 쏘면 맨 뒤 화차 내구도에 절반 반영
+  const chipK=sgBig?1:rail&&(part.id==='legs'||part.id==='tail')?.5:.2; // 화차를 직접 쏘면 맨 뒤 화차 내구도에 절반 반영
   num(part.x,part.y!=null?part.y+.8:2.6*B.h.size,part.z,armd?dmg+' 갑각':air&&!weak?Math.round(dmg*chipK):dmg,!armd&&(heavy||open||P.buff>0),weak);
   burst(part.x,py,part.z,heavy?16:weak?10:6,weak?0x7ef0ff:heavy?0xffd27a:0xfff2d0,heavy?9:6,heavy?7:5);
   G.shake=Math.max(G.shake,heavy?.5:quiet?.05:.14);G.stop=heavy?TUNE.stopHeavy:quiet?0:TUNE.stopLight;sfx.hit(heavy||weak);
@@ -1975,7 +1975,7 @@ function execBeast(){
 const scarMats=new Map();
 function breakLook(id){
   const m=B.m,hb=m.hb,roots=id==='head'?[hb.head.parent]:id==='legs'?[...new Set(hb.legs.map(o=>o.parent))]:hb.tail.filter(o=>!o.cut).slice(0,3).map(o=>o.parent);
-  const quad=B.h.skel==='quad';if(!quad&&id!=='head')return; // 철길뱀과 잿불 날개는 화차 분리, 굴뚝 꺼짐이 파괴 표현
+  const quad=B.h.skel==='quad'||(B.h.air&&id==='legs');if(!quad&&id!=='head')return; // 철길뱀과 잿불 날개는 화차 분리, 굴뚝 꺼짐이 파괴 표현
   for(const r of roots){
     if(!r||r.userData.scar)continue;r.userData.scar=1;
     if(quad)r.traverse(o=>{if(!o.isMesh||!o.material||!o.material.isMeshToonMaterial&&!o.material.isMeshStandardMaterial)return;
